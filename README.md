@@ -2,16 +2,14 @@
 
 A unified evaluation and data framework for data-driven scientific reasoning.
 
-It currently integrates CritPt and SciCode with reproducible generation,
-isolated Harbor evaluation, deterministic verification, and trajectory export.
+ddsr-bench separates reusable model access, evaluation orchestration, result
+collection, and training-data export from each benchmark's data and verification
+contract.
 
-See the [pipeline flowchart](PIPELINE.md) for execution details and the
-[generation guide](ddsr_bench/generation/README.md) for client-specific setup.
-
-| Benchmark | Generation | Evaluation |
-| --- | --- | --- |
-| [CritPt](ddsr_bench/benchmarks/critpt/README.md) | One-step or two-step official prompts | Static validation or Harbor; optional official submission |
-| [SciCode](ddsr_bench/benchmarks/scicode/README.md) | Sequential dependent functions | Harbor execution of official test cases |
+Start with the [benchmark catalog](BENCHMARKS.md), then use the selected
+benchmark's guide for its data and run configuration. The
+[framework pipeline](PIPELINE.md) explains how the shared and benchmark-specific
+layers interact.
 
 ## Installation
 
@@ -24,31 +22,61 @@ mamba activate ddsr-bench
 python -m pip install -e '.[dev]'
 ```
 
-This installs the four commands `ddsr-bench`, `ddsr-solve`, `ddsr-smoke`,
-and `ddsr-vllm`, together with the development tools. Install
-`'.[dev,scicode]'` when preparing or verifying SciCode data.
+This installs the shared `ddsr-bench`, `ddsr-smoke`, and `ddsr-vllm` commands.
+Benchmark guides identify optional dependencies and specialized commands such as
+CritPt's `ddsr-solve`.
+
+## Repository layout
+
+```text
+configs/jobs/             benchmark and client job configurations
+configs/serving/          local model-serving configurations
+ddsr_bench/benchmarks/    benchmark adapters and documentation
+ddsr_bench/generation/    shared model clients
+ddsr_bench/training/      shared trajectory and SFT export
+docker/                   benchmark verifier images
+```
+
+Each benchmark package follows the same capability boundary:
+
+```text
+data/          source loading and public/private projection
+generation/    benchmark prompt and generation policy
+evaluation/    task preparation, agent, and verifier
+result.py      adapter for shared result collection
+trajectory.py  adapter for shared training-data export
+```
 
 ## Configuration
 
-| Layer | Configuration | Purpose |
+| Layer | Location | Controls |
 | --- | --- | --- |
-| Serving | `configs/serving/vllm/*.yaml` | Local model process and context limits |
-| Generation | `agents[].kwargs` in `configs/jobs/*/*.yaml` | Client, model, prompt strategy, and sampling |
+| Serving | `configs/serving/` | Local model process and context limits |
+| Generation | `agents[].kwargs` in a job | Client, model, prompts, and sampling |
 | Evaluation | Remaining job fields | Tasks, attempts, concurrency, and outputs |
 
-One job file combines the generation and evaluation settings for a batch.
+Job configurations follow `configs/jobs/BENCHMARK/CLIENT.yaml`. Client setup is
+documented in the [generation guide](ddsr_bench/generation/README.md).
 
-Run the following commands from the repository root.
+## Workflow
 
-## 1. Start and check the model endpoint
+Run these commands from the repository root.
 
-For the bundled local vLLM configuration:
+### 1. Prepare
+
+Choose a benchmark from [BENCHMARKS.md](BENCHMARKS.md) and follow its guide to
+perform any required data, dependency, verifier-image, and task preparation.
+These steps intentionally remain benchmark-specific.
+
+### 2. Check the model endpoint
+
+For a local vLLM server, start a serving configuration:
 
 ```bash
 ddsr-vllm configs/serving/vllm/macos-qwen38.yaml
 ```
 
-In another terminal:
+Check model discovery and one chat request in another terminal:
 
 ```bash
 ddsr-smoke \
@@ -57,121 +85,53 @@ ddsr-smoke \
   --model ddsr-local
 ```
 
-The smoke command checks model discovery and one chat request before a benchmark
-run. See the [generation guide](ddsr_bench/generation/README.md) for OpenAI,
-Amazon Bedrock, and single-problem commands.
+### 3. Generate and evaluate
 
-## 2. Build the verifier image
-
-This step is required only for Harbor:
+Select one of the prepared job configurations:
 
 ```bash
-docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
-# For SciCode instead:
-docker build -f docker/scicode/Dockerfile -t ddsr-bench-scicode:latest .
+harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml
 ```
 
-The image contains the verifier dependencies; model requests remain on the host.
+Harbor schedules independent problem-attempt trials and runs verifier code in
+no-network containers. Some benchmarks expose an additional non-executing mode;
+their guides document its command and limitations.
 
-## 3. Prepare the official tasks
+To run one prepared problem, append `--path tasks/TASK_SET` and
+`--include-task-name BENCHMARK/PROBLEM_ID`. Benchmark guides provide concrete
+task names.
 
-Download the
-[official CritPt challenges](https://github.com/CritPt-Benchmark/CritPt/tree/17c2545c302762d2f2d644d923ea4c301605cb08/data/public_test_challenges/json),
-then provide their local directory as `paths.input`:
-
-```bash
-ddsr-bench \
-  action=prepare \
-  paths.input=path/to/CritPt/data/public_test_challenges/json \
-  paths.output=tasks/critpt-official
-```
-
-Preparation creates the 70 task directories expected by the bundled jobs under
-`tasks/critpt-official`. Direct runs do not require preparation; see
-[Run one problem](ddsr_bench/generation/README.md#run-one-problem) for an
-example.
-
-Prepared tasks embed the verifier module path. Regenerate tasks in a fresh
-output directory after upgrading across this repository reorganization. See the
-[SciCode guide](ddsr_bench/benchmarks/scicode/README.md) for its dataset and
-preparation command.
-
-Harbor requires each task instruction to be named `instruction.md`. Our custom
-agents intentionally store readable JSON in that file so public problem fields
-can be reconstructed exactly; private verifier fields are written elsewhere.
-
-## 4. Generate and evaluate
-
-Run isolated execution-based evaluation with Harbor:
+### 4. Collect results
 
 ```bash
-harbor run --config configs/jobs/critpt/vllm.yaml
-```
-
-Or generate candidates with static code validation only:
-
-```bash
-ddsr-solve --config configs/jobs/critpt/vllm.yaml
-```
-
-Both commands use the same tasks and generation settings. `ddsr-solve` checks
-code structure and safety without executing answers; Harbor adds isolated
-execution and comparison when verifier data is available.
-
-The default outputs are `outputs/harbor/critpt-official` and
-`outputs/static/critpt-official`, respectively. Replace `vllm.yaml` with
-`openai.yaml`, `bedrock.yaml`, or `aliyun.yaml` after configuring that endpoint.
-SciCode currently uses Harbor through `configs/jobs/scicode/*.yaml`.
-
-## 5. Collect results
-
-```bash
-ddsr-bench action=collect paths.input=outputs/harbor/critpt-official
+ddsr-bench action=collect paths.input=JOB_DIR
 ```
 
 Collection writes `summary.json` and `summary.csv`, groups complete batches by
-attempt, records each generated file under `artifact`, and reports incomplete
-trials separately. It also accepts a static job directory, whose rewards remain
-null.
+attempt, and reports incomplete trials separately.
 
-## 6. Export teacher trajectories
+### 5. Export teacher data
 
 ```bash
 ddsr-bench \
   action=export \
-  paths.input=outputs/harbor/critpt-official \
-  paths.output=datasets/critpt-teacher \
+  paths.input=JOB_DIR \
+  paths.output=DATASET_DIR \
   training.view=full
 ```
 
-This writes `trajectories.jsonl` and `sft.jsonl`. For a two-step trajectory,
-`full` emits derivation, formatting, and derived one-step answer samples. Use
-`training.view=native` for only the calls made during inference. See the
-[training-data guide](ddsr_bench/training/README.md) for every view.
-Export makes no model calls and retains quality and provenance metadata.
-One export directory must contain trials from exactly one benchmark.
+Export writes `trajectories.jsonl` and `sft.jsonl` without making model calls.
+`native` preserves recorded calls; `full` may add benchmark-specific derived
+samples. One export must contain exactly one benchmark. See the
+[training-data guide](ddsr_bench/training/README.md) for the available views.
 
-## 7. Submit one CritPt attempt
+## Trials and outputs
 
-Submission requires one answer for each of the 70 official main problems and
-never happens automatically:
-
-```bash
-export ARTIFICIAL_ANALYSIS_API_KEY='...'
-ddsr-bench \
-  action=submit \
-  paths.input=outputs/harbor/critpt-official \
-  submission.attempt=0
-```
-
-The command rejects missing, duplicate, or mixed-attempt answers before making
-the API request. The server response is saved as `submission-0.json` inside the
-job directory, and an existing submission file is never overwritten.
-
-## Results and isolation
+A trial is one complete evaluation of one problem for one attempt. Concurrency
+changes how many trials run at once, not how attempts are grouped. Separate
+trial directories prevent concurrent runs from overwriting one another.
 
 Each trial retains its conversation, generated benchmark artifact, validation
-result, usage, model settings, latency, and hashes. Separate trial directories
-prevent concurrent attempts from overwriting one another. Harbor verifies
-without network access, and private verifier data never appears in model
-messages or logs.
+result, usage, model settings, and latency. Trajectory export adds content and
+source hashes. Private verifier data stays outside model messages and agent
+logs. See the [framework pipeline](PIPELINE.md) for the full artifact flow.

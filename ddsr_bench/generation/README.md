@@ -1,7 +1,7 @@
 # Generation
 
 ddsr-bench supports local and hosted Chat Completions clients. Use `ddsr-smoke`
-to check an endpoint, then pass the same settings to `ddsr-solve` or Harbor.
+to check an endpoint, then pass the same settings to a benchmark job.
 
 Harbor job examples live in `configs/jobs/BENCHMARK`. Their `agents[].kwargs`
 sections make the endpoint, strategy, streaming behavior, and request-time
@@ -48,8 +48,8 @@ See the
 ### Alibaba Cloud PAI Token Service
 
 PAI Token Service exposes the same OpenAI-compatible routes, so it reuses
-`OpenAIClient`. The bundled `configs/jobs/critpt/aliyun.yaml` targets the Beijing
-endpoint and `qwen3.8-max`:
+`OpenAIClient`. Bundled benchmark `aliyun.yaml` jobs target the Beijing endpoint
+and `qwen3.8-max`:
 
 ```bash
 export ALIYUN_API_KEY='...'
@@ -83,42 +83,3 @@ The `bedrock-mantle` endpoint accepts the bare `openai.gpt-5.6-luna` model ID.
 
 See the
 [Amazon Bedrock endpoint documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/endpoints.html).
-
-## Run one problem
-
-Use the settings from any client above with `ddsr-solve`:
-
-```bash
-ddsr-solve path/to/challenge.json outputs/example \
-  --client CLIENT \
-  --base-url BASE_URL \
-  --api-key-env KEY_VARIABLE \
-  --model MODEL \
-  --style two-step \
-  --reasoning-effort low \
-  --max-tokens 32768 \
-  --stream
-```
-
-Omit `--api-key-env` for an unsecured vLLM endpoint. Use `--problem-id ID` to
-select a subproblem; otherwise the main problem is used. The output directory
-must not already exist.
-
-`ddsr-solve` only extracts and statically validates the generated code. It does
-not execute `answer`, `real_answer`, or testcases; `result.json` therefore has a
-null reward. Use Harbor for all execution-based correctness evaluation.
-
-To run all tasks, attempts, and concurrency from a Harbor job configuration
-without starting Harbor or Docker, use
-`ddsr-solve --config configs/jobs/critpt/CLIENT.yaml`.
-The resulting static job supports the normal `action=collect` and guarded
-official submission workflow.
-
-With the bundled job files, Harbor writes to `outputs/harbor/JOB_NAME`, while
-the static runner writes to `outputs/static/JOB_NAME`. A single-problem command
-continues to use the output directory supplied as its second positional argument.
-
-One-step generation makes one model call with the template in the initial
-problem. Two-step generation first requests the answer without the template,
-then sends CritPt's formatting prompt and template in a second call. Both calls
-use the same sampling configuration.
