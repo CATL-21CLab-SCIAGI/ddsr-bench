@@ -1,4 +1,5 @@
 defaults:
+  - benchmark: critpt
   - harbor: default
   - override hydra/job_logging: disabled
   - _self_

@@ -24,3 +24,12 @@ def test_job_config(name: str, client: str) -> None:
     assert agent.kwargs["sampling"]["max_tokens"] == 32768
     assert config.datasets[0].path == Path("tasks/official")
     assert config.jobs_dir == Path("outputs/harbor")
+
+
+def test_scicode_job_config() -> None:
+    path = Path("configs/job/scicode-vllm.yaml")
+    config = JobConfig.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    assert config.agents[0].name.endswith("scicode.harbor:SciCodeAgent")
+    assert config.datasets[0].path == Path("tasks/scicode-validation")
+    assert config.jobs_dir == Path("outputs/harbor")

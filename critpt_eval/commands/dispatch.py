@@ -12,6 +12,8 @@ from omegaconf import DictConfig
 
 from critpt_eval.benchmark.collect import collect_trials
 from critpt_eval.benchmark.prepare import Resources, compile_challenges
+from critpt_eval.benchmark.scicode.loader import load_split
+from critpt_eval.benchmark.scicode.prepare import compile_problems
 from critpt_eval.benchmark.submit import build_batch, submit_batch
 from critpt_eval.loaders import load_challenges
 from critpt_eval.training import export_sft, export_trajectories
@@ -34,8 +36,6 @@ def configure_logging(verbose: bool = False) -> logging.Logger:
 
 
 def prepare(config: DictConfig) -> str:
-    if config.paths.input is None:
-        raise ValueError("paths.input is required for prepare")
     limits = config.harbor
     resources = Resources(
         image=str(limits.image),
@@ -43,9 +43,21 @@ def prepare(config: DictConfig) -> str:
         memory_mb=int(limits.memory_mb),
         timeout_sec=float(limits.timeout_sec),
     )
-    tasks = compile_challenges(
-        load_challenges(config.paths.input), config.paths.output, resources
-    )
+    benchmark = str(config.benchmark.name)
+    if benchmark == "scicode":
+        tasks = compile_problems(
+            load_split(str(config.benchmark.split)),
+            config.paths.output,
+            resources,
+        )
+    elif benchmark == "critpt":
+        if config.paths.input is None:
+            raise ValueError("paths.input is required for CritPt preparation")
+        tasks = compile_challenges(
+            load_challenges(config.paths.input), config.paths.output, resources
+        )
+    else:
+        raise ValueError(f"unknown benchmark {benchmark!r}")
     return f"prepared {len(tasks)} Harbor tasks in {config.paths.output}"
 
 

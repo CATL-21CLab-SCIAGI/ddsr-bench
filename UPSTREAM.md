@@ -16,3 +16,10 @@
 
 - Repository: https://github.com/harbor-framework/harbor
 - Pinned package version: `0.22.0`
+
+## SciCode
+
+- Repository: https://github.com/scicode-bench/SciCode
+- Commit: `e3158ea011d4235245a547460d3688d7ccbf9900`
+- Reimplemented locally: prompts, sequential generation, dataset loading, HDF5
+  target decoding, exceptional-step substitutions, and official test execution.

@@ -21,6 +21,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["black>=24", "pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8"]
+scicode = [
+    "datasets>=4,<6",
+    "h5py>=3,<4",
+]
 
 [project.scripts]
 critpt-eval = "critpt_eval.commands.dispatch:main"
@@ -32,6 +36,7 @@ critpt-vllm = "critpt_eval.commands.serve:main"
 packages = [
     "critpt_eval",
     "critpt_eval.benchmark",
+    "critpt_eval.benchmark.scicode",
     "critpt_eval.commands",
     "critpt_eval.generation",
     "critpt_eval.grading",
@@ -41,7 +46,16 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-configs = ["*.yaml", "harbor/*.yaml", "job/*.yaml", "prompt/*.yaml", "vllm/*.yaml"]
+"critpt_eval.benchmark.scicode" = ["fixed/*.txt"]
+configs = [
+    "*.yaml",
+    "benchmark/*.yaml",
+    "harbor/*.yaml",
+    "job/*.yaml",
+    "prompt/*.yaml",
+    "prompt/scicode/*.txt",
+    "vllm/*.yaml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

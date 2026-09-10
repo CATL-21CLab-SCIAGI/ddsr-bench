@@ -1,3 +1,4 @@
 *
 !critpt_eval/
 !critpt_eval/**
+!datasets/scicode/test_data.h5

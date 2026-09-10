@@ -12,3 +12,13 @@ def test_verifier_image() -> None:
     assert "COPY critpt_eval /opt/critpt-eval/critpt_eval" in dockerfile
     assert "COPY ." not in dockerfile
     assert ignored.splitlines()[0] == "*"
+
+
+def test_scicode_image() -> None:
+    dockerfile = (ROOT / "docker" / "scicode" / "Dockerfile").read_text()
+    ignored = (ROOT / ".dockerignore").read_text()
+
+    assert "scicode-bench/SciCode" not in dockerfile
+    assert all(name in dockerfile for name in ("h5py", "matplotlib", "numpy", "scipy"))
+    assert "COPY datasets/scicode/test_data.h5 /opt/scicode/test_data.h5" in dockerfile
+    assert "!datasets/scicode/test_data.h5" in ignored
