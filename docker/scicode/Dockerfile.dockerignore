@@ -1,0 +1,4 @@
+*
+!ddsr_bench/
+!ddsr_bench/**
+!datasets/scicode/test_data.h5

@@ -1,4 +1,4 @@
-image: critpt-eval:0.1.0
+image: ddsr-bench-critpt:latest
 cpus: 2
 memory_mb: 4096
 timeout_sec: 120

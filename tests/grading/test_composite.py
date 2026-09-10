@@ -1,6 +1,6 @@
 import pytest
 
-from critpt_eval.grading.composite import all_required, weighted
+from ddsr_bench.grading.composite import all_required, weighted
 
 
 def test_all_required() -> None:

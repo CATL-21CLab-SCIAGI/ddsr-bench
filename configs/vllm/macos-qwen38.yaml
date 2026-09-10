@@ -1,5 +1,5 @@
 model: mlx-community/Qwen3.8-27B-4bit
-served-model-name: critpt-local
+served-model-name: ddsr-local
 host: 127.0.0.1
 port: 8000
 # Qwen3.8 supports 262144 tokens; 32768 is the local 48 GB memory budget.

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import sympy as sp
 
-from critpt_eval.grading.numeric import exact, floating
+from ddsr_bench.grading.numeric import exact, floating
 
 
 def test_exact_numbers() -> None:

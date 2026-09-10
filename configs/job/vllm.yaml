@@ -6,8 +6,8 @@ n_concurrent_trials: 4
 
 # Generation layer: agent, client, prompt strategy, and request parameters.
 agents:
-  - name: critpt_eval.benchmark.harbor:CritPtAgent
-    model_name: critpt-local
+  - name: ddsr_bench.benchmarks.critpt.harbor:CritPtAgent
+    model_name: ddsr-local
     include_logs: [response.json]
     extra_allowed_hosts: [127.0.0.1]
     kwargs:

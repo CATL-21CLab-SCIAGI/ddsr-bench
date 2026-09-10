@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from critpt_eval.generation.prompts import system_prompt
-from critpt_eval.schemas import Trajectory
-from critpt_eval.training import (
+from ddsr_bench.benchmarks.critpt.prompts import system_prompt
+from ddsr_bench.training import (
     export_sft,
     export_trajectories,
     load_trajectory,
     sft_samples,
 )
+from ddsr_bench.training.schemas import Trajectory
 
 
 def write_trial(job: Path, name: str = "Challenge_2_sub_1__attempt-0") -> Path:

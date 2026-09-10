@@ -1,6 +1,6 @@
 import pytest
 
-from critpt_eval.commands.utils import read_api_key
+from ddsr_bench.commands.utils import read_api_key
 
 
 def test_reads_selected_api_key(monkeypatch: pytest.MonkeyPatch) -> None:

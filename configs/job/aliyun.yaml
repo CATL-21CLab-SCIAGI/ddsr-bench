@@ -6,7 +6,7 @@ n_concurrent_trials: 4
 
 # Generation layer: ALIYUN_API_KEY is read from the environment.
 agents:
-  - name: critpt_eval.benchmark.harbor:CritPtAgent
+  - name: ddsr_bench.benchmarks.critpt.harbor:CritPtAgent
     # Available text LLMs:
     # Qwen: qwen3.8-max, qwen3.7-max, qwen3.7-plus, qwen3.6-plus,
     #   qwen3.5-plus, qwen3.7-flash, qwen3.6-flash, qwen3.5-flash

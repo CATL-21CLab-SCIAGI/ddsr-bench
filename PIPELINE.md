@@ -1,12 +1,12 @@
 # Evaluation pipeline
 
-`critpt-solve` stops after code extraction and static AST validation. Harbor adds
+`ddsr-solve` stops after code extraction and static AST validation. Harbor adds
 container isolation and, when verifier data exists, answer execution and comparison.
 
 | Mode | Entry point | Code execution | Result |
 | --- | --- | --- | --- |
-| Harbor | [`CritPtAgent.run`](critpt_eval/benchmark/harbor.py) | When a reference or testcases exist | Reward and status |
-| Static | [`run_trial`](critpt_eval/benchmark/static.py) | None | Validation status; reward is `null` |
+| Harbor | [`CritPtAgent.run`](ddsr_bench/benchmarks/critpt/harbor.py) | When a reference or testcases exist | Reward and status |
+| Static | [`run_trial`](ddsr_bench/benchmarks/critpt/static.py) | None | Validation status; reward is `null` |
 
 Both modes use the same prepared tasks, model clients, prompts, generation
 runner, answer extraction, and AST validation. Only Harbor continues into the
@@ -18,7 +18,7 @@ flowchart TD
     B --> C["Compile each problem into a Harbor task"]
     C --> D{"Runner"}
     D -->|"harbor run"| E["Harbor schedules problem × attempt"]
-    D -->|"critpt-solve"| ES["Static runner schedules problem × attempt"]
+    D -->|"ddsr-solve"| ES["Static runner schedules problem × attempt"]
     E --> F["One trial receives public ProblemSpec"]
     ES --> F
 

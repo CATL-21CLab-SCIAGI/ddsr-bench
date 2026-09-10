@@ -1,6 +1,6 @@
 import sympy as sp
 
-from critpt_eval.grading.compare import compare
+from ddsr_bench.grading.compare import compare
 
 
 def test_mixed_return_value() -> None:

@@ -1,14 +1,12 @@
-# critpt-eval
+# ddsr-bench
 
-A reproducible CritPt harness for answer generation, Harbor evaluation,
-deterministic verification, trajectory export, and explicit Artificial Analysis
-submission.
+A unified evaluation and data framework for data-driven scientific reasoning.
 
-It reproduces CritPt's pinned one-step and two-step prompts, supports local and
-hosted model endpoints, and keeps private verifier data outside conversations.
+It currently integrates CritPt and SciCode with reproducible generation,
+isolated Harbor evaluation, deterministic verification, and trajectory export.
 
 See the [pipeline flowchart](PIPELINE.md) for execution details and the
-[generation guide](critpt_eval/generation/README.md) for client-specific setup.
+[generation guide](ddsr_bench/generation/README.md) for client-specific setup.
 
 ## Installation
 
@@ -16,13 +14,13 @@ After cloning this repository, enter its root and create a Python 3.12
 environment:
 
 ```bash
-mamba create -n critpt-eval python=3.12 -y
-mamba activate critpt-eval
+mamba create -n ddsr-bench python=3.12 -y
+mamba activate ddsr-bench
 python -m pip install -e '.[dev]'
 ```
 
-This installs the four commands `critpt-eval`, `critpt-solve`, `critpt-smoke`,
-and `critpt-vllm`, together with the development tools.
+This installs the four commands `ddsr-bench`, `ddsr-solve`, `ddsr-smoke`,
+and `ddsr-vllm`, together with the development tools.
 
 ## Configuration
 
@@ -41,20 +39,20 @@ Run the following commands from the repository root.
 For the bundled local vLLM configuration:
 
 ```bash
-critpt-vllm configs/vllm/macos-qwen38.yaml
+ddsr-vllm configs/vllm/macos-qwen38.yaml
 ```
 
 In another terminal:
 
 ```bash
-critpt-smoke \
+ddsr-smoke \
   --client vllm \
   --base-url http://127.0.0.1:8000/v1 \
-  --model critpt-local
+  --model ddsr-local
 ```
 
 The smoke command checks model discovery and one chat request before a benchmark
-run. See the [generation guide](critpt_eval/generation/README.md) for OpenAI,
+run. See the [generation guide](ddsr_bench/generation/README.md) for OpenAI,
 Amazon Bedrock, and single-problem commands.
 
 ## 2. Build the verifier image
@@ -62,7 +60,7 @@ Amazon Bedrock, and single-problem commands.
 This step is required only for Harbor:
 
 ```bash
-docker build -f docker/Dockerfile -t critpt-eval:0.1.0 .
+docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
 ```
 
 The image contains the verifier dependencies; model requests remain on the host.
@@ -74,7 +72,7 @@ Download the
 then provide their local directory as `paths.input`:
 
 ```bash
-critpt-eval \
+ddsr-bench \
   action=prepare \
   paths.input=path/to/CritPt/data/public_test_challenges/json \
   paths.output=tasks/official
@@ -82,7 +80,7 @@ critpt-eval \
 
 Preparation creates the 70 task directories expected by the bundled jobs under
 `tasks/official`. Direct runs do not require preparation; see
-[Run one problem](critpt_eval/generation/README.md#run-one-problem) for an
+[Run one problem](ddsr_bench/generation/README.md#run-one-problem) for an
 example.
 
 ## 4. Generate and evaluate
@@ -96,10 +94,10 @@ harbor run --config configs/job/vllm.yaml
 Or generate candidates with static code validation only:
 
 ```bash
-critpt-solve --config configs/job/vllm.yaml
+ddsr-solve --config configs/job/vllm.yaml
 ```
 
-Both commands use the same tasks and generation settings. `critpt-solve` checks
+Both commands use the same tasks and generation settings. `ddsr-solve` checks
 code structure and safety without executing answers; Harbor adds isolated
 execution and comparison when verifier data is available.
 
@@ -110,7 +108,7 @@ The default outputs are `outputs/harbor/critpt-official` and
 ## 5. Collect results
 
 ```bash
-critpt-eval action=collect paths.input=outputs/harbor/critpt-official
+ddsr-bench action=collect paths.input=outputs/harbor/critpt-official
 ```
 
 Collection writes `summary.json` and `summary.csv`, groups complete batches by
@@ -120,7 +118,7 @@ directory, whose rewards remain null.
 ## 6. Export teacher trajectories
 
 ```bash
-critpt-eval \
+ddsr-bench \
   action=export \
   paths.input=outputs/harbor/critpt-official \
   paths.output=datasets/critpt-teacher \
@@ -139,7 +137,7 @@ never happens automatically:
 
 ```bash
 export ARTIFICIAL_ANALYSIS_API_KEY='...'
-critpt-eval \
+ddsr-bench \
   action=submit \
   paths.input=outputs/harbor/critpt-official \
   submission.attempt=0

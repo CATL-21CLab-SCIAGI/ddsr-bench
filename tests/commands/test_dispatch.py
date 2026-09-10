@@ -3,12 +3,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from critpt_eval.commands.dispatch import LOGGER_NAME, configure_logging, dispatch
+from ddsr_bench.commands.dispatch import LOGGER_NAME, configure_logging, dispatch
 
 
 def test_collect_action(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "critpt_eval.commands.dispatch.collect_trials",
+        "ddsr_bench.commands.dispatch.collect_trials",
         lambda _: {"complete_batches": 2},
     )
     config = SimpleNamespace(
@@ -20,10 +20,10 @@ def test_collect_action(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "critpt_eval.commands.dispatch.load_split", lambda split: [split]
+        "ddsr_bench.commands.dispatch.load_split", lambda split: [split]
     )
     monkeypatch.setattr(
-        "critpt_eval.commands.dispatch.compile_problems",
+        "ddsr_bench.commands.dispatch.compile_problems",
         lambda problems, output, resources: [problems[0]],
     )
     config = SimpleNamespace(
@@ -31,7 +31,7 @@ def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
         benchmark=SimpleNamespace(name="scicode", split="validation"),
         paths=SimpleNamespace(input=None, output="tasks/scicode-validation"),
         harbor=SimpleNamespace(
-            image="critpt-eval-scicode:test",
+            image="ddsr-bench-scicode:test",
             cpus=2,
             memory_mb=4096,
             timeout_sec=1800,
@@ -48,11 +48,11 @@ def test_rejects_unknown_action() -> None:
 
 def test_export_action(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "critpt_eval.commands.dispatch.export_trajectories",
+        "ddsr_bench.commands.dispatch.export_trajectories",
         lambda job, output: Path(output) / "trajectories.jsonl",
     )
     monkeypatch.setattr(
-        "critpt_eval.commands.dispatch.export_sft",
+        "ddsr_bench.commands.dispatch.export_sft",
         lambda trajectories, output, view: Path(output) / f"sft-{view}.jsonl",
     )
     config = SimpleNamespace(

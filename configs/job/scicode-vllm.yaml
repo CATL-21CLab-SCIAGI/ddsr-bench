@@ -4,8 +4,8 @@ n_attempts: 1
 n_concurrent_trials: 4
 
 agents:
-  - name: critpt_eval.benchmark.scicode.harbor:SciCodeAgent
-    model_name: critpt-local
+  - name: ddsr_bench.benchmarks.scicode.harbor:SciCodeAgent
+    model_name: ddsr-local
     include_logs: [response.json]
     extra_allowed_hosts: [127.0.0.1]
     kwargs:

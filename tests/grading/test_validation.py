@@ -1,6 +1,10 @@
 import pytest
 
-from critpt_eval.grading.validation import extract_answer, extract_code, validate_code
+from ddsr_bench.grading.validation import (
+    extract_answer,
+    extract_code,
+    validate_code,
+)
 
 TEMPLATE = """import sympy as sp
 

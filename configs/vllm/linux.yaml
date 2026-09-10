@@ -1,5 +1,5 @@
 model: Qwen/Qwen3-0.6B
-served-model-name: critpt-local
+served-model-name: ddsr-local
 host: 127.0.0.1
 port: 8000
 max-model-len: 8192

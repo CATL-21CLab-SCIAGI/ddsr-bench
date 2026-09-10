@@ -6,7 +6,7 @@ n_concurrent_trials: 4
 
 # Generation layer: AWS_BEARER_TOKEN_BEDROCK is read from the environment.
 agents:
-  - name: critpt_eval.benchmark.harbor:CritPtAgent
+  - name: ddsr_bench.benchmarks.critpt.harbor:CritPtAgent
     model_name: global.openai.gpt-5.6-luna
     include_logs: [response.json]
     extra_allowed_hosts: [bedrock-runtime.us-east-1.amazonaws.com]

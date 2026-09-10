@@ -3,9 +3,9 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "critpt-eval"
+name = "ddsr-bench"
 version = "0.1.0"
-description = "Minimal CritPt generation and evaluation harness"
+description = "Evaluation and data framework for data-driven scientific reasoning"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -27,26 +27,26 @@ scicode = [
 ]
 
 [project.scripts]
-critpt-eval = "critpt_eval.commands.dispatch:main"
-critpt-solve = "critpt_eval.commands.solve:main"
-critpt-smoke = "critpt_eval.commands.smoke:main"
-critpt-vllm = "critpt_eval.commands.serve:main"
+ddsr-bench = "ddsr_bench.commands.dispatch:main"
+ddsr-solve = "ddsr_bench.commands.solve:main"
+ddsr-smoke = "ddsr_bench.commands.smoke:main"
+ddsr-vllm = "ddsr_bench.commands.serve:main"
 
 [tool.setuptools]
 packages = [
-    "critpt_eval",
-    "critpt_eval.benchmark",
-    "critpt_eval.benchmark.scicode",
-    "critpt_eval.commands",
-    "critpt_eval.generation",
-    "critpt_eval.grading",
-    "critpt_eval.loaders",
-    "critpt_eval.training",
+    "ddsr_bench",
+    "ddsr_bench.benchmarks",
+    "ddsr_bench.benchmarks.critpt",
+    "ddsr_bench.benchmarks.scicode",
+    "ddsr_bench.commands",
+    "ddsr_bench.generation",
+    "ddsr_bench.grading",
+    "ddsr_bench.training",
     "configs",
 ]
 
 [tool.setuptools.package-data]
-"critpt_eval.benchmark.scicode" = ["fixed/*.txt"]
+"ddsr_bench.benchmarks.scicode" = ["fixed/*.txt"]
 configs = [
     "*.yaml",
     "benchmark/*.yaml",

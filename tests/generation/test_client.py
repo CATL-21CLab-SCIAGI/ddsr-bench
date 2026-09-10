@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from critpt_eval.generation.client import (
+from ddsr_bench.generation.client import (
     BedrockClient,
     ClientError,
     OpenAIClient,

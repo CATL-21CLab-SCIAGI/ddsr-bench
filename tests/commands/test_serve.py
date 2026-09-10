@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from critpt_eval.commands.serve import launch
+from ddsr_bench.commands.serve import launch
 
 
 def test_launch_hands_off_to_vllm(
@@ -37,6 +37,6 @@ def test_native_configs(name: str) -> None:
     path = Path(__file__).parents[2] / "configs" / "vllm" / name
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
 
-    assert config["served-model-name"] == "critpt-local"
+    assert config["served-model-name"] == "ddsr-local"
     assert config["host"] == "127.0.0.1"
     assert config["port"] == 8000

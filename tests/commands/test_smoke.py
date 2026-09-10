@@ -1,7 +1,7 @@
 import pytest
 
-from critpt_eval.commands.smoke import smoke
-from critpt_eval.generation.client import ChatMessages, ChatResponse
+from ddsr_bench.commands.smoke import smoke
+from ddsr_bench.generation.client import ChatMessages, ChatResponse
 
 
 class FakeClient:
