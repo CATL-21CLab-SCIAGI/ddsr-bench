@@ -15,22 +15,27 @@ def write_trial(
     reward: float,
     *,
     agent: str = "critpt",
+    benchmark: str = "critpt",
 ) -> None:
     trial = job / name
     (trial / "artifacts").mkdir(parents=True)
     (trial / "verifier").mkdir()
-    (trial / "artifacts" / "answer.py").write_text("def answer():\n    pass\n")
+    artifact = "answer.py" if benchmark == "critpt" else "solution.py"
+    (trial / "artifacts" / artifact).write_text("def answer():\n    pass\n")
+    kwargs = (
+        {"style": "one-step"} if benchmark == "critpt" else {"with_background": False}
+    )
     (trial / "result.json").write_text(
         json.dumps(
             {
-                "task_name": f"critpt/{problem_id}",
+                "task_name": f"{benchmark}/{problem_id}",
                 "trial_name": name,
                 "started_at": started_at,
                 "agent_info": {
                     "name": agent,
                     "model_info": {"name": "model", "provider": "vllm"},
                 },
-                "config": {"agent": {"kwargs": {"style": "one-step"}}},
+                "config": {"agent": {"kwargs": kwargs}},
                 "verifier_result": {"rewards": {"reward": reward}},
             }
         )
@@ -63,17 +68,35 @@ def test_collects_complete_batches(tmp_path: Path) -> None:
         rows = list(csv.DictReader(file))
     assert len(rows) == 4
     assert rows[0]["attempt"] == "0"
-    assert rows[0]["answer"] == "a-early/artifacts/answer.py"
+    assert rows[0]["artifact"] == "a-early/artifacts/answer.py"
 
 
-def test_rejects_non_critpt_trial(tmp_path: Path) -> None:
+def test_collects_scicode(tmp_path: Path) -> None:
+    write_trial(
+        tmp_path,
+        "trial",
+        "19",
+        "2026-01-01",
+        1,
+        agent="scicode",
+        benchmark="scicode",
+    )
+
+    trial = collect_trials(tmp_path)["batches"][0]["trials"][0]
+
+    assert trial["benchmark"] == "scicode"
+    assert trial["benchmark_config"] == {"with_background": False}
+    assert trial["artifact"] == "trial/artifacts/solution.py"
+
+
+def test_rejects_unknown_benchmark(tmp_path: Path) -> None:
     write_trial(tmp_path, "trial", "problem", "2026-01-01", 1)
     path = tmp_path / "trial" / "result.json"
     data = json.loads(path.read_text())
     data["task_name"] = "other/problem"
     path.write_text(json.dumps(data))
 
-    with pytest.raises(ValueError, match="not a CritPt trial"):
+    with pytest.raises(ValueError, match="unsupported benchmark"):
         collect_trials(tmp_path)
 
 
@@ -81,5 +104,5 @@ def test_rejects_multiple_agents(tmp_path: Path) -> None:
     write_trial(tmp_path, "first", "a", "2026-01-01", 1)
     write_trial(tmp_path, "second", "b", "2026-01-01", 1, agent="other")
 
-    with pytest.raises(ValueError, match="multiple agent"):
+    with pytest.raises(ValueError, match="multiple benchmarks, agents"):
         collect_trials(tmp_path)

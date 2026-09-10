@@ -40,12 +40,17 @@ def build_batch(job_dir: str | Path, attempt: int) -> dict[str, Any]:
         raise ValueError("official submission requires exactly 70 unique problem IDs")
     if any(trial.get("attempt") != attempt for trial in trials):
         raise ValueError("official submission cannot mix attempt indices")
+    benchmark_config = trials[0].get("benchmark_config")
+    if not isinstance(benchmark_config, dict) or not isinstance(
+        benchmark_config.get("strategy"), str
+    ):
+        raise TypeError("CritPt summary requires a generation strategy")
 
     submissions = []
     ordered = sorted(trials, key=lambda item: int(item["problem_id"].split("_")[1]))
     for trial in ordered:
-        answer = trial.get("answer")
-        if not isinstance(answer, str) or not (job / answer).is_file():
+        artifact = trial.get("artifact")
+        if not isinstance(artifact, str) or not (job / artifact).is_file():
             raise ValueError(f"{trial['problem_id']} has no answer artifact")
         record = _read(job / trial["trial_name"] / "agent" / "response.json")
         responses = record.get("responses")
@@ -86,7 +91,7 @@ def build_batch(job_dir: str | Path, attempt: int) -> dict[str, Any]:
         "batch_metadata": {
             "attempt": attempt,
             "agent": trials[0]["agent"],
-            "strategy": trials[0]["strategy"],
+            "strategy": benchmark_config["strategy"],
         },
     }
 

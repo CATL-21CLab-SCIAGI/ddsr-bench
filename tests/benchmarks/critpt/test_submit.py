@@ -34,9 +34,9 @@ def make_job(path: Path) -> list[dict]:
                 "problem_id": problem_id,
                 "agent": "critpt",
                 "model": "model",
-                "strategy": "one-step",
+                "benchmark_config": {"strategy": "one-step"},
                 "trial_name": trial_name,
-                "answer": f"{trial_name}/artifacts/answer.py",
+                "artifact": f"{trial_name}/artifacts/answer.py",
                 "attempt": 0,
             }
         )
@@ -54,6 +54,13 @@ def test_builds_official_batch(tmp_path: Path) -> None:
     assert len(payload["submissions"]) == 70
     assert payload["submissions"][0]["problem_id"] == "Challenge_1_main"
     assert payload["submissions"][0]["generated_code"].startswith("```python")
+    assert set(payload["submissions"][0]) == {
+        "problem_id",
+        "generated_code",
+        "model",
+        "generation_config",
+        "messages",
+    }
     assert payload["submissions"][0]["messages"] == [
         {"role": "user", "content": "problem"}
     ]

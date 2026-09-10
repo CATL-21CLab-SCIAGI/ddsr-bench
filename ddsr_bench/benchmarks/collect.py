@@ -6,19 +6,23 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.critpt.result import trial_fields as critpt_fields
+from ddsr_bench.benchmarks.scicode.result import trial_fields as scicode_fields
+
 
 @dataclass(frozen=True, slots=True)
 class Trial:
+    benchmark: str
     problem_id: str
     agent: str
     model_provider: str
     model: str
-    strategy: str
+    benchmark_config: dict[str, Any]
     trial_name: str
     started_at: str
     reward: float | None
     status: str
-    answer: str | None
+    artifact: str | None
     attempt: int = -1
 
 
@@ -36,8 +40,12 @@ def _trial(result_path: Path, job: Path) -> Trial:
     data = _read(result_path)
     task_name = data.get("task_name")
     trial_name = data.get("trial_name")
-    if not isinstance(task_name, str) or not task_name.startswith("critpt/"):
-        raise ValueError(f"{result_path} is not a CritPt trial")
+    if not isinstance(task_name, str):
+        raise TypeError(f"{result_path} has no task name")
+    benchmark, separator, problem_id = task_name.partition("/")
+    adapters = {"critpt": critpt_fields, "scicode": scicode_fields}
+    if not separator or not problem_id or benchmark not in adapters:
+        raise ValueError(f"{result_path} has an unsupported benchmark")
     if not isinstance(trial_name, str) or not trial_name:
         raise ValueError(f"{result_path} has no trial name")
 
@@ -46,9 +54,8 @@ def _trial(result_path: Path, job: Path) -> Trial:
     agent = agent_info.get("name")
     model = model_info.get("name")
     provider = model_info.get("provider") or ""
-    agent_config = (data.get("config") or {}).get("agent") or {}
-    strategy = (agent_config.get("kwargs") or {}).get("style", "one-step")
-    if not all(isinstance(value, str) and value for value in (agent, model, strategy)):
+    benchmark_config, artifact_path = adapters[benchmark](data, result_path.parent)
+    if not all(isinstance(value, str) and value for value in (agent, model)):
         raise ValueError(f"{result_path} has incomplete agent information")
 
     static = data.get("static_result")
@@ -68,18 +75,20 @@ def _trial(result_path: Path, job: Path) -> Trial:
     attempt = data.get("attempt", -1)
     if isinstance(attempt, bool) or not isinstance(attempt, int):
         raise TypeError(f"{result_path} has an invalid attempt")
-    answer_path = result_path.parent / "artifacts" / "answer.py"
     return Trial(
-        problem_id=task_name.removeprefix("critpt/"),
+        benchmark=benchmark,
+        problem_id=problem_id,
         agent=agent,
         model_provider=str(provider),
         model=model,
-        strategy=strategy,
+        benchmark_config=benchmark_config,
         trial_name=trial_name,
         started_at=str(data.get("started_at") or ""),
         reward=None if reward is None else float(reward),
         status=str(status),
-        answer=str(answer_path.relative_to(job)) if answer_path.is_file() else None,
+        artifact=(
+            str(artifact_path.relative_to(job)) if artifact_path.is_file() else None
+        ),
         attempt=attempt,
     )
 
@@ -91,12 +100,18 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
     if not trials:
         raise ValueError(f"no trial results found in {job}")
     identities = {
-        (trial.agent, trial.model_provider, trial.model, trial.strategy)
+        (
+            trial.benchmark,
+            trial.agent,
+            trial.model_provider,
+            trial.model,
+            json.dumps(trial.benchmark_config, sort_keys=True),
+        )
         for trial in trials
     }
     if len(identities) != 1:
         raise ValueError(
-            "cannot combine multiple agent, model, or strategy configurations"
+            "cannot combine multiple benchmarks, agents, models, or configurations"
         )
 
     groups: dict[str, list[Trial]] = {}
@@ -153,5 +168,8 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
         fields = tuple(Trial.__dataclass_fields__)
         writer = csv.DictWriter(file, fieldnames=fields)
         writer.writeheader()
-        writer.writerows(asdict(trial) for trial in rows)
+        for trial in rows:
+            row = asdict(trial)
+            row["benchmark_config"] = json.dumps(trial.benchmark_config, sort_keys=True)
+            writer.writerow(row)
     return summary

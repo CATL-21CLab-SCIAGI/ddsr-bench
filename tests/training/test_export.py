@@ -1,17 +1,17 @@
 import json
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import pytest
 
 from ddsr_bench.benchmarks.critpt.prompts import system_prompt
-from ddsr_bench.training import (
+from ddsr_bench.benchmarks.critpt.trajectory import sft_samples as critpt_samples
+from ddsr_bench.training.export import (
     export_sft,
     export_trajectories,
     load_trajectory,
-    sft_samples,
 )
-from ddsr_bench.training.schemas import Trajectory
+from ddsr_bench.training.schemas import Generation, Trajectory
 
 
 def write_trial(job: Path, name: str = "Challenge_2_sub_1__attempt-0") -> Path:
@@ -52,6 +52,7 @@ def write_trial(job: Path, name: str = "Challenge_2_sub_1__attempt-0") -> Path:
     path = trial / "agent" / "response.json"
     path.write_text(json.dumps(response), encoding="utf-8")
     result = {
+        "task_name": "critpt/Challenge_2_sub_1",
         "trial_name": name,
         "config": {"agent": {"kwargs": {"client_name": "vllm"}}},
     }
@@ -67,13 +68,20 @@ def test_normalization(tmp_path: Path) -> None:
     job = tmp_path / "job"
     trajectory = load_trajectory(write_trial(job).parent.parent)
 
-    assert trajectory.challenge_id == "Challenge_2"
-    assert trajectory.problem_type == "sub"
-    assert trajectory.problem_index == 1
-    assert trajectory.statement == "problem"
-    assert trajectory.messages[2]["reasoning"] == "private thought"
+    assert trajectory.schema_version == 2
+    assert trajectory.benchmark == "critpt"
+    assert [generation.id for generation in trajectory.generations] == [
+        "derivation",
+        "formatting",
+    ]
+    assert trajectory.metadata["challenge_id"] == "Challenge_2"
+    assert trajectory.metadata["problem_type"] == "sub"
+    assert trajectory.metadata["problem_index"] == 1
+    assert trajectory.metadata["statement"] == "problem"
+    assert trajectory.generations[0].completion["reasoning"] == "private thought"
     assert trajectory.teacher["client"] == "vllm"
     assert trajectory.quality["verified"] is True
+    assert "challenge_id" not in asdict(trajectory)
     assert "raw" not in repr(trajectory)
 
 
@@ -89,6 +97,20 @@ def test_export(tmp_path: Path) -> None:
         "Challenge_2_sub_1__attempt-0",
         "Challenge_2_sub_1__attempt-1",
     ]
+
+
+def test_rejects_mixed_benchmarks(tmp_path: Path) -> None:
+    job = tmp_path / "job"
+    write_trial(job)
+    scicode = job / "scicode-19"
+    (scicode / "agent").mkdir(parents=True)
+    (scicode / "agent" / "response.json").write_text("{}")
+    (scicode / "result.json").write_text(
+        json.dumps({"task_name": "scicode/19"}), encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match="multiple benchmarks"):
+        export_trajectories(job, tmp_path / "dataset")
 
 
 def test_sft_views(tmp_path: Path) -> None:
@@ -112,7 +134,14 @@ def test_sft_views(tmp_path: Path) -> None:
     derivation = export_sft(trajectories, tmp_path / "derivation", view="derivation")
     assert len(derivation.read_text().splitlines()) == 1
 
-    answer = sft_samples(load_trajectory(response.parent.parent), "answer")[0]
+    native = export_sft(trajectories, tmp_path / "native", view="native")
+    native_samples = [json.loads(line) for line in native.read_text().splitlines()]
+    assert [sample["metadata"]["stage"] for sample in native_samples] == [
+        "derivation",
+        "formatting",
+    ]
+
+    answer = critpt_samples(load_trajectory(response.parent.parent), "answer")[0]
     assert answer.prompt[0]["content"] == system_prompt("one-step")
     assert answer.prompt[1]["content"].endswith(
         "```python\ndef answer():\n    return ...\n```"
@@ -121,37 +150,48 @@ def test_sft_views(tmp_path: Path) -> None:
     assert answer.completion[0]["content"] == ("derivation\n\n```python\ncode\n```")
     assert answer.metadata["derived"] is True
 
-    formatting = sft_samples(load_trajectory(response.parent.parent), "formatting")
+    formatting = critpt_samples(load_trajectory(response.parent.parent), "formatting")
     assert len(formatting) == 1
     assert len(formatting[0].prompt) == 4
 
 
 def test_one_step_views() -> None:
     trajectory = Trajectory(
-        schema_version=1,
+        schema_version=2,
         id="trial",
-        challenge_id="challenge",
+        benchmark="critpt",
         problem_id="problem",
-        problem_type="main",
-        problem_index=None,
-        statement="problem",
-        code_template="def answer():\n    return ...",
-        messages=(
-            {"role": "system", "content": "solve"},
-            {"role": "user", "content": "problem and template"},
-            {"role": "assistant", "content": "reasoned answer"},
+        generations=(
+            Generation(
+                "answer",
+                (
+                    {"role": "system", "content": "solve"},
+                    {"role": "user", "content": "problem and template"},
+                ),
+                {"role": "assistant", "content": "reasoned answer"},
+                "model",
+                {},
+            ),
         ),
         teacher={"strategy": "one-step"},
         quality={},
+        metadata={
+            "challenge_id": "challenge",
+            "problem_type": "main",
+            "problem_index": None,
+            "statement": "problem",
+            "code_template": "def answer():\n    return ...",
+        },
         provenance={},
     )
 
-    assert sft_samples(trajectory)[0].metadata["stage"] == "answer"
-    assert sft_samples(trajectory)[0].metadata["derived"] is False
-    assert len(sft_samples(trajectory, "answer")) == 1
+    assert critpt_samples(trajectory, "full")[0].metadata["stage"] == "answer"
+    assert len(critpt_samples(trajectory, "native")) == 1
+    assert critpt_samples(trajectory, "full")[0].metadata["derived"] is False
+    assert len(critpt_samples(trajectory, "answer")) == 1
     with pytest.raises(ValueError, match="unavailable"):
-        sft_samples(trajectory, "derivation")
+        critpt_samples(trajectory, "derivation")
     with pytest.raises(ValueError, match="unavailable"):
-        sft_samples(trajectory, "formatting")
+        critpt_samples(trajectory, "formatting")
     with pytest.raises(ValueError, match="requires 2.*found 1"):
-        sft_samples(replace(trajectory, teacher={"strategy": "two-step"}))
+        critpt_samples(replace(trajectory, teacher={"strategy": "two-step"}), "full")

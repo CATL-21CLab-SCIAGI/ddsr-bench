@@ -17,7 +17,7 @@ from ddsr_bench.benchmarks.critpt.submit import build_batch, submit_batch
 from ddsr_bench.benchmarks.scicode.loader import load_split
 from ddsr_bench.benchmarks.scicode.prepare import compile_problems
 from ddsr_bench.benchmarks.utils import Resources
-from ddsr_bench.training import export_sft, export_trajectories
+from ddsr_bench.training.export import export_sft, export_trajectories
 
 Action = Callable[[DictConfig], str]
 LOGGER_NAME = "ddsr_bench"

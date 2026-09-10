@@ -127,7 +127,8 @@ ddsr-bench \
 
 This writes `trajectories.jsonl` and `sft.jsonl`. For a two-step trajectory,
 `full` emits derivation, formatting, and derived one-step answer samples. Use
-`training.view=derivation`, `formatting`, or `answer` for one projection.
+`training.view=native` for only the calls made during inference. See the
+[training-data guide](ddsr_bench/training/README.md) for every view.
 Export makes no model calls and retains quality and provenance metadata.
 
 ## 7. Submit one attempt

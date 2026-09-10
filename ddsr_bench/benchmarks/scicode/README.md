@@ -62,6 +62,14 @@ harbor run --config configs/jobs/scicode/bedrock.yaml
 Override `benchmark.split=test` and the task path in the job file for the test
 split.
 
+Collect completed trials with the same command used by other benchmarks:
+
+```bash
+ddsr-bench action=collect paths.input=outputs/harbor/scicode-validation-vllm
+```
+
+The job directory receives the shared `summary.json` and `summary.csv` files.
+
 ## Inspect AI
 
 SciCode recommends Inspect AI and its implementation remains our compatibility

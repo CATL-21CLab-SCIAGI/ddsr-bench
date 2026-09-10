@@ -1,5 +1,16 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
+
+
+@dataclass(frozen=True, slots=True)
+class Generation:
+    """One model call, or one fixed stage used in its context."""
+
+    id: str
+    prompt: tuple[dict[str, str], ...]
+    completion: dict[str, str] | None
+    source: Literal["model", "fixed"]
+    quality: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -8,16 +19,13 @@ class Trajectory:
 
     schema_version: int
     id: str
-    challenge_id: str | None
+    benchmark: str
     problem_id: str
-    problem_type: str | None
-    problem_index: int | None
-    statement: str
-    code_template: str
-    messages: tuple[dict[str, str], ...]
+    generations: tuple[Generation, ...]
     teacher: dict[str, Any]
     quality: dict[str, Any]
-    provenance: dict[str, str]
+    metadata: dict[str, Any]
+    provenance: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
