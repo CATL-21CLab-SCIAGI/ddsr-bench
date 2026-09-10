@@ -26,8 +26,8 @@ and `ddsr-vllm`, together with the development tools.
 
 | Layer | Configuration | Purpose |
 | --- | --- | --- |
-| Serving | `configs/vllm/*.yaml` | Local model process and context limits |
-| Generation | `agents[].kwargs` in `configs/job/*.yaml` | Client, model, prompt strategy, and sampling |
+| Serving | `configs/serving/vllm/*.yaml` | Local model process and context limits |
+| Generation | `agents[].kwargs` in `configs/jobs/*/*.yaml` | Client, model, prompt strategy, and sampling |
 | Evaluation | Remaining job fields | Tasks, attempts, concurrency, and outputs |
 
 One job file combines the generation and evaluation settings for a batch.
@@ -39,7 +39,7 @@ Run the following commands from the repository root.
 For the bundled local vLLM configuration:
 
 ```bash
-ddsr-vllm configs/vllm/macos-qwen38.yaml
+ddsr-vllm configs/serving/vllm/macos-qwen38.yaml
 ```
 
 In another terminal:
@@ -88,13 +88,13 @@ example.
 Run isolated execution-based evaluation with Harbor:
 
 ```bash
-harbor run --config configs/job/vllm.yaml
+harbor run --config configs/jobs/critpt/vllm.yaml
 ```
 
 Or generate candidates with static code validation only:
 
 ```bash
-ddsr-solve --config configs/job/vllm.yaml
+ddsr-solve --config configs/jobs/critpt/vllm.yaml
 ```
 
 Both commands use the same tasks and generation settings. `ddsr-solve` checks

@@ -51,10 +51,11 @@ configs = [
     "*.yaml",
     "benchmark/*.yaml",
     "harbor/*.yaml",
-    "job/*.yaml",
-    "prompt/*.yaml",
-    "prompt/scicode/*.txt",
-    "vllm/*.yaml",
+    "jobs/critpt/*.yaml",
+    "jobs/scicode/*.yaml",
+    "prompts/critpt/*.yaml",
+    "prompts/scicode/*.txt",
+    "serving/vllm/*.yaml",
 ]
 
 [tool.pytest.ini_options]

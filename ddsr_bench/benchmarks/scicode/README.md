@@ -49,7 +49,14 @@ ddsr-bench action=prepare benchmark=scicode \
 Then run generation and isolated verification:
 
 ```bash
-harbor run --config configs/job/scicode-vllm.yaml
+harbor run --config configs/jobs/scicode/vllm.yaml
+```
+
+For the tested Bedrock/Luna configuration:
+
+```bash
+export AWS_BEARER_TOKEN_BEDROCK='...'
+harbor run --config configs/jobs/scicode/bedrock.yaml
 ```
 
 Override `benchmark.split=test` and the task path in the job file for the test

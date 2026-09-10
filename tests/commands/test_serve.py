@@ -34,7 +34,7 @@ def test_missing_config_is_rejected(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("name", ["linux.yaml", "macos.yaml", "macos-qwen38.yaml"])
 def test_native_configs(name: str) -> None:
-    path = Path(__file__).parents[2] / "configs" / "vllm" / name
+    path = Path(__file__).parents[2] / "configs" / "serving" / "vllm" / name
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
 
     assert config["served-model-name"] == "ddsr-local"

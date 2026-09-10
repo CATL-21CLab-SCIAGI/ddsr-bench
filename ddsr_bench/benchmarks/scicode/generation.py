@@ -23,7 +23,9 @@ class StepGeneration:
 def _template(with_background: bool) -> str:
     name = "with_background.txt" if with_background else "without_background.txt"
     template = (
-        files("configs").joinpath("prompt", "scicode", name).read_text(encoding="utf-8")
+        files("configs")
+        .joinpath("prompts", "scicode", name)
+        .read_text(encoding="utf-8")
     )
     # The upstream with-background template has no final newline.
     return template.removesuffix("\n") if with_background else template

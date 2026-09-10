@@ -8,7 +8,7 @@ from jinja2 import Environment
 PromptStyle = Literal["one-step", "two-step"]
 
 _ENV = Environment()
-_PATH = files("configs").joinpath("prompt", "prompt_template_default.yaml")
+_PATH = files("configs").joinpath("prompts", "critpt", "default.yaml")
 
 
 @cache

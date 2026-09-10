@@ -3,9 +3,10 @@
 ddsr-bench supports local and hosted Chat Completions clients. Use `ddsr-smoke`
 to check an endpoint, then pass the same settings to `ddsr-solve` or Harbor.
 
-Harbor job examples live in `configs/job`. Their `agents[].kwargs` sections make
-the endpoint, strategy, streaming behavior, and request-time sampling parameters
-explicit. Run one with `harbor run --config configs/job/CLIENT.yaml`.
+Harbor job examples live in `configs/jobs/BENCHMARK`. Their `agents[].kwargs`
+sections make the endpoint, strategy, streaming behavior, and request-time
+sampling parameters explicit. Run one with
+`harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml`.
 
 ## vLLM
 
@@ -13,7 +14,7 @@ explicit. Run one with `harbor run --config configs/job/CLIENT.yaml`.
 chat-template thinking controls.
 
 ```bash
-ddsr-vllm configs/vllm/macos-qwen38.yaml
+ddsr-vllm configs/serving/vllm/macos-qwen38.yaml
 ddsr-smoke \
   --client vllm \
   --base-url http://127.0.0.1:8000/v1 \
@@ -42,7 +43,7 @@ See the
 ### Alibaba Cloud PAI Token Service
 
 PAI Token Service exposes the same OpenAI-compatible routes, so it reuses
-`OpenAIClient`. The bundled `configs/job/aliyun.yaml` targets the Beijing
+`OpenAIClient`. The bundled `configs/jobs/critpt/aliyun.yaml` targets the Beijing
 endpoint and `qwen3.8-max`:
 
 ```bash
@@ -103,7 +104,8 @@ not execute `answer`, `real_answer`, or testcases; `result.json` therefore has a
 null reward. Use Harbor for all execution-based correctness evaluation.
 
 To run all tasks, attempts, and concurrency from a Harbor job configuration
-without starting Harbor or Docker, use `ddsr-solve --config configs/job/CLIENT.yaml`.
+without starting Harbor or Docker, use
+`ddsr-solve --config configs/jobs/critpt/CLIENT.yaml`.
 The resulting static job supports the normal `action=collect` and guarded
 official submission workflow.
 
