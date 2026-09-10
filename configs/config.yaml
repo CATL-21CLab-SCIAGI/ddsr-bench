@@ -1,0 +1,25 @@
+defaults:
+  - harbor: default
+  - override hydra/job_logging: disabled
+  - _self_
+
+action: prepare
+paths:
+  input: null
+  output: outputs
+run:
+  name: default
+training:
+  view: full
+submission:
+  attempt: null
+  endpoint: https://artificialanalysis.ai/api/v2/critpt/evaluate
+  api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
+  timeout_sec: 7200
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: .
+  output_subdir: null

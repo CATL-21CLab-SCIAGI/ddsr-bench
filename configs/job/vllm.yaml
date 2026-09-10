@@ -1,0 +1,28 @@
+# Evaluation layer: Harbor scheduling and result location.
+job_name: critpt-official
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: agent, client, prompt strategy, and request parameters.
+agents:
+  - name: critpt_eval.benchmark.harbor:CritPtAgent
+    model_name: critpt-local
+    include_logs: [response.json]
+    extra_allowed_hosts: [127.0.0.1]
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      style: two-step
+      stream: true
+      sampling:
+        max_tokens: 32768
+        temperature: 0.0
+        top_p: 1.0
+        top_k: null
+        seed: null
+        reasoning_effort: low
+        enable_thinking: null
+
+datasets:
+  - path: tasks/official

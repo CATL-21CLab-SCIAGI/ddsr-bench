@@ -1,0 +1,8 @@
+model: Qwen/Qwen3-0.6B
+served-model-name: critpt-local
+host: 127.0.0.1
+port: 8000
+max-model-len: 8192
+max-num-seqs: 4
+gpu-memory-utilization: 0.85
+generation-config: vllm

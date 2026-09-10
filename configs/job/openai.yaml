@@ -1,0 +1,24 @@
+# Evaluation layer: Harbor scheduling and result location.
+job_name: critpt-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: OPENAI_API_KEY is read from the environment.
+agents:
+  - name: critpt_eval.benchmark.harbor:CritPtAgent
+    model_name: gpt-5.6-luna
+    include_logs: [response.json]
+    extra_allowed_hosts: [api.openai.com]
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      style: two-step
+      stream: true
+      sampling:
+        max_tokens: 32768
+        reasoning_effort: low
+
+datasets:
+  - path: tasks/official

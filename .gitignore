@@ -1,0 +1,11 @@
+__pycache__/
+.DS_Store
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+outputs/
+tasks/
+datasets/
+.hydra/

@@ -1,0 +1,12 @@
+model: mlx-community/Qwen3.8-27B-4bit
+served-model-name: critpt-local
+host: 127.0.0.1
+port: 8000
+# Qwen3.8 supports 262144 tokens; 32768 is the local 48 GB memory budget.
+max-model-len: 32768
+max-num-seqs: 1
+# Scheduler budget per iteration, not a reasoning or response length limit.
+max-num-batched-tokens: 4096
+gpu-memory-utilization: 0.80
+generation-config: vllm
+reasoning-parser: qwen3
