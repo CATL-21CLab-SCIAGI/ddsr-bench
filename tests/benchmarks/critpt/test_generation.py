@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.generation import (
+from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, Problem, ProblemSpec
+from ddsr_bench.benchmarks.critpt.generation.prompts import parse_prompt, system_prompt
+from ddsr_bench.benchmarks.critpt.generation.runner import (
     Message,
     converse,
     converse_challenge,
 )
-from ddsr_bench.benchmarks.critpt.prompts import parse_prompt, system_prompt
-from ddsr_bench.benchmarks.critpt.schemas import Challenge, Problem, ProblemSpec
 
 PROBLEM = ProblemSpec(
     id="p1",

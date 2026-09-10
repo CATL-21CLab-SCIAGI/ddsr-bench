@@ -1,19 +1,19 @@
 # Evaluation layer: Harbor scheduling and result location.
-job_name: scicode-validation-bedrock
+job_name: scicode-validation-openai
 jobs_dir: outputs/harbor
 n_attempts: 1
 n_concurrent_trials: 4
 
-# Generation layer: AWS_BEARER_TOKEN_BEDROCK is read from the environment.
+# Generation layer: OPENAI_API_KEY is read from the environment.
 agents:
   - name: ddsr_bench.benchmarks.scicode.evaluation.harbor:SciCodeAgent
-    model_name: global.openai.gpt-5.6-luna
+    model_name: gpt-5.6-luna
     include_logs: [response.json]
-    extra_allowed_hosts: [bedrock-runtime.us-east-1.amazonaws.com]
+    extra_allowed_hosts: [api.openai.com]
     kwargs:
-      client_name: bedrock
-      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
-      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
       stream: true
       with_background: false
       sampling:

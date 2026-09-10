@@ -8,6 +8,11 @@ isolated Harbor evaluation, deterministic verification, and trajectory export.
 See the [pipeline flowchart](PIPELINE.md) for execution details and the
 [generation guide](ddsr_bench/generation/README.md) for client-specific setup.
 
+| Benchmark | Generation | Evaluation |
+| --- | --- | --- |
+| [CritPt](ddsr_bench/benchmarks/critpt/README.md) | One-step or two-step official prompts | Static validation or Harbor; optional official submission |
+| [SciCode](ddsr_bench/benchmarks/scicode/README.md) | Sequential dependent functions | Harbor execution of official test cases |
+
 ## Installation
 
 After cloning this repository, enter its root and create a Python 3.12
@@ -20,7 +25,8 @@ python -m pip install -e '.[dev]'
 ```
 
 This installs the four commands `ddsr-bench`, `ddsr-solve`, `ddsr-smoke`,
-and `ddsr-vllm`, together with the development tools.
+and `ddsr-vllm`, together with the development tools. Install
+`'.[dev,scicode]'` when preparing or verifying SciCode data.
 
 ## Configuration
 
@@ -61,6 +67,8 @@ This step is required only for Harbor:
 
 ```bash
 docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
+# For SciCode instead:
+docker build -f docker/scicode/Dockerfile -t ddsr-bench-scicode:latest .
 ```
 
 The image contains the verifier dependencies; model requests remain on the host.
@@ -75,13 +83,22 @@ then provide their local directory as `paths.input`:
 ddsr-bench \
   action=prepare \
   paths.input=path/to/CritPt/data/public_test_challenges/json \
-  paths.output=tasks/official
+  paths.output=tasks/critpt-official
 ```
 
 Preparation creates the 70 task directories expected by the bundled jobs under
-`tasks/official`. Direct runs do not require preparation; see
+`tasks/critpt-official`. Direct runs do not require preparation; see
 [Run one problem](ddsr_bench/generation/README.md#run-one-problem) for an
 example.
+
+Prepared tasks embed the verifier module path. Regenerate tasks in a fresh
+output directory after upgrading across this repository reorganization. See the
+[SciCode guide](ddsr_bench/benchmarks/scicode/README.md) for its dataset and
+preparation command.
+
+Harbor requires each task instruction to be named `instruction.md`. Our custom
+agents intentionally store readable JSON in that file so public problem fields
+can be reconstructed exactly; private verifier fields are written elsewhere.
 
 ## 4. Generate and evaluate
 
@@ -104,6 +121,7 @@ execution and comparison when verifier data is available.
 The default outputs are `outputs/harbor/critpt-official` and
 `outputs/static/critpt-official`, respectively. Replace `vllm.yaml` with
 `openai.yaml`, `bedrock.yaml`, or `aliyun.yaml` after configuring that endpoint.
+SciCode currently uses Harbor through `configs/jobs/scicode/*.yaml`.
 
 ## 5. Collect results
 
@@ -112,8 +130,9 @@ ddsr-bench action=collect paths.input=outputs/harbor/critpt-official
 ```
 
 Collection writes `summary.json` and `summary.csv`, groups complete batches by
-attempt, and reports incomplete trials separately. It also accepts a static job
-directory, whose rewards remain null.
+attempt, records each generated file under `artifact`, and reports incomplete
+trials separately. It also accepts a static job directory, whose rewards remain
+null.
 
 ## 6. Export teacher trajectories
 
@@ -130,8 +149,9 @@ This writes `trajectories.jsonl` and `sft.jsonl`. For a two-step trajectory,
 `training.view=native` for only the calls made during inference. See the
 [training-data guide](ddsr_bench/training/README.md) for every view.
 Export makes no model calls and retains quality and provenance metadata.
+One export directory must contain trials from exactly one benchmark.
 
-## 7. Submit one attempt
+## 7. Submit one CritPt attempt
 
 Submission requires one answer for each of the 70 official main problems and
 never happens automatically:
@@ -150,7 +170,8 @@ job directory, and an existing submission file is never overwritten.
 
 ## Results and isolation
 
-Each trial retains its conversation, generated `answer.py`, validation result,
-usage, model settings, latency, and hashes. Separate trial directories prevent
-concurrent attempts from overwriting one another. Harbor verifies without
-network access, and reference data never appears in model messages or logs.
+Each trial retains its conversation, generated benchmark artifact, validation
+result, usage, model settings, latency, and hashes. Separate trial directories
+prevent concurrent attempts from overwriting one another. Harbor verifies
+without network access, and private verifier data never appears in model
+messages or logs.

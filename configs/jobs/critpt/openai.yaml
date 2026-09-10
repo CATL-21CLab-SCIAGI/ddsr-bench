@@ -6,7 +6,7 @@ n_concurrent_trials: 4
 
 # Generation layer: OPENAI_API_KEY is read from the environment.
 agents:
-  - name: ddsr_bench.benchmarks.critpt.harbor:CritPtAgent
+  - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
     model_name: gpt-5.6-luna
     include_logs: [response.json]
     extra_allowed_hosts: [api.openai.com]
@@ -21,4 +21,4 @@ agents:
         reasoning_effort: low
 
 datasets:
-  - path: tasks/official
+  - path: tasks/critpt-official

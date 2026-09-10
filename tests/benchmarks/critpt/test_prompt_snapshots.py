@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.prompts import (
+from ddsr_bench.benchmarks.critpt.generation.prompts import (
     PromptStyle,
     parse_prompt,
     system_prompt,

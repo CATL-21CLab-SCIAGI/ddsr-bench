@@ -3,7 +3,7 @@ from pathlib import Path
 
 import h5py
 
-from ddsr_bench.benchmarks.scicode.verifier import verify
+from ddsr_bench.benchmarks.scicode.evaluation.verifier import verify
 
 
 def _targets(path: Path) -> None:

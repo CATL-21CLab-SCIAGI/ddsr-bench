@@ -4,8 +4,8 @@ from pathlib import Path
 from harbor.models.task.config import NetworkMode
 from harbor.models.task.task import Task
 
-from ddsr_bench.benchmarks.scicode.loader import load_problem
-from ddsr_bench.benchmarks.scicode.prepare import compile_problem
+from ddsr_bench.benchmarks.scicode.data.loader import load_problem
+from ddsr_bench.benchmarks.scicode.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.utils import Resources
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "scicode_19.json"

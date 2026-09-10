@@ -6,21 +6,21 @@ from dataclasses import asdict
 from pathlib import Path
 
 from ddsr_bench import __version__
-from ddsr_bench.benchmarks.scicode.schemas import SciCodeProblem, SciCodeStep
+from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
 from ddsr_bench.benchmarks.utils import Resources
 
 _TEST = """#!/bin/sh
 set -eu
-python -m ddsr_bench.benchmarks.scicode.verifier
+python -m ddsr_bench.benchmarks.scicode.evaluation.verifier
 """
 
 
 def encode_instruction(problem: SciCodeProblem) -> str:
-    """Serialize the fields visible to the SciCode model."""
+    """Serialize public fields as JSON for Harbor's required instruction.md."""
     data = asdict(problem)
     for step in data["steps"]:
         step.pop("tests")
-    return json.dumps(data, ensure_ascii=False)
+    return json.dumps(data, indent=2, ensure_ascii=False)
 
 
 def decode_instruction(instruction: str) -> SciCodeProblem:

@@ -2,14 +2,14 @@ from hashlib import sha256
 
 import pytest
 
-from ddsr_bench.benchmarks.scicode.generation import (
+from ddsr_bench.benchmarks.scicode.data.loader import load_fixed
+from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
+from ddsr_bench.benchmarks.scicode.generation.runner import (
     _template,
     extract_code,
     generate,
     render_prompt,
 )
-from ddsr_bench.benchmarks.scicode.loader import load_fixed
-from ddsr_bench.benchmarks.scicode.schemas import SciCodeProblem, SciCodeStep
 from ddsr_bench.generation.client import ChatResponse
 
 

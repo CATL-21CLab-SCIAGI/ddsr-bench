@@ -4,7 +4,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from ddsr_bench.benchmarks.critpt.submit import build_batch, submit_batch
+from ddsr_bench.benchmarks.critpt.evaluation.submit import build_batch, submit_batch
 
 
 def make_job(path: Path) -> list[dict]:

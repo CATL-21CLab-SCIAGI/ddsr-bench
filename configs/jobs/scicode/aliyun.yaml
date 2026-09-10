@@ -1,12 +1,12 @@
 # Evaluation layer: Harbor scheduling and result location.
-job_name: critpt-aliyun
+job_name: scicode-validation-aliyun
 jobs_dir: outputs/harbor
 n_attempts: 1
 n_concurrent_trials: 4
 
 # Generation layer: ALIYUN_API_KEY is read from the environment.
 agents:
-  - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
+  - name: ddsr_bench.benchmarks.scicode.evaluation.harbor:SciCodeAgent
     # Available text LLMs:
     # Qwen: qwen3.8-max, qwen3.7-max, qwen3.7-plus, qwen3.6-plus,
     #   qwen3.5-plus, qwen3.7-flash, qwen3.6-flash, qwen3.5-flash
@@ -20,10 +20,10 @@ agents:
       client_name: openai
       base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
       api_key_env: ALIYUN_API_KEY
-      style: two-step
       stream: true
+      with_background: false
       sampling:
         max_tokens: 32768
 
 datasets:
-  - path: tasks/critpt-official
+  - path: tasks/scicode-validation

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from ddsr_bench.benchmarks.critpt.verifier import verify
+from ddsr_bench.benchmarks.critpt.evaluation.verifier import verify
 
 TEMPLATE = """import sympy as sp
 

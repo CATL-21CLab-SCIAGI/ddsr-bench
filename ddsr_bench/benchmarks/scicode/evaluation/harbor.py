@@ -11,16 +11,15 @@ from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 
 from ddsr_bench import __version__
-from ddsr_bench.benchmarks.scicode.schemas import SciCodeProblem
+from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem
+from ddsr_bench.benchmarks.scicode.evaluation.prepare import decode_instruction
+from ddsr_bench.benchmarks.scicode.generation.runner import StepGeneration, generate
 from ddsr_bench.generation.client import (
     CLIENTS,
     ChatClient,
     ClientName,
     Sampling,
 )
-
-from .generation import StepGeneration, generate
-from .prepare import decode_instruction
 
 
 class SciCodeAgent(BaseAgent):

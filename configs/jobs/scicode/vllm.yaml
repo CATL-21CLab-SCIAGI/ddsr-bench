@@ -4,7 +4,7 @@ n_attempts: 1
 n_concurrent_trials: 4
 
 agents:
-  - name: ddsr_bench.benchmarks.scicode.harbor:SciCodeAgent
+  - name: ddsr_bench.benchmarks.scicode.evaluation.harbor:SciCodeAgent
     model_name: ddsr-local
     include_logs: [response.json]
     extra_allowed_hosts: [127.0.0.1]

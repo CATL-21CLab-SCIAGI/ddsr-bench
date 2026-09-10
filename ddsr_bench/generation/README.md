@@ -8,6 +8,11 @@ sections make the endpoint, strategy, streaming behavior, and request-time
 sampling parameters explicit. Run one with
 `harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml`.
 
+Shared API clients live in `ddsr_bench/generation`. Benchmark prompt and
+conversation behavior lives in each `benchmarks/BENCHMARK/generation` package;
+Harbor and static evaluation adapters live beside one another under
+`benchmarks/BENCHMARK/evaluation`.
+
 ## vLLM
 
 `VLLMClient` checks `/v1/models` and supports vLLM options such as `top_k` and

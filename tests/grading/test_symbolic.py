@@ -2,7 +2,7 @@ from pathlib import Path
 
 import sympy as sp
 
-from ddsr_bench.benchmarks.critpt.loader import load_challenge
+from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
 from ddsr_bench.grading.symbolic import symbolic
 
 FIXTURE = Path(__file__).parent.parent / "fixtures" / "quantum_error_correction.json"

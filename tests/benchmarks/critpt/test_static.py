@@ -5,9 +5,9 @@ import pytest
 from harbor.models.job.config import AgentConfig
 
 from ddsr_bench.benchmarks.collect import collect_trials
-from ddsr_bench.benchmarks.critpt.prepare import encode_instruction
-from ddsr_bench.benchmarks.critpt.schemas import ProblemSpec
-from ddsr_bench.benchmarks.critpt.static import run_job, run_trial
+from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.evaluation.prepare import encode_instruction
+from ddsr_bench.benchmarks.critpt.evaluation.static import run_job, run_trial
 from ddsr_bench.generation.client import ChatMessages, ChatResponse
 
 
@@ -41,7 +41,7 @@ async def test_valid_trial(tmp_path: Path) -> None:
     )
     output = tmp_path / "p1__attempt-0"
     agent = AgentConfig(
-        name="ddsr_bench.benchmarks.critpt.harbor:CritPtAgent",
+        name="ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent",
         model_name="local",
         kwargs={"client_name": "vllm", "style": "one-step"},
     )
@@ -68,7 +68,8 @@ async def test_invalid_trial_has_no_reward(tmp_path: Path) -> None:
     )
 
     agent = AgentConfig(
-        name="ddsr_bench.benchmarks.critpt.harbor:CritPtAgent", model_name="local"
+        name="ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent",
+        model_name="local",
     )
     output = tmp_path / "p1__attempt-0"
 
@@ -99,7 +100,7 @@ jobs_dir: outputs/harbor
 n_attempts: 2
 n_concurrent_trials: 2
 agents:
-  - name: ddsr_bench.benchmarks.critpt.harbor:CritPtAgent
+  - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
     model_name: local
     kwargs: {client_name: vllm, style: one-step}
 datasets:

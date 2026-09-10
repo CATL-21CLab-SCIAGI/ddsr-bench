@@ -27,12 +27,12 @@ def _cases(path: Path) -> list[dict[str, Any]]:
 
 def _script(solution: str, case: dict[str, Any], h5_path: Path) -> str:
     tests = case["tests"]
-    package_root = Path(__file__).resolve().parents[3]
+    package_root = Path(__file__).resolve().parents[4]
     lines = [
         solution,
         "import sys",
         f"sys.path.insert(0, {str(package_root)!r})",
-        "from ddsr_bench.benchmarks.scicode.loader import load_targets",
+        "from ddsr_bench.benchmarks.scicode.data.loader import load_targets",
         f"targets = load_targets({case['id']!r}, {len(tests)}, {str(h5_path)!r})",
     ]
     for index, test in enumerate(tests):

@@ -9,10 +9,10 @@ import os
 from pathlib import Path
 from typing import Any
 
-from ddsr_bench.benchmarks.critpt.generation import generate
-from ddsr_bench.benchmarks.critpt.loader import load_challenge
-from ddsr_bench.benchmarks.critpt.schemas import ProblemSpec
-from ddsr_bench.benchmarks.critpt.static import run_job
+from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
+from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.evaluation.static import run_job
+from ddsr_bench.benchmarks.critpt.generation.runner import generate
 from ddsr_bench.generation.client import CLIENTS, Sampling
 from ddsr_bench.grading.validation import extract_answer
 

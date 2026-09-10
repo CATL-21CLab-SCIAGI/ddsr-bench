@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.loader import (
+from ddsr_bench.benchmarks.critpt.data.loader import (
     load_challenge,
     load_challenges,
     load_problems,

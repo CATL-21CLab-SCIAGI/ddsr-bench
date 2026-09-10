@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ddsr_bench.benchmarks.critpt.schemas import (
+from ddsr_bench.benchmarks.critpt.data.schemas import (
     AnswerSpec,
     Challenge,
     Problem,

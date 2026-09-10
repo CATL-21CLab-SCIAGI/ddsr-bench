@@ -52,6 +52,9 @@ Then run generation and isolated verification:
 harbor run --config configs/jobs/scicode/vllm.yaml
 ```
 
+The same directory also provides `openai.yaml`, `bedrock.yaml`, and
+`aliyun.yaml`; configure the corresponding API key before selecting one.
+
 For the tested Bedrock/Luna configuration:
 
 ```bash
@@ -69,6 +72,19 @@ ddsr-bench action=collect paths.input=outputs/harbor/scicode-validation-vllm
 ```
 
 The job directory receives the shared `summary.json` and `summary.csv` files.
+
+Export canonical trajectories and conversational SFT samples with the shared
+command:
+
+```bash
+ddsr-bench action=export \
+  paths.input=outputs/harbor/scicode-validation-vllm \
+  paths.output=datasets/scicode-teacher \
+  training.view=full
+```
+
+For SciCode, `full` and `native` both emit one sample per model-generated step.
+Fixed compatibility steps are retained as context but are not training targets.
 
 ## Inspect AI
 

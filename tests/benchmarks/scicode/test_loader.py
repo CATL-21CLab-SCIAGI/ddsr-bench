@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.scicode.generation import render_prompt
-from ddsr_bench.benchmarks.scicode.loader import load_problem
+from ddsr_bench.benchmarks.scicode.data.loader import load_problem
+from ddsr_bench.benchmarks.scicode.generation.runner import render_prompt
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "scicode_19.json"
 

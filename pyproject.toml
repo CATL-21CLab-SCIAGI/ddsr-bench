@@ -37,7 +37,13 @@ packages = [
     "ddsr_bench",
     "ddsr_bench.benchmarks",
     "ddsr_bench.benchmarks.critpt",
+    "ddsr_bench.benchmarks.critpt.data",
+    "ddsr_bench.benchmarks.critpt.evaluation",
+    "ddsr_bench.benchmarks.critpt.generation",
     "ddsr_bench.benchmarks.scicode",
+    "ddsr_bench.benchmarks.scicode.data",
+    "ddsr_bench.benchmarks.scicode.evaluation",
+    "ddsr_bench.benchmarks.scicode.generation",
     "ddsr_bench.commands",
     "ddsr_bench.generation",
     "ddsr_bench.grading",
@@ -46,7 +52,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-"ddsr_bench.benchmarks.scicode" = ["fixed/*.txt"]
+"ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]
 configs = [
     "*.yaml",
     "benchmark/*.yaml",

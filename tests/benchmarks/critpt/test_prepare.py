@@ -5,8 +5,11 @@ from pathlib import Path
 from harbor.models.task.config import NetworkMode
 from harbor.models.task.task import Task
 
-from ddsr_bench.benchmarks.critpt.loader import load_challenge
-from ddsr_bench.benchmarks.critpt.prepare import compile_challenge, compile_problem
+from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
+from ddsr_bench.benchmarks.critpt.evaluation.prepare import (
+    compile_challenge,
+    compile_problem,
+)
 from ddsr_bench.benchmarks.utils import Resources
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "quantum_error_correction.json"

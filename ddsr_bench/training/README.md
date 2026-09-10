@@ -39,3 +39,30 @@ That third sample was not a separate inference call; it is an intentional
 one-step augmentation. For SciCode, `native` and `full` currently both export
 one sample per model-generated step. Fixed compatibility steps remain in the
 trajectory for provenance and context but are never SFT targets.
+
+## Sample records
+
+Every JSONL line has one conversational prompt and one supervised assistant
+completion. Long prompt text is abbreviated below.
+
+A native CritPt formatting sample preserves the preceding derivation:
+
+```json
+{"id":"trial:formatting","prompt":[{"role":"system","content":"..."},{"role":"user","content":"problem"},{"role":"assistant","content":"derivation"},{"role":"user","content":"format with template"}],"completion":[{"role":"assistant","content":"```python\n...\n```"}],"metadata":{"benchmark":"critpt","stage":"formatting"}}
+```
+
+The derived CritPt answer view turns the same two-step result into one-step SFT:
+
+```json
+{"id":"trial:answer","prompt":[{"role":"system","content":"one-step prompt"},{"role":"user","content":"problem + template"}],"completion":[{"role":"assistant","content":"derivation\n\n```python\n...\n```"}],"metadata":{"benchmark":"critpt","stage":"answer","derived":true}}
+```
+
+A SciCode native sample represents one sequential model-generated step:
+
+```json
+{"id":"trial:19.2","prompt":[{"role":"user","content":"problem + preceding code + next function"}],"completion":[{"role":"assistant","content":"def step_2(...): ..."}],"metadata":{"benchmark":"scicode","stage":"19.2"}}
+```
+
+When a provider exposes hidden reasoning, the canonical trajectory retains it
+under a separate `reasoning` key. SFT samples intentionally supervise the
+visible `content`; CritPt's derived answer sample uses its visible derivation.

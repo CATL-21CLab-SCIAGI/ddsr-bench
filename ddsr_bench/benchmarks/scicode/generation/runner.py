@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from importlib.resources import files
 from typing import Literal
 
-from ddsr_bench.benchmarks.scicode.schemas import SciCodeProblem
+from ddsr_bench.benchmarks.scicode.data.loader import load_fixed
+from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem
 from ddsr_bench.generation.client import ChatClient, ChatResponse
-
-from .loader import load_fixed
 
 
 @dataclass(frozen=True, slots=True)

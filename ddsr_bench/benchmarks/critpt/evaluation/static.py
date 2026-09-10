@@ -14,9 +14,9 @@ from typing import Any
 import yaml
 from harbor.models.job.config import AgentConfig, JobConfig
 
-from ddsr_bench.benchmarks.critpt.generation import generate
-from ddsr_bench.benchmarks.critpt.prompts import PromptStyle
-from ddsr_bench.benchmarks.critpt.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
+from ddsr_bench.benchmarks.critpt.generation.runner import generate
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling
 from ddsr_bench.grading.validation import extract_answer
 
@@ -97,7 +97,7 @@ async def run_job(path: Path, client: ChatClient | None = None) -> dict[str, Any
         raise ValueError("static runs require exactly one agent")
     agent = config.agents[0]
     if (
-        agent.name != "ddsr_bench.benchmarks.critpt.harbor:CritPtAgent"
+        agent.name != "ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent"
         or not agent.model_name
     ):
         raise ValueError("static runs require CritPtAgent and a model name")

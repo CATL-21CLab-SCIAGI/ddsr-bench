@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from harbor.models.agent.context import AgentContext
 
-from ddsr_bench.benchmarks.critpt.harbor import CritPtAgent
-from ddsr_bench.benchmarks.critpt.prepare import encode_instruction
-from ddsr_bench.benchmarks.critpt.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.evaluation.harbor import CritPtAgent
+from ddsr_bench.benchmarks.critpt.evaluation.prepare import encode_instruction
 from ddsr_bench.generation.client import ChatMessages, ChatResponse, Sampling
 
 

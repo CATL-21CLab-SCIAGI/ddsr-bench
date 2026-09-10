@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from harbor.models.agent.context import AgentContext
 
-from ddsr_bench.benchmarks.scicode.harbor import SciCodeAgent
-from ddsr_bench.benchmarks.scicode.loader import load_problem
-from ddsr_bench.benchmarks.scicode.prepare import encode_instruction
+from ddsr_bench.benchmarks.scicode.data.loader import load_problem
+from ddsr_bench.benchmarks.scicode.evaluation.harbor import SciCodeAgent
+from ddsr_bench.benchmarks.scicode.evaluation.prepare import encode_instruction
 from ddsr_bench.generation.client import ChatMessages, ChatResponse, Sampling
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "scicode_19.json"

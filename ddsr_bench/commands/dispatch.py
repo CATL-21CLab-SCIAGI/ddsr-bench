@@ -11,11 +11,11 @@ import hydra
 from omegaconf import DictConfig
 
 from ddsr_bench.benchmarks.collect import collect_trials
-from ddsr_bench.benchmarks.critpt.loader import load_challenges
-from ddsr_bench.benchmarks.critpt.prepare import compile_challenges
-from ddsr_bench.benchmarks.critpt.submit import build_batch, submit_batch
-from ddsr_bench.benchmarks.scicode.loader import load_split
-from ddsr_bench.benchmarks.scicode.prepare import compile_problems
+from ddsr_bench.benchmarks.critpt.data.loader import load_challenges
+from ddsr_bench.benchmarks.critpt.evaluation.prepare import compile_challenges
+from ddsr_bench.benchmarks.critpt.evaluation.submit import build_batch, submit_batch
+from ddsr_bench.benchmarks.scicode.data.loader import load_split
+from ddsr_bench.benchmarks.scicode.evaluation.prepare import compile_problems
 from ddsr_bench.benchmarks.utils import Resources
 from ddsr_bench.training.export import export_sft, export_trajectories
 

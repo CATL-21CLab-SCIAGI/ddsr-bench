@@ -6,20 +6,20 @@ from dataclasses import asdict
 from pathlib import Path
 
 from ddsr_bench import __version__
-from ddsr_bench.benchmarks.critpt.schemas import Challenge, Problem, ProblemSpec
+from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, Problem, ProblemSpec
 from ddsr_bench.benchmarks.utils import Resources
 
 _TEST = """#!/bin/sh
 set -eu
-python -m ddsr_bench.benchmarks.critpt.verifier
+python -m ddsr_bench.benchmarks.critpt.evaluation.verifier
 """
 
 
 def encode_instruction(problem: ProblemSpec) -> str:
-    """Serialize only the public problem fields for one prepared task."""
+    """Serialize public fields as JSON for Harbor's required instruction.md."""
     data = asdict(problem)
     data.pop("source_path")
-    return json.dumps(data, ensure_ascii=False)
+    return json.dumps(data, indent=2, ensure_ascii=False)
 
 
 def decode_instruction(instruction: str) -> ProblemSpec:

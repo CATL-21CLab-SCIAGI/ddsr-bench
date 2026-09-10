@@ -5,8 +5,8 @@ container isolation and, when verifier data exists, answer execution and compari
 
 | Mode | Entry point | Code execution | Result |
 | --- | --- | --- | --- |
-| Harbor | [`CritPtAgent.run`](ddsr_bench/benchmarks/critpt/harbor.py) | When a reference or testcases exist | Reward and status |
-| Static | [`run_trial`](ddsr_bench/benchmarks/critpt/static.py) | None | Validation status; reward is `null` |
+| Harbor | [`CritPtAgent.run`](ddsr_bench/benchmarks/critpt/evaluation/harbor.py) | When a reference or testcases exist | Reward and status |
+| Static | [`run_trial`](ddsr_bench/benchmarks/critpt/evaluation/static.py) | None | Validation status; reward is `null` |
 
 Both modes use the same prepared tasks, model clients, prompts, generation
 runner, answer extraction, and AST validation. Only Harbor continues into the
@@ -62,3 +62,8 @@ A trial is one complete evaluation of one problem for one attempt. A two-step
 trial contains two model calls but still produces one answer and one trial
 result. Concurrency changes how many trials run simultaneously, not how trials
 are grouped into submission attempts.
+
+SciCode uses the same prepare → Harbor trials → collect → export outer flow.
+Inside each trial, its generation runner produces dependent functions in order,
+then the no-network verifier executes every official step test. SciCode has no
+static runner or Artificial Analysis submission stage.

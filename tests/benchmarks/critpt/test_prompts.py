@@ -1,6 +1,6 @@
 import pytest
 
-from ddsr_bench.benchmarks.critpt.prompts import parse_prompt, system_prompt
+from ddsr_bench.benchmarks.critpt.generation.prompts import parse_prompt, system_prompt
 
 
 def test_system_styles() -> None:

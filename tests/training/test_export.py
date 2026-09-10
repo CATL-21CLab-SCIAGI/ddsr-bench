@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.prompts import system_prompt
+from ddsr_bench.benchmarks.critpt.generation.prompts import system_prompt
 from ddsr_bench.benchmarks.critpt.trajectory import sft_samples as critpt_samples
 from ddsr_bench.training.export import (
     export_sft,

@@ -3,7 +3,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from ddsr_bench.benchmarks.scicode.loader import load_targets
+from ddsr_bench.benchmarks.scicode.data.loader import load_targets
 
 
 def _file(path: Path) -> None:

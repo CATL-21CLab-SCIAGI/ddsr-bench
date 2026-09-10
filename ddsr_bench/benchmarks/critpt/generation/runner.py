@@ -6,12 +6,12 @@ from dataclasses import asdict, dataclass
 from hashlib import sha256
 from typing import Any, Literal
 
-from ddsr_bench.benchmarks.critpt.prompts import (
+from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, ProblemSpec
+from ddsr_bench.benchmarks.critpt.generation.prompts import (
     PromptStyle,
     parse_prompt,
     system_prompt,
 )
-from ddsr_bench.benchmarks.critpt.schemas import Challenge, ProblemSpec
 from ddsr_bench.generation.client import ChatClient, ChatResponse, Sampling
 
 

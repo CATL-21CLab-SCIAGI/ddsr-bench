@@ -8,7 +8,7 @@ from typing import Any
 import h5py
 import scipy.sparse
 
-from ddsr_bench.benchmarks.scicode.schemas import SciCodeProblem, SciCodeStep
+from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
 
 _FIXED_STEPS = {"13.6", "62.1", "76.3"}
 
@@ -70,7 +70,7 @@ def load_fixed(step_id: str) -> str | None:
     if step_id not in _FIXED_STEPS:
         return None
     return (
-        files("ddsr_bench.benchmarks.scicode")
+        files("ddsr_bench.benchmarks.scicode.data")
         .joinpath("fixed", f"{step_id}.txt")
         .read_text(encoding="utf-8")
         .removesuffix("\n")

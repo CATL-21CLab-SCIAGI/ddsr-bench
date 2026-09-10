@@ -6,7 +6,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
-from ddsr_bench.benchmarks.critpt.prompts import system_prompt
+from ddsr_bench.benchmarks.critpt.generation.prompts import system_prompt
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
