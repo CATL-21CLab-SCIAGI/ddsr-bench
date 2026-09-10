@@ -1,69 +1,38 @@
-# Evaluation pipeline
+# Framework pipeline
 
-`ddsr-solve` stops after code extraction and static AST validation. Harbor adds
-container isolation and, when verifier data exists, answer execution and comparison.
-
-| Mode | Entry point | Code execution | Result |
-| --- | --- | --- | --- |
-| Harbor | [`CritPtAgent.run`](ddsr_bench/benchmarks/critpt/evaluation/harbor.py) | When a reference or testcases exist | Reward and status |
-| Static | [`run_trial`](ddsr_bench/benchmarks/critpt/evaluation/static.py) | None | Validation status; reward is `null` |
-
-Both modes use the same prepared tasks, model clients, prompts, generation
-runner, answer extraction, and AST validation. Only Harbor continues into the
-container verifier.
+Every benchmark supplies adapters for its source data, generation policy,
+verifier, result records, and trajectories. The shared framework supplies model
+clients, job configuration, collection, and training-data export.
 
 ```mermaid
 flowchart TD
-    A["CritPt challenge JSON"] --> B["Load main and indexed subproblems"]
-    B --> C["Compile each problem into a Harbor task"]
-    C --> D{"Runner"}
-    D -->|"harbor run"| E["Harbor schedules problem × attempt"]
-    D -->|"ddsr-solve"| ES["Static runner schedules problem × attempt"]
-    E --> F["One trial receives public ProblemSpec"]
-    ES --> F
-
-    F --> G{"Prompt strategy"}
-    G -->|"one-step"| H["One LLM call<br/>problem + template"]
-    G -->|"two-step"| I["LLM call 1<br/>reasoning without template"]
-    I --> J["LLM call 2<br/>formatting prompt + template"]
-    H --> K["Final model response"]
-    J --> K
-
-    K --> L["Extract code and validate AST"]
-    L -->|"invalid"| M["Failed trial<br/>no answer artifact"]
-    L -->|"valid + Harbor"| N["Upload /app/answer.py"]
-    L -->|"valid + static"| NS["Validated; reward is null"]
-    N --> O["No-network verifier"]
-    O --> OA{"Reference or testcases?"}
-    OA -->|"yes"| OB["Execute and compare answer"]
-    OA -->|"no"| OC["Format validation only"]
-    OB --> P["Reward and status"]
-    OC --> P
-
-    M --> Q["Harbor or static trial directory"]
-    NS --> Q
-    P --> Q
-    Q --> R["Collect all job trials"]
-    R --> S["Group identical agent, model, and strategy"]
-    S --> T["Assign per-problem attempt indices"]
-    T --> U{"One trial for every problem?"}
-    U -->|"no"| V["Report unbatched trials"]
-    U -->|"yes"| W["Complete attempt batch"]
-
-    W --> X["Write summary.json and summary.csv"]
-    X --> Y["User selects one attempt"]
-    Y --> Z{"Exactly 70 official main IDs<br/>with answer artifacts?"}
-    Z -->|"no"| ZA["Reject submission"]
-    Z -->|"yes"| ZB["Submit once to Artificial Analysis"]
-    ZB --> ZC["Save submission response"]
+    A["Benchmark source data"] --> B["Benchmark data adapter"]
+    B --> C["Prepared task directories"]
+    C --> D["Job configuration"]
+    D --> E{"Evaluation mode"}
+    E -->|"Harbor"| F["Schedule problem × attempt"]
+    E -->|"Benchmark supports static mode"| G["Schedule problem × attempt"]
+    F --> H["Benchmark generation adapter"]
+    G --> H
+    H --> I["Shared model client"]
+    I --> J["Generated benchmark artifact"]
+    J --> K{"Verifier"}
+    K -->|"Harbor"| L["Isolated benchmark execution"]
+    K -->|"Static"| M["Non-executing validation"]
+    L --> N["Trial result"]
+    M --> N
+    N --> O["Benchmark result adapter"]
+    O --> P["summary.json + summary.csv"]
+    N --> Q["Benchmark trajectory adapter"]
+    Q --> R["trajectories.jsonl + sft.jsonl"]
 ```
 
-A trial is one complete evaluation of one problem for one attempt. A two-step
-trial contains two model calls but still produces one answer and one trial
-result. Concurrency changes how many trials run simultaneously, not how trials
-are grouped into submission attempts.
+A trial is one evaluation of one problem for one attempt. Concurrency controls
+how many trials run at once; it does not combine them or cause their files to
+share a directory.
 
-SciCode uses the same prepare → Harbor trials → collect → export outer flow.
-Inside each trial, its generation runner produces dependent functions in order,
-then the no-network verifier executes every official step test. SciCode has no
-static runner or Artificial Analysis submission stage.
+The benchmark pipelines define what one generated artifact contains and how it
+is verified:
+
+- [CritPt pipeline](ddsr_bench/benchmarks/critpt/PIPELINE.md)
+- [SciCode pipeline](ddsr_bench/benchmarks/scicode/PIPELINE.md)
