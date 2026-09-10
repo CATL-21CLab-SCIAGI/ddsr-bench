@@ -1,0 +1,29 @@
+# Evaluation layer: Harbor scheduling and result location.
+job_name: critpt-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: ALIYUN_API_KEY is read from the environment.
+agents:
+  - name: critpt_eval.benchmark.harbor:CritPtAgent
+    # Available text LLMs:
+    # Qwen: qwen3.8-max, qwen3.7-max, qwen3.7-plus, qwen3.6-plus,
+    #   qwen3.5-plus, qwen3.7-flash, qwen3.6-flash, qwen3.5-flash
+    # DeepSeek: deepseek-v4-pro, deepseek-v4-flash-0731, deepseek-v4-flash
+    # Kimi: kimi-k2.7-code, kimi-k2.6
+    # GLM: glm-5.2, glm-5.1, glm-5
+    model_name: qwen3.8-max
+    include_logs: [response.json]
+    extra_allowed_hosts: [cn-beijing.pai-token.aliyuncs.com]
+    kwargs:
+      client_name: openai
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      style: two-step
+      stream: true
+      sampling:
+        max_tokens: 32768
+
+datasets:
+  - path: tasks/official

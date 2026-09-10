@@ -105,7 +105,7 @@ execution and comparison when verifier data is available.
 
 The default outputs are `outputs/harbor/critpt-official` and
 `outputs/static/critpt-official`, respectively. Replace `vllm.yaml` with
-`openai.yaml` or `bedrock.yaml` after configuring that client.
+`openai.yaml`, `bedrock.yaml`, or `aliyun.yaml` after configuring that endpoint.
 
 ## 5. Collect results
 

@@ -1,6 +1,7 @@
 # Generation
 
-CritPt Eval supports three Chat Completions clients. Use `critpt-smoke` to check
+CritPt Eval supports local and hosted Chat Completions clients. Use
+`critpt-smoke` to check
 an endpoint, then pass the same settings to `critpt-solve` or Harbor.
 
 Harbor job examples live in `configs/job`. Their `agents[].kwargs` sections make
@@ -38,6 +39,24 @@ critpt-smoke \
 
 See the
 [OpenAI Chat Completions reference](https://developers.openai.com/api/reference/cli/resources/chat/subresources/completions).
+
+### Alibaba Cloud PAI Token Service
+
+PAI Token Service exposes the same OpenAI-compatible routes, so it reuses
+`OpenAIClient`. The bundled `configs/job/aliyun.yaml` targets the Beijing
+endpoint and `qwen3.8-max`:
+
+```bash
+export ALIYUN_API_KEY='...'
+critpt-smoke \
+  --client openai \
+  --base-url https://cn-beijing.pai-token.aliyuncs.com/v1 \
+  --api-key-env ALIYUN_API_KEY \
+  --model qwen3.8-max
+```
+
+For another region, update both `base_url` and `extra_allowed_hosts` in the job
+file. The API key is read at runtime and is never stored in the configuration.
 
 ## Amazon Bedrock
 
