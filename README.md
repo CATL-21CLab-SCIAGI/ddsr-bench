@@ -22,9 +22,9 @@ mamba activate ddsr-bench
 python -m pip install -e '.[dev]'
 ```
 
-This installs the shared `ddsr-bench`, `ddsr-smoke`, and `ddsr-vllm` commands.
-Benchmark guides identify optional dependencies and specialized commands such as
-CritPt's `ddsr-solve`.
+This installs the shared `ddsr-bench`, `ddsr-solve`, `ddsr-smoke`, and
+`ddsr-vllm` commands. Benchmark guides identify optional dependencies and
+whether evaluation uses Harbor or the static `ddsr-solve` runner.
 
 ## Repository layout
 
@@ -57,6 +57,9 @@ trajectory.py  adapter for shared training-data export
 
 Job configurations follow `configs/jobs/BENCHMARK/CLIENT.yaml`. Client setup is
 documented in the [generation guide](ddsr_bench/generation/README.md).
+Each job names its benchmark; the explicit benchmark registry selects the
+supported runner, while `configs/benchmark/` remains the single source for
+dataset and benchmark defaults.
 
 ## Workflow
 
@@ -98,8 +101,8 @@ no-network containers. Some benchmarks expose an additional non-executing mode;
 their guides document its command and limitations.
 
 To run one prepared problem, append `--path tasks/TASK_SET` and
-`--include-task-name BENCHMARK/PROBLEM_ID`. Benchmark guides provide concrete
-task names.
+`--include-task-name TASK_NAME`. Harbor filters local datasets by task
+directory name; benchmark guides provide concrete IDs.
 
 ### 4. Collect results
 

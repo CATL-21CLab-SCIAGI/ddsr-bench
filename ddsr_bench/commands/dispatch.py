@@ -11,11 +11,7 @@ import hydra
 from omegaconf import DictConfig
 
 from ddsr_bench.benchmarks.collect import collect_trials
-from ddsr_bench.benchmarks.critpt.data.loader import load_challenges
-from ddsr_bench.benchmarks.critpt.evaluation.prepare import compile_challenges
-from ddsr_bench.benchmarks.critpt.evaluation.submit import build_batch, submit_batch
-from ddsr_bench.benchmarks.scicode.data.loader import load_split
-from ddsr_bench.benchmarks.scicode.evaluation.prepare import compile_problems
+from ddsr_bench.benchmarks.registry import preparer, submitter
 from ddsr_bench.benchmarks.utils import Resources
 from ddsr_bench.training.export import export_sft, export_trajectories
 
@@ -45,20 +41,12 @@ def prepare(config: DictConfig) -> str:
         timeout_sec=float(limits.timeout_sec),
     )
     benchmark = str(config.benchmark.name)
-    if benchmark == "scicode":
-        tasks = compile_problems(
-            load_split(str(config.benchmark.split)),
-            config.paths.output,
-            resources,
-        )
-    elif benchmark == "critpt":
-        if config.paths.input is None:
-            raise ValueError("paths.input is required for CritPt preparation")
-        tasks = compile_challenges(
-            load_challenges(config.paths.input), config.paths.output, resources
-        )
-    else:
-        raise ValueError(f"unknown benchmark {benchmark!r}")
+    tasks = preparer(benchmark)(
+        config.benchmark,
+        config.paths.input,
+        config.paths.output,
+        resources,
+    )
     return f"prepared {len(tasks)} Harbor tasks in {config.paths.output}"
 
 
@@ -85,12 +73,17 @@ def submit(config: DictConfig) -> str:
     output = job / f"submission-{attempt}.json"
     if output.exists():
         raise ValueError(f"submission result already exists: {output}")
-    payload = build_batch(job, attempt)
-    result = submit_batch(
-        payload,
-        os.environ.get(str(config.submission.api_key_env), ""),
-        endpoint=str(config.submission.endpoint),
-        timeout=float(config.submission.timeout_sec),
+    benchmark = str(config.benchmark.name)
+    send = submitter(benchmark)
+    submission = config.benchmark.get("submission")
+    if submission is None:
+        raise ValueError(f"benchmark {benchmark!r} has no submission configuration")
+    result = send(
+        job,
+        attempt,
+        os.environ.get(str(submission.api_key_env), ""),
+        str(submission.endpoint),
+        float(submission.timeout_sec),
     )
     output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     return f"submitted attempt {attempt}; result saved to {output}"

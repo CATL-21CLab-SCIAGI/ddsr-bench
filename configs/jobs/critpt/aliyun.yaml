@@ -1,5 +1,7 @@
+benchmark: critpt
+
 # Evaluation layer: Harbor scheduling and result location.
-job_name: critpt-aliyun
+job_name: critpt-official-aliyun
 jobs_dir: outputs/harbor
 n_attempts: 1
 n_concurrent_trials: 4
@@ -17,7 +19,7 @@ agents:
     include_logs: [response.json]
     extra_allowed_hosts: [cn-beijing.pai-token.aliyuncs.com]
     kwargs:
-      client_name: openai
+      client_name: aliyun
       base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
       api_key_env: ALIYUN_API_KEY
       style: two-step
@@ -25,5 +27,6 @@ agents:
       sampling:
         max_tokens: 32768
 
+# Dataset layer: normalized Harbor tasks.
 datasets:
   - path: tasks/critpt-official

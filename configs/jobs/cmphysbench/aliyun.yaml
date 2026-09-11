@@ -1,0 +1,34 @@
+benchmark: cmphysbench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: cmphysbench-train-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: ALIYUN_API_KEY is read from the environment.
+agents:
+  - name: ddsr_bench.benchmarks.cmphysbench.evaluation.harbor:CMPhysBenchAgent
+    # Available text LLMs:
+    # Qwen: qwen3.8-max, qwen3.7-max, qwen3.7-plus, qwen3.6-plus,
+    #   qwen3.5-plus, qwen3.7-flash, qwen3.6-flash, qwen3.5-flash
+    # DeepSeek: deepseek-v4-pro, deepseek-v4-flash-0731, deepseek-v4-flash
+    # Kimi: kimi-k2.7-code, kimi-k2.6
+    # GLM: glm-5.2, glm-5.1, glm-5
+    model_name: qwen3.8-max
+    include_logs: [response.json]
+    extra_allowed_hosts: [cn-beijing.pai-token.aliyuncs.com]
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: true
+      # Official vLLM settings, supported unchanged by this endpoint.
+      sampling:
+        max_tokens: 16384
+        temperature: 0.6
+        top_p: 0.95
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/cmphysbench

@@ -43,7 +43,9 @@ ddsr-bench \
 Set `benchmark.split=test` and use a matching output directory to prepare the
 test split.
 
-## Run
+## Evaluation
+
+### Harbor
 
 Run sequential generation and isolated official-test execution:
 
@@ -52,14 +54,18 @@ harbor run --config configs/jobs/scicode/vllm.yaml
 ```
 
 Other client configurations live beside `vllm.yaml`. The default vLLM job
-writes `outputs/harbor/scicode-validation-vllm`. SciCode does not expose static
-evaluation because its score requires executing the generated functions.
+writes `outputs/harbor/scicode-validation`.
 
 To evaluate one prepared problem, append
-`--path tasks/scicode-validation --include-task-name scicode/19`. There is no
+`--path tasks/scicode-validation --include-task-name 19`. There is no
 raw-data `ddsr-solve` shortcut: without the prepared assertions, HDF5 targets,
 and container execution it could generate functions but could not evaluate them
 under SciCode's contract.
+
+### Static
+
+Static evaluation is not supported because SciCode's score requires executing
+the generated functions against its assertions and numeric targets.
 
 ## Results and teacher data
 
@@ -69,7 +75,7 @@ job directory above. For SciCode, `native` and `full` both emit one training
 sample per model-generated step. Bundled compatibility steps remain context and
 are not training targets.
 
-## Compatibility reference
+## Compatibility and limitations
 
 SciCode recommends Inspect AI, and its implementation remains the compatibility
 reference. ddsr-bench does not execute generated code through Inspect AI on the

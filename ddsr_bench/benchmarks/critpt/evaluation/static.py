@@ -90,7 +90,12 @@ async def run_trial(
     return result["status"]
 
 
-async def run_job(path: Path, client: ChatClient | None = None) -> dict[str, Any]:
+async def run_job(
+    path: Path,
+    client: ChatClient | None = None,
+    *,
+    task_name: str | None = None,
+) -> dict[str, Any]:
     """Run every task in one Harbor job config without code execution."""
     config = JobConfig.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
     if len(config.agents) != 1:
@@ -113,6 +118,10 @@ async def run_job(path: Path, client: ChatClient | None = None) -> dict[str, Any
     ids = [problem.id for problem in problems]
     if not ids or len(ids) != len(set(ids)):
         raise ValueError("static tasks must contain unique problem IDs")
+    if task_name is not None:
+        problems = [problem for problem in problems if problem.id == task_name]
+        if not problems:
+            raise ValueError(f"task {task_name!r} was not found")
 
     output = config.jobs_dir.parent / "static" / config.job_name
     output.mkdir(parents=True)

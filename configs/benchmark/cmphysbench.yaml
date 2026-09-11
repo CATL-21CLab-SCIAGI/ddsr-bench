@@ -1,0 +1,5 @@
+name: cmphysbench
+dataset: weidawang/CMPhysBench
+revision: 43d185851f731e23aa5737c3667b3a9e87bf8cd1
+split: train
+gradable_only: true

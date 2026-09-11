@@ -6,8 +6,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from ddsr_bench.benchmarks.critpt.result import trial_fields as critpt_fields
-from ddsr_bench.benchmarks.scicode.result import trial_fields as scicode_fields
+from ddsr_bench.benchmarks.registry import result_adapter, summarizer
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,9 +42,12 @@ def _trial(result_path: Path, job: Path) -> Trial:
     if not isinstance(task_name, str):
         raise TypeError(f"{result_path} has no task name")
     benchmark, separator, problem_id = task_name.partition("/")
-    adapters = {"critpt": critpt_fields, "scicode": scicode_fields}
-    if not separator or not problem_id or benchmark not in adapters:
-        raise ValueError(f"{result_path} has an unsupported benchmark")
+    if not separator or not problem_id:
+        raise ValueError(f"{result_path} has an invalid task name")
+    try:
+        fields = result_adapter(benchmark)
+    except ValueError as error:
+        raise ValueError(f"{result_path} has an unsupported benchmark") from error
     if not isinstance(trial_name, str) or not trial_name:
         raise ValueError(f"{result_path} has no trial name")
 
@@ -54,7 +56,7 @@ def _trial(result_path: Path, job: Path) -> Trial:
     agent = agent_info.get("name")
     model = model_info.get("name")
     provider = model_info.get("provider") or ""
-    benchmark_config, artifact_path = adapters[benchmark](data, result_path.parent)
+    benchmark_config, artifact_path = fields(data, result_path.parent)
     if not all(isinstance(value, str) and value for value in (agent, model)):
         raise ValueError(f"{result_path} has incomplete agent information")
 
@@ -163,6 +165,9 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
         "unbatched_trials": len(trials) - len(rows),
         "batches": batches,
     }
+    summarize = summarizer(trials[0].benchmark)
+    if summarize is not None and rows:
+        summary["metrics"] = summarize([asdict(trial) for trial in rows])
     (job / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     with (job / "summary.csv").open("w", newline="", encoding="utf-8") as file:
         fields = tuple(Trial.__dataclass_fields__)

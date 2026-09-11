@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -19,13 +20,14 @@ def test_collect_action(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "ddsr_bench.commands.dispatch.load_split", lambda split: [split]
-    )
-    monkeypatch.setattr(
-        "ddsr_bench.commands.dispatch.compile_problems",
-        lambda problems, output, resources: [problems[0]],
-    )
+    def prepare(config, source, output, resources):
+        assert config.split == "validation"
+        assert source is None
+        assert output == "tasks/scicode-validation"
+        assert resources.cpus == 2
+        return [Path(output)]
+
+    monkeypatch.setattr("ddsr_bench.commands.dispatch.preparer", lambda _: prepare)
     config = SimpleNamespace(
         action="prepare",
         benchmark=SimpleNamespace(name="scicode", split="validation"),
@@ -65,6 +67,30 @@ def test_export_action(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert "dataset/trajectories.jsonl" in result
     assert "dataset/sft-answer.jsonl" in result
+
+
+def test_submit_action(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TEST_API_KEY", "secret")
+    monkeypatch.setattr(
+        "ddsr_bench.commands.dispatch.submitter",
+        lambda _: lambda *args: {"attempt": args[1]},
+    )
+    config = SimpleNamespace(
+        action="submit",
+        benchmark=SimpleNamespace(
+            name="critpt",
+            get=lambda _: SimpleNamespace(
+                endpoint="endpoint", timeout_sec=10, api_key_env="TEST_API_KEY"
+            ),
+        ),
+        paths=SimpleNamespace(input=tmp_path, output=None),
+        submission=SimpleNamespace(attempt=2),
+    )
+
+    result = dispatch(config)
+
+    assert "submitted attempt 2" in result
+    assert json.loads((tmp_path / "submission-2.json").read_text()) == {"attempt": 2}
 
 
 def test_logging_is_idempotent() -> None:

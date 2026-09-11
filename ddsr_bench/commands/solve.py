@@ -1,4 +1,4 @@
-"""Generate CritPt candidate answers with static validation."""
+"""Run static benchmark evaluation."""
 
 from __future__ import annotations
 
@@ -9,28 +9,41 @@ import os
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
-from ddsr_bench.benchmarks.critpt.evaluation.static import run_job
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
+from ddsr_bench.benchmarks.registry import static_runner
 from ddsr_bench.generation.client import CLIENTS, Sampling
 from ddsr_bench.grading.validation import extract_answer
 
 from .utils import read_api_key
 
 
-def _select(path: Path, problem_id: str | None) -> ProblemSpec:
+async def run_job(path: Path, task_name: str | None = None) -> dict[str, Any]:
+    """Dispatch one static job to its benchmark adapter."""
+    config = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(config, dict):
+        raise TypeError("job configuration must be a mapping")
+    name = config.get("benchmark", "critpt")
+    if not isinstance(name, str):
+        raise TypeError("job benchmark must be a name")
+    return await static_runner(name)(path, task_name=task_name)
+
+
+def _select(path: Path, task_name: str | None) -> ProblemSpec:
     challenge = load_challenge(path)
-    if problem_id is None:
+    if task_name is None:
         return challenge.main.spec
     for problem in challenge.problems:
-        if problem.spec.id == problem_id:
+        if problem.spec.id == task_name:
             return problem.spec
-    raise ValueError(f"problem {problem_id!r} not found in {challenge.id!r}")
+    raise ValueError(f"task {task_name!r} not found in {challenge.id!r}")
 
 
 async def _run(args: argparse.Namespace) -> dict[str, Any]:
-    problem = _select(args.challenge, args.problem_id)
+    problem = _select(args.challenge, args.include_task_name)
     openai = args.client in ("openai", "bedrock")
     sampling = Sampling(
         args.model,
@@ -80,12 +93,12 @@ async def _run(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate and statically validate CritPt answers"
+        description="Run static benchmark evaluation or solve one CritPt problem"
     )
     parser.add_argument("challenge", type=Path, nargs="?")
     parser.add_argument("output", type=Path, nargs="?")
     parser.add_argument("--config", type=Path)
-    parser.add_argument("--problem-id")
+    parser.add_argument("--include-task-name")
     parser.add_argument("--style", choices=("one-step", "two-step"), default="one-step")
     parser.add_argument(
         "--base-url",
@@ -109,7 +122,7 @@ def main() -> None:
     if args.config:
         if args.challenge or args.output:
             parser.error("--config cannot be combined with a challenge or output")
-        result = asyncio.run(run_job(args.config))
+        result = asyncio.run(run_job(args.config, args.include_task_name))
     else:
         if args.challenge is None or args.output is None:
             parser.error("challenge and output are required without --config")

@@ -47,14 +47,15 @@ See the
 
 ### Alibaba Cloud PAI Token Service
 
-PAI Token Service exposes the same OpenAI-compatible routes, so it reuses
-`OpenAIClient`. Bundled benchmark `aliyun.yaml` jobs target the Beijing endpoint
-and `qwen3.8-max`:
+PAI Token Service exposes OpenAI-compatible routes. `AliyunClient` preserves its
+documented `max_tokens`, `temperature`, `top_p`, `seed`, and `enable_thinking`
+fields. Bundled `aliyun.yaml` jobs target the Beijing endpoint and
+`qwen3.8-max`:
 
 ```bash
 export ALIYUN_API_KEY='...'
 ddsr-smoke \
-  --client openai \
+  --client aliyun \
   --base-url https://cn-beijing.pai-token.aliyuncs.com/v1 \
   --api-key-env ALIYUN_API_KEY \
   --model qwen3.8-max

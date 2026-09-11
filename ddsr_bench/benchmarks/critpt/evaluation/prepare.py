@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from ddsr_bench import __version__
+from ddsr_bench.benchmarks.critpt.data.loader import load_challenges
 from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, Problem, ProblemSpec
 from ddsr_bench.benchmarks.utils import Resources
 
@@ -106,3 +109,17 @@ def compile_challenges(
         for challenge in challenges
         for task in compile_challenge(challenge, output, resources)
     )
+
+
+def prepare_tasks(
+    config: Mapping[str, Any],
+    source: str | Path | None,
+    output: str | Path,
+    resources: Resources,
+) -> tuple[Path, ...]:
+    """Load CritPt source data and compile its Harbor tasks."""
+    if config.get("name") != "critpt":
+        raise ValueError("CritPt preparation requires its benchmark configuration")
+    if source is None:
+        raise ValueError("paths.input is required for CritPt preparation")
+    return compile_challenges(load_challenges(source), output, resources)

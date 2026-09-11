@@ -1,8 +1,12 @@
-job_name: scicode-validation-vllm
+benchmark: scicode
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: scicode-validation
 jobs_dir: outputs/harbor
 n_attempts: 1
 n_concurrent_trials: 4
 
+# Generation layer: agent, client, prompt strategy, and request parameters.
 agents:
   - name: ddsr_bench.benchmarks.scicode.evaluation.harbor:SciCodeAgent
     model_name: ddsr-local
@@ -22,5 +26,6 @@ agents:
         reasoning_effort: low
         enable_thinking: null
 
+# Dataset layer: normalized Harbor tasks.
 datasets:
   - path: tasks/scicode-validation

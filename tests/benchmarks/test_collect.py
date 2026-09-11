@@ -20,26 +20,35 @@ def write_trial(
     trial = job / name
     (trial / "artifacts").mkdir(parents=True)
     (trial / "verifier").mkdir()
-    artifact = "answer.py" if benchmark == "critpt" else "solution.py"
+    artifacts = {
+        "critpt": "answer.py",
+        "scicode": "solution.py",
+        "cmphysbench": "answer.txt",
+    }
+    artifact = artifacts[benchmark]
     (trial / "artifacts" / artifact).write_text("def answer():\n    pass\n")
     kwargs = (
         {"style": "one-step"} if benchmark == "critpt" else {"with_background": False}
     )
-    (trial / "result.json").write_text(
-        json.dumps(
-            {
-                "task_name": f"{benchmark}/{problem_id}",
-                "trial_name": name,
-                "started_at": started_at,
-                "agent_info": {
-                    "name": agent,
-                    "model_info": {"name": "model", "provider": "vllm"},
-                },
-                "config": {"agent": {"kwargs": kwargs}},
-                "verifier_result": {"rewards": {"reward": reward}},
-            }
-        )
-    )
+    result = {
+        "task_name": f"{benchmark}/{problem_id}",
+        "trial_name": name,
+        "started_at": started_at,
+        "agent_info": {
+            "name": agent,
+            "model_info": {"name": "model", "provider": "vllm"},
+        },
+        "config": {"agent": {"kwargs": kwargs}},
+        "verifier_result": {"rewards": {"reward": reward}},
+    }
+    if benchmark == "cmphysbench":
+        result["static_result"] = {
+            "reward": reward,
+            "status": "passed" if reward == 1 else "different",
+            "answer_type": "Expression",
+            "topic": "Theoretical Foundations",
+        }
+    (trial / "result.json").write_text(json.dumps(result))
     (trial / "verifier" / "result.json").write_text(
         json.dumps({"status": "passed" if reward else "different"})
     )
@@ -82,11 +91,44 @@ def test_collects_scicode(tmp_path: Path) -> None:
         benchmark="scicode",
     )
 
-    trial = collect_trials(tmp_path)["batches"][0]["trials"][0]
+    summary = collect_trials(tmp_path)
+    trial = summary["batches"][0]["trials"][0]
 
     assert trial["benchmark"] == "scicode"
     assert trial["benchmark_config"] == {"with_background": False}
     assert trial["artifact"] == "trial/artifacts/solution.py"
+
+
+def test_collects_cmphysbench(tmp_path: Path) -> None:
+    write_trial(
+        tmp_path,
+        "trial",
+        "7",
+        "2026-01-01",
+        0.75,
+        agent="cmphysbench",
+        benchmark="cmphysbench",
+    )
+
+    summary = collect_trials(tmp_path)
+    trial = summary["batches"][0]["trials"][0]
+
+    assert trial["benchmark_config"] == {
+        "answer_type": "Expression",
+        "topic": "Theoretical Foundations",
+    }
+    assert trial["artifact"] == "trial/artifacts/answer.txt"
+    assert summary["metrics"]["overall"] == {
+        "trials": 1,
+        "mean_seed": 75.0,
+        "accuracy": 0.0,
+    }
+    assert (
+        summary["metrics"]["by_topic"]["Theoretical Foundations"]
+        == summary["metrics"]["overall"]
+    )
+    assert summary["metrics"]["by_answer_type"]["Expression"]["mean_seed"] == 75
+    assert summary["metrics"]["by_attempt"]["0"]["accuracy"] == 0
 
 
 def test_rejects_unknown_benchmark(tmp_path: Path) -> None:

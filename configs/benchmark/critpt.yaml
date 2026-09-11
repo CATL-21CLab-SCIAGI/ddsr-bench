@@ -1,1 +1,5 @@
 name: critpt
+submission:
+  endpoint: https://artificialanalysis.ai/api/v2/critpt/evaluate
+  api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
+  timeout_sec: 7200

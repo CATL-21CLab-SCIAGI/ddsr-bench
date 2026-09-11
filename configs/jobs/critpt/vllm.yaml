@@ -1,3 +1,5 @@
+benchmark: critpt
+
 # Evaluation layer: Harbor scheduling and result location.
 job_name: critpt-official
 jobs_dir: outputs/harbor
@@ -24,5 +26,6 @@ agents:
         reasoning_effort: low
         enable_thinking: null
 
+# Dataset layer: normalized Harbor tasks.
 datasets:
   - path: tasks/critpt-official

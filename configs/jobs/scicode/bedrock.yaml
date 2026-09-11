@@ -1,3 +1,5 @@
+benchmark: scicode
+
 # Evaluation layer: Harbor scheduling and result location.
 job_name: scicode-validation-bedrock
 jobs_dir: outputs/harbor
@@ -20,5 +22,6 @@ agents:
         max_tokens: 8192
         reasoning_effort: low
 
+# Dataset layer: normalized Harbor tasks.
 datasets:
   - path: tasks/scicode-validation

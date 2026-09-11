@@ -8,7 +8,7 @@ from typing import Any, Literal, Protocol, Self
 
 import httpx
 
-ClientName = Literal["vllm", "openai", "bedrock"]
+ClientName = Literal["vllm", "openai", "bedrock", "aliyun"]
 ChatMessages = tuple[dict[str, str], ...]
 
 
@@ -303,8 +303,31 @@ class BedrockClient(OpenAIClient):
         pass
 
 
+class AliyunClient(BaseClient):
+    """Chat client using Alibaba Cloud's OpenAI-compatible parameters."""
+
+    def _payload(self, messages: ChatMessages) -> dict[str, Any]:
+        if self.sampling.reasoning_effort is not None:
+            raise ValueError("Aliyun uses enable_thinking, not reasoning_effort")
+        if self.sampling.top_k is not None:
+            raise ValueError("Aliyun does not document top_k for this endpoint")
+        payload = {
+            "model": self.sampling.model,
+            "messages": list(messages),
+            "max_tokens": self.sampling.max_tokens,
+            "temperature": self.sampling.temperature,
+            "top_p": self.sampling.top_p,
+        }
+        if self.sampling.seed is not None:
+            payload["seed"] = self.sampling.seed
+        if self.sampling.enable_thinking is not None:
+            payload["enable_thinking"] = self.sampling.enable_thinking
+        return payload
+
+
 CLIENTS: dict[ClientName, type[BaseClient]] = {
     "vllm": VLLMClient,
     "openai": OpenAIClient,
     "bedrock": BedrockClient,
+    "aliyun": AliyunClient,
 }
