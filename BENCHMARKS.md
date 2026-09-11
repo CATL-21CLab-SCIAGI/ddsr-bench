@@ -8,6 +8,7 @@ across all benchmarks.
 | --- | --- | --- | --- |
 | CritPt | Physics derivation returned as executable answers | Static validation or Harbor; optional official submission | [Guide](ddsr_bench/benchmarks/critpt/README.md) · [Pipeline](ddsr_bench/benchmarks/critpt/PIPELINE.md) |
 | SciCode | Sequential scientific function generation | Harbor execution of official assertions | [Guide](ddsr_bench/benchmarks/scicode/README.md) · [Pipeline](ddsr_bench/benchmarks/scicode/PIPELINE.md) |
+| CMPhysBench | Condensed-matter reasoning with boxed LaTeX answers | Direct static SEED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/cmphysbench/README.md) · [Pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md) |
 
 New integrations should follow the capability layout in the root
 [README](README.md#repository-layout) and provide both a guide and a pipeline.

@@ -1,0 +1,31 @@
+benchmark: cmphysbench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: cmphysbench-train
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: official sampling parameters with a local vLLM endpoint.
+agents:
+  - name: ddsr_bench.benchmarks.cmphysbench.evaluation.harbor:CMPhysBenchAgent
+    model_name: ddsr-local
+    include_logs: [response.json]
+    extra_allowed_hosts: [127.0.0.1]
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: true
+      # Official vLLM settings pinned from CMPhysBench evaluation.py.
+      sampling:
+        max_tokens: 16384
+        temperature: 0.6
+        top_p: 0.95
+        top_k: null
+        seed: null
+        reasoning_effort: null
+        enable_thinking: null
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/cmphysbench

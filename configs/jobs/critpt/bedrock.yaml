@@ -1,5 +1,7 @@
+benchmark: critpt
+
 # Evaluation layer: Harbor scheduling and result location.
-job_name: critpt-bedrock
+job_name: critpt-official-bedrock
 jobs_dir: outputs/harbor
 n_attempts: 1
 n_concurrent_trials: 4
@@ -20,5 +22,6 @@ agents:
         max_tokens: 32768
         reasoning_effort: low
 
+# Dataset layer: normalized Harbor tasks.
 datasets:
   - path: tasks/critpt-official

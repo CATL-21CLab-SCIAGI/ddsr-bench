@@ -40,6 +40,10 @@ one-step augmentation. For SciCode, `native` and `full` currently both export
 one sample per model-generated step. Fixed compatibility steps remain in the
 trajectory for provenance and context but are never SFT targets.
 
+For CMPhysBench, `native` and `full` both export its single recorded call. The
+completion contains the visible derivation and boxed answer; provider reasoning
+is retained only in the canonical trajectory.
+
 ## Sample records
 
 Every JSONL line has one conversational prompt and one supervised assistant
@@ -61,6 +65,12 @@ A SciCode native sample represents one sequential model-generated step:
 
 ```json
 {"id":"trial:19.2","prompt":[{"role":"user","content":"problem + preceding code + next function"}],"completion":[{"role":"assistant","content":"def step_2(...): ..."}],"metadata":{"benchmark":"scicode","stage":"19.2"}}
+```
+
+A CMPhysBench sample preserves the official system and constructed user input:
+
+```json
+{"id":"trial:answer","prompt":[{"role":"system","content":"..."},{"role":"user","content":"question + symbols"}],"completion":[{"role":"assistant","content":"derivation + boxed answer"}],"metadata":{"benchmark":"cmphysbench","stage":"answer"}}
 ```
 
 When a provider exposes hidden reasoning, the canonical trajectory retains it

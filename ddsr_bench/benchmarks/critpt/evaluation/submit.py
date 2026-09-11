@@ -125,3 +125,19 @@ def submit_batch(
     if not isinstance(result, dict):
         raise TypeError("grading server response must be a JSON object")
     return result
+
+
+def submit_attempt(
+    job: Path,
+    attempt: int,
+    api_key: str,
+    endpoint: str,
+    timeout: float,
+) -> dict[str, Any]:
+    """Build and explicitly submit one selected CritPt attempt."""
+    return submit_batch(
+        build_batch(job, attempt),
+        api_key,
+        endpoint=endpoint,
+        timeout=timeout,
+    )

@@ -5,13 +5,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from ddsr_bench.benchmarks.critpt.trajectory import normalize as normalize_critpt
-from ddsr_bench.benchmarks.critpt.trajectory import sft_samples as critpt_samples
-from ddsr_bench.benchmarks.scicode.trajectory import normalize as normalize_scicode
-from ddsr_bench.benchmarks.scicode.trajectory import sft_samples as scicode_samples
+from ddsr_bench.benchmarks.registry import sft_adapter, trajectory_adapter
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
-
-_NORMALIZERS = {"critpt": normalize_critpt, "scicode": normalize_scicode}
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -27,8 +22,10 @@ def _json(path: Path) -> dict[str, Any]:
 def _benchmark(trial: Path, record: dict[str, Any]) -> str:
     task_name = record.get("task_name")
     benchmark = task_name.partition("/")[0] if isinstance(task_name, str) else ""
-    if benchmark not in _NORMALIZERS:
-        raise ValueError(f"{trial} has an unsupported benchmark")
+    try:
+        trajectory_adapter(benchmark)
+    except ValueError as error:
+        raise ValueError(f"{trial} has an unsupported benchmark") from error
     return benchmark
 
 
@@ -43,7 +40,9 @@ def load_trajectory(trial_dir: str | Path) -> Trajectory:
         validation_path = trial / "verifier" / "result.json"
     validation = _json(validation_path)
     benchmark = _benchmark(trial, trial_record)
-    return _NORMALIZERS[benchmark](trial, response_record, trial_record, validation)
+    return trajectory_adapter(benchmark)(
+        trial, response_record, trial_record, validation
+    )
 
 
 def export_trajectories(job_dir: str | Path, output: str | Path) -> Path:
@@ -67,10 +66,10 @@ def export_trajectories(job_dir: str | Path, output: str | Path) -> Path:
 
 def _sft_samples(trajectory: Trajectory, view: str) -> tuple[SftSample, ...]:
     """Delegate SFT view selection to the trajectory's benchmark adapter."""
-    exporters = {"critpt": critpt_samples, "scicode": scicode_samples}
-    exporter = exporters.get(trajectory.benchmark)
-    if exporter is None:
-        raise ValueError(f"unsupported benchmark: {trajectory.benchmark!r}")
+    try:
+        exporter = sft_adapter(trajectory.benchmark)
+    except ValueError as error:
+        raise ValueError(f"unsupported benchmark: {trajectory.benchmark!r}") from error
     return exporter(trajectory, view)
 
 

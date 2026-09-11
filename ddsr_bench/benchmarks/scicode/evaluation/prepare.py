@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from ddsr_bench import __version__
+from ddsr_bench.benchmarks.scicode.data.loader import load_split
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
 from ddsr_bench.benchmarks.utils import Resources
 
@@ -90,3 +93,15 @@ def compile_problems(
     if len(ids) != len(set(ids)):
         raise ValueError("SciCode problem IDs must be unique")
     return tuple(compile_problem(problem, output, resources) for problem in problems)
+
+
+def prepare_tasks(
+    config: Mapping[str, Any],
+    source: str | Path | None,
+    output: str | Path,
+    resources: Resources,
+) -> tuple[Path, ...]:
+    """Load the selected SciCode split and compile its Harbor tasks."""
+    if config.get("name") != "scicode" or not isinstance(config.get("split"), str):
+        raise ValueError("SciCode preparation requires a configured split")
+    return compile_problems(load_split(config["split"]), output, resources)

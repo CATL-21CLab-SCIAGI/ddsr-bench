@@ -33,7 +33,9 @@ Preparation emits one task per main or indexed subproblem. The official public
 set produces 70 main tasks. Public fields go into the model instruction;
 reference code and optional testcases remain verifier-only.
 
-## Run
+## Evaluation
+
+### Harbor
 
 For isolated generation and verification:
 
@@ -41,21 +43,25 @@ For isolated generation and verification:
 harbor run --config configs/jobs/critpt/vllm.yaml
 ```
 
+Other client configurations live beside `vllm.yaml`. The default job directory
+is `outputs/harbor/critpt-official`. To select one prepared problem, append
+`--path tasks/critpt-official --include-task-name Challenge_1_main`.
+
+### Static
+
 For generation with non-executing AST validation:
 
 ```bash
 ddsr-solve --config configs/jobs/critpt/vllm.yaml
 ```
 
-The default job directories are `outputs/harbor/critpt-official` and
-`outputs/static/critpt-official`. Other client configurations live beside
-`vllm.yaml`. To select one prepared problem through Harbor, append
-`--path tasks/critpt-official --include-task-name critpt/Challenge_1_main`.
+The default job directory is `outputs/static/critpt-official`. Static evaluation
+checks answer structure and safety but does not execute generated code.
 
-### Generate directly from one challenge
+### Solve one challenge
 
-CritPt additionally supports generation from a challenge JSON without preparing
-a Harbor task:
+CritPt can read one existing challenge JSON and generate its answer without
+preparing a Harbor task:
 
 ```bash
 ddsr-solve path/to/challenge.json outputs/example \
@@ -69,7 +75,7 @@ ddsr-solve path/to/challenge.json outputs/example \
   --stream
 ```
 
-The main problem is selected by default; pass `--problem-id ID` for a
+The main problem is selected by default; pass `--include-task-name ID` for a
 subproblem. This shortcut extracts and statically validates code but does not
 execute `answer`, `real_answer`, or testcases, so its reward is null. The output
 directory must not already exist.
@@ -82,7 +88,7 @@ either default job directory. Static results have no execution reward. For a
 two-step trajectory, the `full` view preserves both recorded calls and adds a
 derived one-step answer sample.
 
-## Artificial Analysis submission
+## Submission
 
 Submission is explicit and requires exactly one answer for each of the 70
 official main problems:
@@ -99,3 +105,9 @@ The command rejects missing, duplicate, and mixed-attempt batches before making
 one request. It writes `submission-0.json` without overwriting an existing
 response. The payload retains CritPt's official `problem_id`, `generated_code`,
 `model`, `generation_config`, and `messages` fields.
+
+## Compatibility and limitations
+
+The pinned CritPt prompts and one-step and two-step conversations are checked
+against the upstream renderer. Static evaluation cannot establish correctness;
+use Harbor when a local reference or verifier testcase is available.

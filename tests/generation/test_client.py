@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from ddsr_bench.generation.client import (
+    AliyunClient,
     BedrockClient,
     ClientError,
     OpenAIClient,
@@ -239,6 +240,46 @@ async def test_openai_request() -> None:
         await client.chat(MESSAGES)
 
     assert body["reasoning_effort"] == "none"
+
+
+@pytest.mark.asyncio
+async def test_aliyun_request() -> None:
+    body = None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal body
+        body = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": "answer"}, "finish_reason": "stop"}]
+            },
+        )
+
+    sampling = Sampling(
+        "qwen3.8-max",
+        max_tokens=123,
+        temperature=0.6,
+        top_p=0.95,
+        seed=7,
+        enable_thinking=False,
+    )
+    async with AliyunClient(
+        "https://example.com/v1",
+        sampling,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        await client.chat(MESSAGES)
+
+    assert body == {
+        "model": "qwen3.8-max",
+        "messages": [{"role": "user", "content": "Solve."}],
+        "max_tokens": 123,
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "seed": 7,
+        "enable_thinking": False,
+    }
 
 
 @pytest.mark.asyncio

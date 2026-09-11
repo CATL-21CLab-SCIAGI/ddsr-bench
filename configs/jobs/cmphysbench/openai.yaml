@@ -1,0 +1,28 @@
+benchmark: cmphysbench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: cmphysbench-train-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: OPENAI_API_KEY is read from the environment.
+agents:
+  - name: ddsr_bench.benchmarks.cmphysbench.evaluation.harbor:CMPhysBenchAgent
+    model_name: gpt-5.6-luna
+    include_logs: [response.json]
+    extra_allowed_hosts: [api.openai.com]
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      stream: true
+      # Upstream uses max_tokens=16384, temperature=0.6, and top_p=0.95.
+      # This reasoning API keeps the token cap and uses reasoning_effort instead.
+      sampling:
+        max_tokens: 16384
+        reasoning_effort: low
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/cmphysbench
