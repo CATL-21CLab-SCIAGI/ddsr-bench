@@ -72,6 +72,14 @@ BENCHMARKS = {
         sft_adapter="ddsr_bench.benchmarks.cmphysbench.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.cmphysbench.evaluation.prepare:prepare_tasks",
     ),
+    "phybench": Benchmark(
+        static_runner="ddsr_bench.benchmarks.phybench.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.phybench.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.phybench.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.phybench.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.phybench.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.phybench.evaluation.prepare:prepare_tasks",
+    ),
 }
 
 

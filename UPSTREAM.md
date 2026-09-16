@@ -33,3 +33,20 @@
 - Pinned for: the prompt, vLLM sampling parameters (`16384`, `0.6`, `0.95`),
   boxed-answer extraction, and SEED scoring behavior.
 - License: Apache-2.0.
+
+## PHYBench
+
+- Repository: https://github.com/phybench-official/phybench
+- Commit: `d9db3ec7246f3678aaee65d44a32649ad93beea2`
+- Dataset: `Eureka-Lab/PHYBench`
+- Dataset revision: `d6d91c787b7abb865eb2490a328bf85a9f5095f0`
+- Canonical file: `PHYBench-questions_v1.json` (500 unique problems; 100
+  publish reference solutions and answers, and 400 are generation-only).
+- Prompt source: arXiv `2504.16074v2`, Appendix D, “Evaluation Experiment
+  Setup” (arXiv source file `paper/sec/appendix.tex`).
+- Inference settings: provider defaults for API models; local models use
+  `temperature=0.6`, `top_p=0.95`, and `max_tokens=32768`.
+- Adapted: the official prompt and EED scoring behavior. The repository has no
+  inference driver, so the single-user-message envelope and final-balanced-box
+  selection are documented project choices.
+- License: MIT.

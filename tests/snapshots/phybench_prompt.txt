@@ -1,0 +1,5 @@
+You are a physics expert. Please read the following question and provide a step-by-step solution. Put your final answer, which must be a readable LaTeX formula, in a \boxed{} environment.
+
+Question: A particle undergoes planar motion, where the $x$ component of its velocity $v_{x}$ remains constant. The radius of curvature at this moment is $R$. Determine the acceleration at this moment.
+
+Answer:

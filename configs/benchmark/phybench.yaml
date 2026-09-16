@@ -1,0 +1,6 @@
+name: phybench
+dataset: Eureka-Lab/PHYBench
+revision: d6d91c787b7abb865eb2490a328bf85a9f5095f0
+data_file: PHYBench-questions_v1.json
+split: train
+gradable_only: true
