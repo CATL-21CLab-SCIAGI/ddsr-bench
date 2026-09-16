@@ -36,3 +36,5 @@ is verified:
 
 - [CritPt pipeline](ddsr_bench/benchmarks/critpt/PIPELINE.md)
 - [SciCode pipeline](ddsr_bench/benchmarks/scicode/PIPELINE.md)
+- [CMPhysBench pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md)
+- [PHYBench pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md)

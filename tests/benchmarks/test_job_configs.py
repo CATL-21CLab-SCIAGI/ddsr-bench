@@ -81,3 +81,30 @@ def test_cmphysbench_job_config(name: str, client: str) -> None:
     if name in ("vllm", "aliyun"):
         assert config.agents[0].kwargs["sampling"]["temperature"] == 0.6
         assert config.agents[0].kwargs["sampling"]["top_p"] == 0.95
+
+
+@pytest.mark.parametrize(
+    ("name", "client"),
+    [
+        ("vllm", "vllm"),
+        ("openai", "openai"),
+        ("bedrock", "bedrock"),
+        ("aliyun", "aliyun"),
+    ],
+)
+def test_phybench_job_config(name: str, client: str) -> None:
+    path = Path("configs/jobs/phybench") / f"{name}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+
+    assert raw["benchmark"] == "phybench"
+    assert config.agents[0].name.endswith("phybench.evaluation.harbor:PHYBenchAgent")
+    assert config.agents[0].kwargs["client_name"] == client
+    assert config.agents[0].kwargs["sampling"]["max_tokens"] == 32768
+    assert config.datasets[0].path == Path("tasks/phybench")
+    assert config.jobs_dir == Path("outputs/harbor")
+    suffix = "" if name == "vllm" else f"-{name}"
+    assert config.job_name == f"phybench-gradable{suffix}"
+    if name in ("vllm", "aliyun"):
+        assert config.agents[0].kwargs["sampling"]["temperature"] == 0.6
+        assert config.agents[0].kwargs["sampling"]["top_p"] == 0.95

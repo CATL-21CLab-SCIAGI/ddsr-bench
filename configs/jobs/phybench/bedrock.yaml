@@ -1,0 +1,28 @@
+benchmark: phybench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: phybench-gradable-bedrock
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: AWS_BEARER_TOKEN_BEDROCK is read from the environment.
+agents:
+  - name: ddsr_bench.benchmarks.phybench.evaluation.harbor:PHYBenchAgent
+    model_name: global.openai.gpt-5.6-luna
+    include_logs: [response.json]
+    extra_allowed_hosts: [bedrock-runtime.us-east-1.amazonaws.com]
+    kwargs:
+      client_name: bedrock
+      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      stream: true
+      # Upstream API runs use provider defaults; this project config explicitly
+      # caps output and selects low reasoning for the configured GPT model.
+      sampling:
+        max_tokens: 32768
+        reasoning_effort: low
+
+# Dataset layer: Harbor tasks and static fallback.
+datasets:
+  - path: tasks/phybench

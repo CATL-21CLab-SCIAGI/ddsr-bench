@@ -27,6 +27,11 @@ cmphysbench = [
     "timeout-decorator>=0.5,<1",
 ]
 dev = ["black>=24", "pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8"]
+phybench = [
+    "datasets>=4,<6",
+    "latex2sympy2-extended>=1.11,<2",
+    "timeout-decorator>=0.5,<1",
+]
 scicode = [
     "datasets>=4,<6",
     "h5py>=3,<4",
@@ -47,6 +52,11 @@ packages = [
     "ddsr_bench.benchmarks.cmphysbench.evaluation",
     "ddsr_bench.benchmarks.cmphysbench.evaluation.seed",
     "ddsr_bench.benchmarks.cmphysbench.generation",
+    "ddsr_bench.benchmarks.phybench",
+    "ddsr_bench.benchmarks.phybench.data",
+    "ddsr_bench.benchmarks.phybench.evaluation",
+    "ddsr_bench.benchmarks.phybench.evaluation.eed",
+    "ddsr_bench.benchmarks.phybench.generation",
     "ddsr_bench.benchmarks.critpt",
     "ddsr_bench.benchmarks.critpt.data",
     "ddsr_bench.benchmarks.critpt.evaluation",
@@ -63,6 +73,8 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
+"ddsr_bench.benchmarks.cmphysbench.evaluation.seed" = ["LICENSE", "NOTICE.md"]
+"ddsr_bench.benchmarks.phybench.evaluation.eed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]
 configs = [
     "*.yaml",
@@ -70,9 +82,11 @@ configs = [
     "harbor/*.yaml",
     "jobs/critpt/*.yaml",
     "jobs/cmphysbench/*.yaml",
+    "jobs/phybench/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
     "prompts/cmphysbench/*.txt",
+    "prompts/phybench/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",
 ]
@@ -80,9 +94,13 @@ configs = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+[tool.black]
+target-version = ["py312"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint.per-file-ignores]
 "ddsr_bench/benchmarks/cmphysbench/evaluation/seed/*.py" = ["ALL"]
+"ddsr_bench/benchmarks/phybench/evaluation/eed/*.py" = ["ALL"]

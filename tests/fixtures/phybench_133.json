@@ -1,0 +1,7 @@
+{
+  "id": 133,
+  "tag": "MECHANICS",
+  "content": "A particle undergoes planar motion, where the $x$ component of its velocity $v_{x}$ remains constant. The radius of curvature at this moment is $R$. Determine the acceleration at this moment.",
+  "solution": "To solve for the radius of curvature, it's more appropriate to use the natural coordinate system. In this coordinate system, the tangential and normal components of acceleration are represented as:\n\n$$\na_{\\tau} = {\\frac{\\mathrm{d}v}{\\mathrm{d}t}}, \\quad a_{n} = {\\frac{v^{2}}{R}}.\n$$\n\nAlso, \n\n$$\nv_{x} = v \\cos\\theta,\n$$\n\nwhere $\\theta$ can be referenced in Figure 1.5. If we take the time derivative of equation (2) and consider that $v_{x}$ is a constant, we get:\n\n$$\n{\\frac{\\mathrm{d}v}{\\mathrm{d}t}} = v {\\dot{\\theta}} \\tan\\theta.\n$$\n\nSince $\\dot{\\theta} = \\frac{\\mathrm{d}\\theta}{\\mathrm{d}s} \\frac{\\mathrm{d}s}{\\mathrm{d}t} = \\frac{v}{R}$, where $s$ is the arc length coordinate, substituting this relation into equation (3) gives:\n\n$$\na_{\\tau} = {\\frac{\\mathrm{d}v}{\\mathrm{d}t}} = {\\frac{v^{2}}{R}} \\tan\\theta.\n$$\n\nFrom equations (1), (2), and (4), the magnitude of the particle's acceleration can be expressed as:\n\n$$\na = \\sqrt{a_{n}^{2} + a_{\\tau}^{2}} = \\frac{v^{2}}{R} \\frac{1}{\\cos\\theta} = \\frac{v^{3}}{R v_{x}}.\n$$",
+  "answer": "$$\\frac{v^3}{R v_x}$$"
+}

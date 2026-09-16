@@ -1,0 +1,28 @@
+benchmark: phybench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: phybench-gradable-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: OPENAI_API_KEY is read from the environment.
+agents:
+  - name: ddsr_bench.benchmarks.phybench.evaluation.harbor:PHYBenchAgent
+    model_name: gpt-5.6-luna
+    include_logs: [response.json]
+    extra_allowed_hosts: [api.openai.com]
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      stream: true
+      # Upstream API runs use provider defaults; this project config explicitly
+      # caps output and selects low reasoning for the configured GPT model.
+      sampling:
+        max_tokens: 32768
+        reasoning_effort: low
+
+# Dataset layer: Harbor tasks and static fallback.
+datasets:
+  - path: tasks/phybench

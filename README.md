@@ -2,19 +2,13 @@
 
 A unified evaluation and data framework for data-driven scientific reasoning.
 
-ddsr-bench separates reusable model access, evaluation orchestration, result
-collection, and training-data export from each benchmark's data and verification
-contract.
+ddsr-bench provides shared model access, evaluation orchestration, result
+collection, and training-data export while preserving each benchmark's own data,
+prompt, and verification contract.
 
-Start with the [benchmark catalog](BENCHMARKS.md), then use the selected
-benchmark's guide for its data and run configuration. The
-[framework pipeline](PIPELINE.md) explains how the shared and benchmark-specific
-layers interact.
+## 🚀 Installation
 
-## Installation
-
-After cloning this repository, enter its root and create a Python 3.12
-environment:
+Use Python 3.12 or newer. From this project's root:
 
 ```bash
 mamba create -n ddsr-bench python=3.12 -y
@@ -22,64 +16,28 @@ mamba activate ddsr-bench
 python -m pip install -e '.[dev]'
 ```
 
-This installs the shared `ddsr-bench`, `ddsr-solve`, `ddsr-smoke`, and
-`ddsr-vllm` commands. Benchmark guides identify optional dependencies and
-whether evaluation uses Harbor or the static `ddsr-solve` runner.
+Benchmark-specific dependencies are optional. The selected benchmark guide
+identifies the required extra and any external data or container preparation.
 
-## Repository layout
+## 🧭 Choose a benchmark
 
-```text
-configs/jobs/             benchmark and client job configurations
-configs/serving/          local model-serving configurations
-ddsr_bench/benchmarks/    benchmark adapters and documentation
-ddsr_bench/generation/    shared model clients
-ddsr_bench/training/      shared trajectory and SFT export
-docker/                   benchmark verifier images
-```
+Start with the [benchmark catalog](BENCHMARKS.md), then follow that benchmark's
+README and pipeline. The catalog records which benchmarks support static
+evaluation, Harbor isolation, result collection, and trajectory export.
 
-Each benchmark package follows the same capability boundary:
+Shared model-client setup is documented in the
+[generation guide](ddsr_bench/generation/README.md). Job configurations follow
+`configs/jobs/BENCHMARK/CLIENT.yaml` for local vLLM and hosted providers.
 
-```text
-data/          source loading and public/private projection
-generation/    benchmark prompt and generation policy
-evaluation/    task preparation, agent, and verifier
-result.py      adapter for shared result collection
-trajectory.py  adapter for shared training-data export
-```
+## 🧠 Check model access
 
-## Configuration
-
-| Layer | Location | Controls |
-| --- | --- | --- |
-| Serving | `configs/serving/` | Local model process and context limits |
-| Generation | `agents[].kwargs` in a job | Client, model, prompts, and sampling |
-| Evaluation | Remaining job fields | Tasks, attempts, concurrency, and outputs |
-
-Job configurations follow `configs/jobs/BENCHMARK/CLIENT.yaml`. Client setup is
-documented in the [generation guide](ddsr_bench/generation/README.md).
-Each job names its benchmark; the explicit benchmark registry selects the
-supported runner, while `configs/benchmark/` remains the single source for
-dataset and benchmark defaults.
-
-## Workflow
-
-Run these commands from the repository root.
-
-### 1. Prepare
-
-Choose a benchmark from [BENCHMARKS.md](BENCHMARKS.md) and follow its guide to
-perform any required data, dependency, verifier-image, and task preparation.
-These steps intentionally remain benchmark-specific.
-
-### 2. Check the model endpoint
-
-For a local vLLM server, start a serving configuration:
+For a local vLLM server, start the configured model:
 
 ```bash
 ddsr-vllm configs/serving/vllm/macos-qwen38.yaml
 ```
 
-Check model discovery and one chat request in another terminal:
+In another terminal, verify model discovery and one chat completion:
 
 ```bash
 ddsr-smoke \
@@ -88,32 +46,43 @@ ddsr-smoke \
   --model ddsr-local
 ```
 
-### 3. Generate and evaluate
+The generation guide includes equivalent examples for OpenAI, Amazon Bedrock,
+and Alibaba Cloud Model Studio.
 
-Select one of the prepared job configurations:
+## ⚗️ Evaluate
+
+After following the selected benchmark's preparation instructions, run its job
+with Harbor:
 
 ```bash
 harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml
 ```
 
-Harbor schedules independent problem-attempt trials and runs verifier code in
-no-network containers. Some benchmarks expose an additional non-executing mode;
-their guides document its command and limitations.
+Harbor schedules independent problem attempts and isolates executable
+verification. Benchmarks that do not require execution can also use the static
+runner:
 
-To run one prepared problem, append `--path tasks/TASK_SET` and
-`--include-task-name TASK_NAME`. Harbor filters local datasets by task
-directory name; benchmark guides provide concrete IDs.
+```bash
+ddsr-solve --config configs/jobs/BENCHMARK/CLIENT.yaml
+```
 
-### 4. Collect results
+Not every benchmark supports both paths. Concrete commands, task selection, and
+verification behavior belong to the benchmark guide.
+
+## 📊 Collect results
+
+Summarize a completed job without rerunning generation:
 
 ```bash
 ddsr-bench action=collect paths.input=JOB_DIR
 ```
 
-Collection writes `summary.json` and `summary.csv`, groups complete batches by
-attempt, and reports incomplete trials separately.
+This writes `summary.json` and `summary.csv`, groups complete batches by attempt,
+and reports incomplete trials separately.
 
-### 5. Export teacher data
+## 🎓 Export teacher data
+
+Convert completed trials into canonical trajectories and SFT samples:
 
 ```bash
 ddsr-bench \
@@ -123,18 +92,13 @@ ddsr-bench \
   training.view=full
 ```
 
-Export writes `trajectories.jsonl` and `sft.jsonl` without making model calls.
-`native` preserves recorded calls; `full` may add benchmark-specific derived
-samples. One export must contain exactly one benchmark. See the
-[training-data guide](ddsr_bench/training/README.md) for the available views.
+Export makes no model calls. See the
+[training-data guide](ddsr_bench/training/README.md) for the available views and
+their benchmark-specific behavior.
 
-## Trials and outputs
+## 📚 Learn more
 
-A trial is one complete evaluation of one problem for one attempt. Concurrency
-changes how many trials run at once, not how attempts are grouped. Separate
-trial directories prevent concurrent runs from overwriting one another.
-
-Each trial retains its conversation, generated benchmark artifact, validation
-result, usage, model settings, and latency. Trajectory export adds content and
-source hashes. Private verifier data stays outside model messages and agent
-logs. See the [framework pipeline](PIPELINE.md) for the full artifact flow.
+- [Benchmarks](BENCHMARKS.md): supported datasets and capabilities
+- [Framework pipeline](PIPELINE.md): configuration layers and artifact flow
+- [Contributing](CONTRIBUTING.md): repository structure and development checks
+- [Upstream sources](UPSTREAM.md): pinned repositories, datasets, and provenance

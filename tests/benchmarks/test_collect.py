@@ -24,6 +24,7 @@ def write_trial(
         "critpt": "answer.py",
         "scicode": "solution.py",
         "cmphysbench": "answer.txt",
+        "phybench": "answer.txt",
     }
     artifact = artifacts[benchmark]
     (trial / "artifacts" / artifact).write_text("def answer():\n    pass\n")
@@ -41,13 +42,21 @@ def write_trial(
         "config": {"agent": {"kwargs": kwargs}},
         "verifier_result": {"rewards": {"reward": reward}},
     }
-    if benchmark == "cmphysbench":
-        result["static_result"] = {
+    if benchmark in ("cmphysbench", "phybench"):
+        static_result = {
             "reward": reward,
             "status": "passed" if reward == 1 else "different",
-            "answer_type": "Expression",
-            "topic": "Theoretical Foundations",
         }
+        if benchmark == "cmphysbench":
+            static_result.update(
+                {
+                    "answer_type": "Expression",
+                    "topic": "Theoretical Foundations",
+                }
+            )
+        else:
+            static_result["tag"] = "MECHANICS"
+        result["static_result"] = static_result
     (trial / "result.json").write_text(json.dumps(result))
     (trial / "verifier" / "result.json").write_text(
         json.dumps({"status": "passed" if reward else "different"})
@@ -129,6 +138,30 @@ def test_collects_cmphysbench(tmp_path: Path) -> None:
     )
     assert summary["metrics"]["by_answer_type"]["Expression"]["mean_seed"] == 75
     assert summary["metrics"]["by_attempt"]["0"]["accuracy"] == 0
+
+
+def test_collects_phybench(tmp_path: Path) -> None:
+    write_trial(
+        tmp_path,
+        "trial",
+        "133",
+        "2026-01-01",
+        0.8,
+        agent="phybench",
+        benchmark="phybench",
+    )
+
+    summary = collect_trials(tmp_path)
+    trial = summary["batches"][0]["trials"][0]
+
+    assert trial["benchmark_config"] == {"tag": "MECHANICS"}
+    assert trial["artifact"] == "trial/artifacts/answer.txt"
+    assert summary["metrics"]["overall"] == {
+        "trials": 1,
+        "mean_eed": 80.0,
+        "accuracy": 0.0,
+    }
+    assert summary["metrics"]["by_tag"]["MECHANICS"]["mean_eed"] == 80
 
 
 def test_rejects_unknown_benchmark(tmp_path: Path) -> None:
