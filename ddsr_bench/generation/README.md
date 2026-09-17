@@ -64,6 +64,51 @@ ddsr-smoke \
 For another region, update both `base_url` and `extra_allowed_hosts` in the job
 file. The API key is read at runtime and is never stored in the configuration.
 
+`reasoning_effort` is also forwarded when explicitly set; support and accepted
+values depend on the served model. It remains mutually exclusive with
+`enable_thinking`. There is no automatic reasoning downgrade.
+
+For CritPt jobs migrated from an OpenAI-compatible PAI client, set
+`client_name: aliyun` and `request_profile: openai` in `agents[].kwargs`.
+That profile sends `max_completion_tokens` and `reasoning_effort`, omitting
+`temperature` and `top_p` just as the previous OpenAI client did. The default
+`native` profile retains DDSR's `max_tokens`, `temperature`, and `top_p` body.
+Both use the same Chat Completions endpoint and the configured `api_key_env`;
+neither switches to Responses API.
+
+## CritPt long-context generation
+
+CritPt static jobs can connect directly to an already running vLLM server.
+Set `context_window` and optional `context_safety_tokens` (default 32) to count
+each stage's input through `/tokenize` and cap output at the remaining context.
+No context extension is applied by the client. `sampling.max_tokens` caps stage
+one; `formatting_max_tokens` independently caps stage two. Prompt text and the
+two-step conversation remain unchanged, including formatting after an empty or
+length-limited first-stage content response. `require_complete_stages: true`
+is an explicit stricter alternative, disabled by default.
+
+The static runner refills each free concurrency slot immediately. `seed_base`
+derives a stable seed from `(base, problem_id, attempt)` and sends the same seed
+to both stages. Seeds do not imply deterministic GPU kernels or provider
+behavior. This option requires the static runner; Harbor can use a fixed
+`sampling.seed` with a supporting client.
+
+Each completed stage is saved atomically under `agent/stage-N.json`. Streaming
+requests also retain `stage-N.stream.jsonl`, including partial output after a
+disconnect. Interrupted answers are not silently retried after receiving a
+stream chunk. `ddsr-solve --config JOB.yaml --resume` reuses completed trials
+and validated stage checkpoints; only concurrency may change in a normal
+resume. Increasing a formatting budget requires a separate retry directory
+with only the saved first stage copied, then `run_trial(..., resume=True)`.
+Never overwrite a completed trial to retry it without first preserving its
+original artifacts and provenance.
+
+Injected clients with the original `chat(messages)` interface remain supported;
+their sampling settings remain client-managed. Per-trial `seed_base` and an
+explicit formatting budget require `seed` and `max_tokens` keyword support,
+respectively, and fail explicitly when unsupported. Stream journals require
+`stream_path` support; stage checkpoints do not.
+
 ## Amazon Bedrock
 
 `BedrockClient` uses Bedrock's OpenAI-compatible request format. Replace the

@@ -23,3 +23,19 @@ def test_scicode_image() -> None:
     assert all(name in dockerfile for name in ("h5py", "matplotlib", "numpy", "scipy"))
     assert "COPY datasets/scicode/test_data.h5 /opt/scicode/test_data.h5" in dockerfile
     assert "!datasets/scicode/test_data.h5" in ignored
+
+
+def test_all_solver_contexts_exclude_local_artifacts():
+    from docker.utils.build import exclude_paths
+
+    for benchmark in ("critpt", "scicode", "cmphysbench", "phybench"):
+        patterns = (
+            (ROOT / "docker" / benchmark / "Dockerfile.dockerignore")
+            .read_text()
+            .splitlines()
+        )
+        visible = set(exclude_paths(ROOT, patterns))
+        assert "ddsr_bench/grading/validation.py" in visible
+        assert "ddsr_bench/benchmarks/critpt/evaluation/consensus/worker.py" in visible
+        assert ".env" not in visible
+        assert not any(path.startswith("configs/local/") for path in visible)
