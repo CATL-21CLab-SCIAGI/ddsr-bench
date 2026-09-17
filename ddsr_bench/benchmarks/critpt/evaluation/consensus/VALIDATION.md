@@ -1,4 +1,23 @@
-# consensus-63-v1 验证记录
+# Consensus 验证记录
+## consensus-61-v2（2026-09-17）
+
+用户确认排除 47、51，具体原因见 [EXCLUSIONS.md](EXCLUSIONS.md)。
+当前 70 个槽位中 61 题启用、9 题 skipped；启用参考 204 份，权重合计 43.6。
+
+- 全仓库测试：318 passed；Black、Ruff、git diff --check 通过。
+- 真实 Linux 全参考回放：204 matched、9 skipped，healthy=true。
+- wheel 检查：只包含当前 v2 参考包，SHA-256 为
+  `6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`。
+- 新回归检查：两题即使候选格式损坏也不执行；保留 skip_reason，
+  普通/加权分母均排除，CSV score 留空。
+- 两个历史模型的 700 条 attempt 仅重分类评分范围；逐项确认其余题目
+  定义和参考没有变化，没有重执行候选。每模型仍保留 350 条记录，
+  305 条计分、45 条 skipped。Qwen 58/305，DeepSeek 92/305。
+- 新结果：`/mnt/workspace/zhizhou/assets/critpt/runs/grading-ddsr-20260917-skip47-51/`。
+  旧 v1 评分及其哈希保持不变，未用新政策覆盖历史实验记录。
+
+## 以下为历史 consensus-63-v1 验证记录
+
 
 日期：2026-09-16。验证环境：Python 3.12.14、SymPy 1.14.0、NumPy 2.5.3、SciPy 1.18.1。
 

@@ -66,7 +66,7 @@ belong in ignored `configs/local/` and `.env` files.
 
 ### Independent consensus scoring
 
-The [63-challenge consensus evaluator](evaluation/consensus/README.md) scores
+The [61-challenge consensus evaluator](evaluation/consensus/README.md) scores
 existing answers without model calls. It has a separate CLI and report schema;
 its match results do not populate the mainline `reward` or training filters.
 For a native multi-attempt job:

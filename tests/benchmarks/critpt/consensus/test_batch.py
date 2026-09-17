@@ -12,6 +12,7 @@ class Evaluator:
         f"Challenge_{i}_main": {
             "id": f"Challenge_{i}_main",
             "mode": "skip" if i == 3 else "active",
+            "note": "Excluded after review" if i == 3 else "",
         }
         for i in range(1, 4)
     }
@@ -34,6 +35,11 @@ class Evaluator:
             "confidence": 1,
             "methods": [],
             "reference_coverage": "complete",
+            **(
+                {"skip_reason": self.rows[problem_id]["note"]}
+                if status == "skipped"
+                else {}
+            ),
             **({"error": input_error} if input_error else {}),
         }
 
@@ -70,6 +76,10 @@ def test_batch_retains_attempts_errors_unknowns_and_fixed_denominator(tmp_path):
     rows = list(csv.DictReader((output / "attempt-results.csv").open()))
     assert len(rows) == 6
     assert next(r for r in rows if r["status"] == "unknown")["score"] == "0"
+    skipped = next(r for r in rows if r["status"] == "skipped")
+    assert skipped["score"] == ""
+    assert skipped["skip_reason"] == "Excluded after review"
+    assert summary["problems"][2]["skip_reason"] == "Excluded after review"
     assert (
         next(r for r in rows if r["status"] == "candidate_error")["error_stage"]
         == "generation"

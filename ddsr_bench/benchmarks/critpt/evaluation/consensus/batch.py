@@ -136,6 +136,11 @@ def score_batch(
         problems.append(
             {
                 "problem_id": row["id"],
+                **(
+                    {"skip_reason": row.get("note", "")}
+                    if row["mode"] == "skip"
+                    else {}
+                ),
                 "mean_match_rate": (
                     None
                     if row["mode"] == "skip"
@@ -172,6 +177,7 @@ def score_batch(
             "matched",
             "score",
             "error_stage",
+            "skip_reason",
             "candidate_source",
         ]
         writer = csv.DictWriter(f, fieldnames=fields)

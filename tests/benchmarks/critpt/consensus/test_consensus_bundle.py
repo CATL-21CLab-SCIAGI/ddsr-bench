@@ -105,10 +105,10 @@ def test_shipped_bundle_is_complete_and_default_works_outside_repo(
         bundle = load(args.bundle)
         rows = bundle["problems"]
         assert len(rows) == 70
-        assert sum(p["mode"] != "skip" for p in rows) == 63
-        assert sum(len(p["references"]) for p in rows) == 212
+        assert sum(p["mode"] != "skip" for p in rows) == 61
+        assert sum(len(p["references"]) for p in rows) == 204
         assert digest(args.bundle.read_text()) == (
-            "fa0facc0082261b6f42d976e07b8bc1c9302eff517e7802c9bf49f87fd4a3f2f"
+            "6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc"
         )
         assert parser().parse_args(argv + ["--bundle", "custom.json"]).bundle.name == (
             "custom.json"

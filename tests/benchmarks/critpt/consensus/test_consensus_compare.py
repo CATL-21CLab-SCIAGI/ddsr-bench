@@ -8,12 +8,12 @@ from ddsr_bench.benchmarks.critpt.evaluation.consensus.wire import decode, encod
 
 def test_scope_is_disjoint_and_complete():
     active = [n for v in MODES.values() for n in v]
-    assert len(active) == len(set(active)) == 63
+    assert len(active) == len(set(active)) == 61
     assert set(active) | SKIP == set(range(1, 71))
     assert [
         len(MODES[x])
         for x in ("value", "symbolic", "set", "domain", "series", "function")
-    ] == [32, 13, 6, 6, 4, 2]
+    ] == [31, 12, 6, 6, 4, 2]
 
 
 def test_tiny_values_and_arbitrary_precision_integers():

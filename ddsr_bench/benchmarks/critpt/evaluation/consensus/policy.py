@@ -4,9 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-SKIP = {6, 12, 19, 25, 30, 33, 68}
+SKIP = {6, 12, 19, 25, 30, 33, 47, 51, 68}
+SKIP_REASONS = {
+    47: (
+        "Excluded after the 2026-09-17 audit: theta=x violates the stated constant "
+        "boundary condition and the full trace diverges. All four flagship reference "
+        "values (~11.891648076711) match the configuration with theta and phi swapped."
+    ),
+    51: (
+        "Excluded after the 2026-09-17 audit: returns to the origin require even time "
+        "steps, but all four flagship references give Z(3)=2g. Independent path "
+        "enumeration contradicts the references; the elementary-function requirement "
+        "also conflicts with the elliptic-integral case g=2, lambda=1."
+    ),
+}
 MODES = {
-    "symbolic": {3, 11, 15, 18, 29, 34, 36, 38, 39, 51, 53, 60, 67},
+    "symbolic": {3, 11, 15, 18, 29, 34, 36, 38, 39, 53, 60, 67},
     "set": {4, 13, 40, 54, 58, 65},
     "domain": {5, 7, 22, 23, 24, 62},
     "series": {2, 49, 59, 66},
@@ -77,8 +90,8 @@ NOTES = {
     37: "Historical 1% consensus retained; each available complete reference is accepted at field precision.",
     45: "Positive masses follow conduction-minimum / valence-maximum dispersion. Includes equal ratios returning False.",
     49: "Compare requested large-z powers and logarithms; omit z-independent terms.",
-    51: "Generating function analytic at x=0 with Omega(0)=1; samples stay near origin.",
     53: "Reported Fable source duplicates GPT; reported confidence is not recomputed.",
     62: "k_value selects k=1 or k>1, while symbolic dependence on k is preserved.",
     65: "Canonical formal tr/psi syntax only; no general fermion algebra or numeric substitution.",
+    **SKIP_REASONS,
 }

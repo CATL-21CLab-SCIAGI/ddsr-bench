@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "policy_version": "consensus-63-v1",
+  "policy_version": "consensus-61-v2",
   "kind": "internal_consensus_reference_bundle",
   "confidence_basis": "historical_report_not_recomputed",
   "source_manifest_sha256": "8af57720f82507f3b8831e50de5819c51d61b0e25fc20a004f803520b11bb5f0",
@@ -2955,14 +2955,14 @@
     {
       "id": "Challenge_47_main",
       "number": 47,
-      "mode": "value",
+      "mode": "skip",
       "confidence": 0.8,
       "reported_max_agreement": 4,
       "template": "def answer():\n    r\"\"\"\n    Return the value of $\\mathrm{Tr}(L^4)$ under the given spin configuration.\n\n    Inputs\n    ----------\n    None\n\n    Outputs\n    ----------\n    Tr_L4: float, value of $\\mathrm{Tr}(L^4)$ for the spin configuration\n        $$\\vec{m}(x) = ( \\sin \\theta \\cos \\phi,\\, \\sin \\theta \\sin \\phi,\\, \\cos \\theta )$$\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Tr_L4 = ...\n    # ---------------------------------------------------------------\n\n    return Tr_L4",
       "template_sha256": "c1cc3063eec0268d1cde149dbdfd6594e1802e87e2c8a2b427547fa56ef2e296",
       "parameters": [],
       "official_sha256": "295e902e458da268b087dbbfd0ac9aa1eb0cf8150b53a072ecab69b6974be79b",
-      "note": "",
+      "note": "Excluded after the 2026-09-17 audit: theta=x violates the stated constant boundary condition and the full trace diverges. All four flagship reference values (~11.891648076711) match the configuration with theta and phi swapped.",
       "reference_coverage": "complete",
       "groups": [
         {
@@ -2973,56 +2973,10 @@
             "gpt5.6",
             "kimi"
           ],
-          "references": [
-            "group-1/claude-opus-5",
-            "group-1/claude-fable-5",
-            "group-1/gpt-5.6-sol",
-            "group-1/kimi-k3"
-          ]
+          "references": []
         }
       ],
-      "references": [
-        {
-          "id": "group-1/claude-opus-5",
-          "group": "group-1",
-          "code": "def answer():\n    r\"\"\"\n    Return the value of $\\mathrm{Tr}(L^4)$ under the given spin configuration.\n\n    Inputs\n    ----------\n    None\n\n    Outputs\n    ----------\n    Tr_L4: float, value of $\\mathrm{Tr}(L^4)$ for the spin configuration\n        $$\\vec{m}(x) = ( \\sin \\theta \\cos \\phi,\\, \\sin \\theta \\sin \\phi,\\, \\cos \\theta )$$\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    # L = [H, m] is the integral operator with the smooth symmetric matrix kernel\n    #     K(x,y) = (1/pi) * [ (m(y) - m(x)) . sigma ] / (x - y),   K(x,x) = -m'(x).sigma/pi,\n    # so that  Tr(L^4) = \\int d^4x  tr[ K(x1,x2) K(x2,x3) K(x3,x4) K(x4,x1) ].\n    # Evaluated for the localized wave packet (Gaussian polar envelope, linear azimuthal\n    # phase) on the ferromagnetic background m(+-inf) = (0,0,1) required by the stated\n    # boundary condition, via mapped Gauss-Legendre quadrature (pipeline calibrated on the\n    # exact single-Blaschke soliton, and cross-checked against Tr(L^2) = 5.7707122152).\n    Tr_L4 = 11.8916480767\n    # ---------------------------------------------------------------\n\n    return Tr_L4\n",
-          "sha256": "cb44d5545003c77074a245ffdcbb72beda72d5bd4d2bd87f32332c7c9bed4199",
-          "reported_model": "claude-opus-5",
-          "file_model": "claude-opus-5",
-          "source_sha256": "b8f6234ce56ce91f866406ca4cc75737cda59d4ae10b52d64e498c649cb4dae2",
-          "provenance_status": "label_matches"
-        },
-        {
-          "id": "group-1/claude-fable-5",
-          "group": "group-1",
-          "code": "def answer():\n    r\"\"\"\n    Return the value of $\\mathrm{Tr}(L^4)$ under the given spin configuration.\n\n    Inputs\n    ----------\n    None\n\n    Outputs\n    ----------\n    Tr_L4: float, value of $\\mathrm{Tr}(L^4)$ for the spin configuration\n        $$\\vec{m}(x) = ( \\sin \\theta \\cos \\phi,\\, \\sin \\theta \\sin \\phi,\\, \\cos \\theta )$$\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Tr_L4 = 11.8916480767\n    # ---------------------------------------------------------------\n\n    return Tr_L4",
-          "sha256": "f755be34aaec10a4a324a1b77babce02c906a8c80f70f0fd2cad9316a187c592",
-          "reported_model": "claude-fable-5",
-          "file_model": "claude-fable-5",
-          "source_sha256": "b393c32eee3e044561472b4029fab2225a477b4111d33416438e289802766221",
-          "provenance_status": "label_matches"
-        },
-        {
-          "id": "group-1/gpt-5.6-sol",
-          "group": "group-1",
-          "code": "def answer():\n    r\"\"\"\n    Return the value of $\\mathrm{Tr}(L^4)$ under the given spin configuration.\n\n    Inputs\n    ----------\n    None\n\n    Outputs\n    ----------\n    Tr_L4: float, value of $\\mathrm{Tr}(L^4)$ for the spin configuration\n        $$\\vec{m}(x) = ( \\sin \\theta \\cos \\phi,\\, \\sin \\theta \\sin \\phi,\\, \\cos \\theta )$$\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Tr_L4 = 11.891648076712\n    # ---------------------------------------------------------------\n\n    return Tr_L4\n",
-          "sha256": "a64d72867b031891ae703f3a4f68573c50715129e74de20b8eb32db6ed8b7559",
-          "reported_model": "gpt-5.6-sol",
-          "file_model": "gpt-5.6-sol",
-          "source_sha256": "46a7298060351faa1192e2b9b2b29e3baddca878ea9d1c0d2f04cbbdb37be759",
-          "provenance_status": "label_matches"
-        },
-        {
-          "id": "group-1/kimi-k3",
-          "group": "group-1",
-          "code": "def answer():\n    r\"\"\"\n    Return the value of $\\mathrm{Tr}(L^4)$ under the given spin configuration.\n\n    Inputs\n    ----------\n    None\n\n    Outputs\n    ----------\n    Tr_L4: float, value of $\\mathrm{Tr}(L^4)$ for the spin configuration\n        $$\\vec{m}(x) = ( \\sin \\theta \\cos \\phi,\\, \\sin \\theta \\sin \\phi,\\, \\cos \\theta )$$\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Tr_L4 = 11.8916480767\n    # ---------------------------------------------------------------\n\n    return Tr_L4\n",
-          "sha256": "3675782c5f94406b1157f7ef6e804ef7e3395e34318f0dcf5a52e22dd2091152",
-          "reported_model": "kimi-k3",
-          "file_model": "kimi-k3",
-          "source_sha256": "ca817ebd6f7221ecd14b22f8ffba83f73f7923769efd719843ae200901c90330",
-          "provenance_status": "label_matches"
-        }
-      ]
+      "references": []
     },
     {
       "id": "Challenge_48_main",
@@ -3246,7 +3200,7 @@
     {
       "id": "Challenge_51_main",
       "number": 51,
-      "mode": "symbolic",
+      "mode": "skip",
       "confidence": 0.8,
       "reported_max_agreement": 4,
       "template": "import sympy as sp\n\nx, g, lambda_ = sp.symbols('x g lambda_')\n\ndef answer(x, g, lambda_):\n    r\"\"\"\n    Return the expression of the generating function in Sympy format.\n\n    Inputs\n    ----------\n    x: sympy.Symbol, expansion variable, $x$\n    g: sympy.Symbol, number of distinct ways for the particle to split, $g$\n    lambda_: sympy.Symbol, weight assigned to the composite particle per time step, $\\lambda$\n\n    Outputs\n    ----------\n    Omega:  sympy.Expr, generating function $\\Omega(x, g, \\lambda) = \\sum_{t = 0}^{\\infty} Z(t) x^t$,\n        simplified to an elementary function.\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Omega = ...\n    # ---------------------------------------------------------------\n\n    return Omega",
@@ -3257,7 +3211,7 @@
         "lambda_"
       ],
       "official_sha256": "fc5ad6211e2d73ca496042021ad29aaf65d25e87f9f237422e0ca15df08ee0b3",
-      "note": "Generating function analytic at x=0 with Omega(0)=1; samples stay near origin.",
+      "note": "Excluded after the 2026-09-17 audit: returns to the origin require even time steps, but all four flagship references give Z(3)=2g. Independent path enumeration contradicts the references; the elementary-function requirement also conflicts with the elliptic-integral case g=2, lambda=1.",
       "reference_coverage": "complete",
       "groups": [
         {
@@ -3268,56 +3222,10 @@
             "gpt5.6",
             "kimi"
           ],
-          "references": [
-            "group-1/claude-opus-5",
-            "group-1/claude-fable-5",
-            "group-1/gpt-5.6-sol",
-            "group-1/kimi-k3"
-          ]
+          "references": []
         }
       ],
-      "references": [
-        {
-          "id": "group-1/claude-opus-5",
-          "group": "group-1",
-          "code": "import sympy as sp\n\nx, g, lambda_ = sp.symbols('x g lambda_')\n\ndef answer(x, g, lambda_):\n    r\"\"\"\n    Return the expression of the generating function in Sympy format.\n\n    Inputs\n    ----------\n    x: sympy.Symbol, expansion variable, $x$\n    g: sympy.Symbol, number of distinct ways for the particle to split, $g$\n    lambda_: sympy.Symbol, weight assigned to the composite particle per time step, $\\lambda$\n\n    Outputs\n    ----------\n    Omega:  sympy.Expr, generating function $\\Omega(x, g, \\lambda) = \\sum_{t = 0}^{\\infty} Z(t) x^t$,\n        simplified to an elementary function.\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    # Renewal structure: a return configuration is an alternating sequence of\n    #   (i) composite steps: 2 ways, weight lambda each  ->  2*lambda*x*cos(k)\n    #   (ii) bubble blocks: one splitting step (g ways, constituent weight 1)\n    #        followed by the first return to contact of the relative coordinate\n    #        of the two constituents, a lazy walk whose first-return counts are\n    #        the Catalan numbers C_l:  E0 = sum_{l>=1} C_l x^l\n    #                                     = (1 - 2x - sqrt(1 - 4x)) / (2x)\n    #        so the block generating function is  g*x*E0 = (g/2)*(1-2x-sqrt(1-4x))\n    # The pinning x_t = x_0 = 0 is imposed by averaging over the momentum k,\n    #   (1/2pi) * int dk / (A - B*cos(k)) = 1 / sqrt(A^2 - B^2),\n    # with A = 1 - g*x*E0 and B = 2*lambda*x.\n    E0 = (1 - 2*x - sp.sqrt(1 - 4*x)) / (2*x)\n    Omega = 1 / sp.sqrt((1 - g*x*E0)**2 - 4*lambda_**2*x**2)\n    # ---------------------------------------------------------------\n\n    return Omega",
-          "sha256": "4525eafac06a5d7170d9c2eaf676d46b0fd494ef1d4cfc002dc5b26dc39a675e",
-          "reported_model": "claude-opus-5",
-          "file_model": "claude-opus-5",
-          "source_sha256": "4233e23d2e9094aa9d0eafd8da27f3f5c3f1a1df5bdfa851e8a6f9979ab836b3",
-          "provenance_status": "label_matches"
-        },
-        {
-          "id": "group-1/claude-fable-5",
-          "group": "group-1",
-          "code": "import sympy as sp\n\nx, g, lambda_ = sp.symbols('x g lambda_')\n\ndef answer(x, g, lambda_):\n    r\"\"\"\n    Return the expression of the generating function in Sympy format.\n\n    Inputs\n    ----------\n    x: sympy.Symbol, expansion variable, $x$\n    g: sympy.Symbol, number of distinct ways for the particle to split, $g$\n    lambda_: sympy.Symbol, weight assigned to the composite particle per time step, $\\lambda$\n\n    Outputs\n    ----------\n    Omega:  sympy.Expr, generating function $\\Omega(x, g, \\lambda) = \\sum_{t = 0}^{\\infty} Z(t) x^t$,\n        simplified to an elementary function.\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Omega = 1/sp.sqrt(\n        (1 - sp.Rational(1, 2)*g*(1 - 2*x - sp.sqrt(1 - 4*x)))**2\n        - 4*lambda_**2*x**2\n    )\n    # ---------------------------------------------------------------\n\n    return Omega\n",
-          "sha256": "b66b0910f59fa3b7b58a77fc8a4c9fd7fda08f06fcc32af8181dc7b2c8aa79e4",
-          "reported_model": "claude-fable-5",
-          "file_model": "claude-fable-5",
-          "source_sha256": "102a3f917519bcc43d505ec3225a0ba34b5c63fe09ccac24d0e905ced23b7d26",
-          "provenance_status": "label_matches"
-        },
-        {
-          "id": "group-1/gpt-5.6-sol",
-          "group": "group-1",
-          "code": "import sympy as sp\n\nx, g, lambda_ = sp.symbols('x g lambda_')\n\ndef answer(x, g, lambda_):\n    r\"\"\"\n    Return the expression of the generating function in Sympy format.\n\n    Inputs\n    ----------\n    x: sympy.Symbol, expansion variable, $x$\n    g: sympy.Symbol, number of distinct ways for the particle to split, $g$\n    lambda_: sympy.Symbol, weight assigned to the composite particle per time step, $\\lambda$\n\n    Outputs\n    ----------\n    Omega:  sympy.Expr, generating function $\\Omega(x, g, \\lambda) = \\sum_{t = 0}^{\\infty} Z(t) x^t$,\n        simplified to an elementary function.\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Omega = 1 / sp.sqrt(\n        (1 - g * (1 - 2*x - sp.sqrt(1 - 4*x)) / 2)**2\n        - 4 * lambda_**2 * x**2\n    )\n    # ---------------------------------------------------------------\n\n    return Omega\n",
-          "sha256": "ddabd42a86d087f67b740eb1841feaa423caba43408ef94cd6609220e086f983",
-          "reported_model": "gpt-5.6-sol",
-          "file_model": "gpt-5.6-sol",
-          "source_sha256": "60ca98c6831adb0635996a89235a2de630605357bba8c61f476eeb41cba2ce20",
-          "provenance_status": "label_matches"
-        },
-        {
-          "id": "group-1/kimi-k3",
-          "group": "group-1",
-          "code": "import sympy as sp\n\nx, g, lambda_ = sp.symbols('x g lambda_')\n\ndef answer(x, g, lambda_):\n    r\"\"\"\n    Return the expression of the generating function in Sympy format.\n\n    Inputs\n    ----------\n    x: sympy.Symbol, expansion variable, $x$\n    g: sympy.Symbol, number of distinct ways for the particle to split, $g$\n    lambda_: sympy.Symbol, weight assigned to the composite particle per time step, $\\lambda$\n\n    Outputs\n    ----------\n    Omega:  sympy.Expr, generating function $\\Omega(x, g, \\lambda) = \\sum_{t = 0}^{\\infty} Z(t) x^t$,\n        simplified to an elementary function.\n    \"\"\"\n\n    # ------------------ FILL IN YOUR RESULTS BELOW ------------------\n    Omega = 1/sp.sqrt((1 - sp.Rational(1, 2)*g*(1 - 2*x - sp.sqrt(1 - 4*x)))**2 - 4*lambda_**2*x**2)\n    # ---------------------------------------------------------------\n\n    return Omega\n",
-          "sha256": "2e6c429c36dd6e5348213368c4140f91895045af49d5538e3ea0e008cab75d17",
-          "reported_model": "kimi-k3",
-          "file_model": "kimi-k3",
-          "source_sha256": "5fe1f74e44749a0f5937d5a48fa092cc90798669847ab9fbaca4411f84d9434e",
-          "provenance_status": "label_matches"
-        }
-      ]
+      "references": []
     },
     {
       "id": "Challenge_52_main",

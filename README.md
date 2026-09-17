@@ -103,7 +103,7 @@ their benchmark-specific behavior.
 - [Contributing](CONTRIBUTING.md): repository structure and development checks
 - [Upstream sources](UPSTREAM.md): pinned repositories, datasets, and provenance
 
-CritPt additionally supports [independent consensus scoring](ddsr_bench/benchmarks/critpt/evaluation/consensus/README.md)
+CritPt additionally supports 61-problem [independent consensus scoring](ddsr_bench/benchmarks/critpt/evaluation/consensus/README.md)
 for saved multi-attempt answers, with Docker or Linux worker isolation. Its
 per-attempt match results and aggregate means remain separate from mainline
 reward and training-data selection. See the [migration notes](ddsr_bench/benchmarks/critpt/MIGRATION.md)

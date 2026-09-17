@@ -58,3 +58,7 @@ only when verifier-side answer data is available. Artificial Analysis
 submission is a separate, explicit action after collecting one complete batch.
 
 See the [CritPt guide](README.md) for commands and data setup.
+
+The current CritPt consensus policy scores 61 of 70 main problems. Nine skipped
+problems, including audited exclusions 47 and 51, retain per-attempt records and
+are omitted from score denominators; generation still covers all requested tasks.

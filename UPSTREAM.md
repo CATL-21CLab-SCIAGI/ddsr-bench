@@ -11,11 +11,14 @@
 - Source: https://github.com/CATL-21CLab-SCIAGI/critpt-eval
 - Source commit: `93425280f1829bfced2a51ff52f0d0deba540863`.
 - Shared ancestor with DDSR: `aec06ded389df0e60b25b4272c4337269aa4ccda`.
-- Internal policy: `consensus-63-v1`, 70 slots, 63 active, 7 skipped,
-  212 reviewed references. The versioned bundle carries reference provenance
+- Current internal policy: `consensus-61-v2`, 70 slots, 61 active, 9 skipped,
+  204 reviewed references. On 2026-09-17, the user approved excluding 47 and 51
+  after the [reference audit](ddsr_bench/benchmarks/critpt/evaluation/consensus/EXCLUSIONS.md). The versioned bundle carries reference provenance
   and template/code digests. This policy is not official CritPt grading.
 - Reference bundle SHA-256:
-  `fa0facc0082261b6f42d976e07b8bc1c9302eff517e7802c9bf49f87fd4a3f2f`.
+  `6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`.
+  Historical `consensus-63-v1` had 63 active problems and 212 references; its
+  hash was `fa0facc0082261b6f42d976e07b8bc1c9302eff517e7802c9bf49f87fd4a3f2f`.
 - Original code validator from `d83b0d9`, unchanged in DDSR:
   `1b388bfd2107206393c9c121b8dcfb25065921880f80fa7b9c52a129e4bb5a50`.
 - Migrated project choices: concurrency slot refill, streaming journals,

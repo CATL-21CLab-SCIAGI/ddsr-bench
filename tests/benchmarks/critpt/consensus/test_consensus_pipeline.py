@@ -109,6 +109,28 @@ def test_summary_fixed_denominator_and_uncertainty():
     assert report["sampled_matches"] == 1
 
 
+@pytest.mark.parametrize("number", [47, 51])
+def test_audited_exclusions_keep_reason_without_executing_bad_candidates(number):
+    from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import (
+        DEFAULT_BUNDLE,
+        load,
+    )
+
+    class NoRun:
+        def run(self, _):
+            raise AssertionError("excluded candidate or reference executed")
+
+    evaluator = Evaluator(load(DEFAULT_BUNDLE), NoRun())
+    result = evaluator.grade(
+        f"Challenge_{number}_main", "nonsense", input_error={"stage": "generation"}
+    )
+    assert result["status"] == "skipped" and result["matched"] is None
+    assert "2026-09-17 audit" in result["skip_reason"]
+    summary = summarize([result])
+    assert summary["active"] == 0 and summary["weight_total"] == 0
+    assert summary["match_rate"] is None
+
+
 def test_validator_does_not_accept_import_or_signature_changes():
     with pytest.raises(ValueError):
         validate("import os\ndef answer(): return 1", "def answer(): pass")

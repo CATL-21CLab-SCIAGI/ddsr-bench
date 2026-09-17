@@ -1,19 +1,21 @@
 # 独立的 CritPt 内部共识评测
 
-`ddsr_bench.benchmarks.critpt.evaluation.consensus` 对候选答案做内部共识参考匹配。它使用独立入口、比较器、数据包和结果格式，只共享 `ddsr_bench.grading.validation` 的结构校验规则，不调用现有 reward grader，也不接入官方提交、Harbor任务编译、旧汇总或训练导出流程。当前版本为 `consensus-63-v1`。
+`ddsr_bench.benchmarks.critpt.evaluation.consensus` 对候选答案做内部共识参考匹配。它使用独立入口、比较器、数据包和结果格式，只共享 `ddsr_bench.grading.validation` 的结构校验规则，不调用现有 reward grader，也不接入官方提交、Harbor任务编译、旧汇总或训练导出流程。当前版本为 `consensus-61-v2`。
 
 运行时不使用LLM judge。参考匹配不等于官方正确性标签；历史confidence也不是校准后的正确概率。
 
 ## 范围和结果
 
-保留70个main题号，评分63题，skip为：`6, 12, 19, 25, 30, 33, 68`。
+保留70个main题号，评分61题，skip为：`6, 12, 19, 25, 30, 33, 47, 51, 68`。
 
-历史confidence分布：80%有46题，60%有8题，40%有9题，权重合计45.2。本版本不根据新的域/精度规则重新计票。
+历史confidence分布：80%有44题，60%有8题，40%有9题，权重合计43.6。本版本保留历史 confidence，不重新计票。
+
+2026-09-17 审计后，经用户确认新增 skip 47、51，原因见 [排除记录](EXCLUSIONS.md)。两题在每个 attempt 中仍保留 `status=skipped`、`matched=null` 和 `skip_reason`，不计入普通或加权分母；CSV 的 score 留空。旧 `consensus-63-v1` 结果属于历史评分，不应与本版本混用。
 
 | 主要模式 | 题数 | 题号 |
 | --- | ---: | --- |
-| 固定值、有序结构 | 32 | 1,8,9,10,14,16,17,21,26,27,28,31,32,35,37,41,42,43,44,46,47,48,50,52,55,56,57,61,63,64,69,70 |
-| 符号函数 | 13 | 3,11,15,18,29,34,36,38,39,51,53,60,67 |
+| 固定值、有序结构 | 31 | 1,8,9,10,14,16,17,21,26,27,28,31,32,35,37,41,42,43,44,46,48,50,52,55,56,57,61,63,64,69,70 |
+| 符号函数 | 12 | 3,11,15,18,29,34,36,38,39,53,60,67 |
 | 无序集合、根集 | 6 | 4,13,40,54,58,65 |
 | 分域、端点、区间 | 6 | 5,7,22,23,24,62 |
 | 指定阶数的展开 | 4 | 2,49,59,66 |
@@ -32,7 +34,7 @@
 
 每条结果包含 `evaluation_kind=internal_consensus`、`policy_version`、历史 `confidence`、`matched`、匹配的参考/组、`reference_coverage` 和 `methods`。没有旧流程的 `reward` 或 `verified` 字段。`methods`区分符号证明、数值容差、固定点核验、端点处理等；固定样本吻合不是恒等证明。发现数值反例时记录对应测试点与值。
 
-主命中率分母固定为63；未决、缺失、执行失败不会缩小分母。另报状态数量和按confidence分层的结果。加权命中率为 `sum(confidence * matched) / 45.2`。该规则使全匹配时结果为1。
+主命中率分母固定为61；未决、缺失、执行失败不会缩小分母。另报状态数量和按confidence分层的结果。加权命中率为 `sum(confidence * matched) / 43.6`。该规则使全匹配时结果为1。
 
 ## 安装与内置参考包
 
@@ -44,9 +46,9 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.consensus --help
 # 同一入口也注册为 ddsr-critpt-consensus
 ```
 
-仓库已包含 [`data/consensus-63-v1.json`](data/consensus-63-v1.json)，大小为430,880字节（约421 KiB）。它随Git和Python安装包一起分发。`score`和`replay`默认使用此文件，路径不依赖当前工作目录；也可用`--bundle /path/to/custom.json`显式指定其他包。正常评测不再需要原始模型JSON、外部清单或题面目录。
+仓库已包含 [`data/consensus-61-v2.json`](data/consensus-61-v2.json)，大小为420,292字节（约410 KiB）。它随Git和Python安装包一起分发。`score`和`replay`默认使用此文件，路径不依赖当前工作目录；也可用`--bundle /path/to/custom.json`显式指定其他包。正常评测不再需要原始模型JSON、外部清单或题面目录。
 
-包内保存70个题号、63道启用题的212份参考代码、模板、confidence、共识组和来源哈希。其SHA-256为`fa0facc0082261b6f42d976e07b8bc1c9302eff517e7802c9bf49f87fd4a3f2f`，与此前完整回放所用的本地包逐字节相同。212份记录包含重复来源，不能视为212份独立证据。
+包内保存70个题号、61道启用题的204份参考代码、模板、confidence、共识组和来源哈希。其SHA-256为`6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`；47、51 的历史参考保存在 Git 的 v1 版本和审计记录中。204份记录包含重复来源，不能视为204份独立证据。
 
 参考包仅供评测端使用。各 `docker/*/Dockerfile.dockerignore`明确排除`ddsr_bench/benchmarks/critpt/evaluation/consensus/data/`，因此标准solver/worker镜像只复制执行代码，不包含参考包。含标答的完整仓库或安装包不作为solver的可见工作目录。候选执行请求仍只携带当前候选、模板和输入。
 
@@ -61,7 +63,7 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.consensus build \
   --output .consensus/bundle.json
 ```
 
-构建器只收录报告中最大共识组的现存代码，校验原始文件SHA-256和模板签名，并保存全部70个槽位。63题之外的参考不执行。
+构建器只收录报告中最大共识组的现存代码，校验原始文件SHA-256和模板签名，并保存全部70个槽位。61题之外的参考不执行。
 
 `.consensus/`继续被Git忽略，用于本地评分结果、诊断文件或临时重建的包。输出文件使用排他创建，不覆盖已有结果。
 
@@ -96,7 +98,7 @@ ddsr-critpt-consensus score \
   --image ddsr-critpt-consensus:local
 ```
 
-若目录中只有一个attempt，会自动选择；多个attempt必须显式提供`--attempt`。每次评分只使用选定的attempt，缺题不会从其他attempt补取。平铺答案和原生trial不能混用，也不能把多个job目录合并成一次评分。每次结果仍保留70题槽位，分母为63道启用题。
+若目录中只有一个attempt，会自动选择；多个attempt必须显式提供`--attempt`。每次评分只使用选定的attempt，缺题不会从其他attempt补取。平铺答案和原生trial不能混用，也不能把多个job目录合并成一次评分。每次结果仍保留70题槽位，分母为61道启用题。
 
 候选JSON损坏、`generated_code`缺失/为null/不是字符串、空代码、无法提取代码或文件读取失败，均记录为该题的`candidate_error`，`error.stage=input`；其他题继续评分。原生trial没有答案产物但已有生成/格式校验错误时，保留上游错误，记为`candidate_error`、`error.stage=generation`；没有失败记录也没有答案时为`missing_candidate`。这两种情况均不通过，且不缩小分母。
 
@@ -148,7 +150,7 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.consensus replay \
   --all-references --trusted-local --jobs 4
 ```
 
-默认replay每题选第一份可用参考；`--all-references`覆盖所有212份获准参考记录，另保留7个skip。`--problems 3,24,62`可做明确标为partial的诊断回放。回放成功说明参考可执行、序列化和匹配规则可用，不验证其物理正确性，也不证明每组参考在所有参数上彼此相等。
+默认replay每题选第一份可用参考；`--all-references`覆盖所有204份获准参考记录，另保留9个skip。`--problems 3,24,62`可做明确标为partial的诊断回放。回放成功说明参考可执行、序列化和匹配规则可用，不验证其物理正确性，也不证明每组参考在所有参数上彼此相等。
 
 ## 比较政策
 
@@ -191,8 +193,8 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.consensus replay \
 
 ```bash
 python -m pytest -q
-python -m ruff check ddsr_bench/benchmarks/critpt/evaluation/consensus tests/consensus
-python -m black --target-version py312 --check ddsr_bench/benchmarks/critpt/evaluation/consensus tests/consensus
+python -m ruff check ddsr_bench/benchmarks/critpt/evaluation/consensus tests/benchmarks/critpt/consensus
+python -m black --target-version py312 --check ddsr_bench/benchmarks/critpt/evaluation/consensus tests/benchmarks/critpt/consensus
 ```
 
 测试覆盖极小数和大整数、非贪心集合配对、复根、复共轭、明确错误端点、级数阶数、区间开闭及符号k、跨参考拼接拒绝、非有限参考、执行超时、固定分母、数据包完整性、独立模块边界等。
@@ -214,8 +216,8 @@ ddsr-critpt-consensus batch \
 `summary.json` 记录逐题、逐 attempt 的 `status`、`matched` 及平均值；
 `attempt-results.csv` 方便汇总，`progress.json` 表示完成进度。
 
-平均值为 `matched / (63 × attempt 数)`。生成格式错误、缺失回答和 `unknown`
-保留在分母中；7 个 skip 不进入分母。`unknown` 仍保留 `matched: null`，不会
+平均值为 `matched / (61 × attempt 数)`。生成格式错误、缺失回答和 `unknown`
+保留在分母中；9 个 skip 不进入分母。`unknown` 仍保留 `matched: null`，不会
 改写成已经证实错误。参考执行错误、候选执行错误、符号归一化问题均保留原始
 诊断。命令拒绝覆盖已有输出目录；异常退出时已落盘的 trial 仍保留。
 

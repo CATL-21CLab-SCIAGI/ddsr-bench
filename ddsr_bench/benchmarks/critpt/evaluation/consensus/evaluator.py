@@ -59,7 +59,7 @@ class Evaluator:
             "methods": [],
         }
         if row["mode"] == "skip":
-            return base
+            return {**base, "skip_reason": row.get("note", "")}
         if input_error is not None:
             return {
                 **base,

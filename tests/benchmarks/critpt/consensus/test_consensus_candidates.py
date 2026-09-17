@@ -217,10 +217,10 @@ async def test_native_rollout_to_score_keeps_two_step_and_failure_diagnostics(tm
     assert report["summary"]["statuses"] == {
         "matched": 1,
         "candidate_error": 1,
-        "missing_candidate": 61,
-        "skipped": 7,
+        "missing_candidate": 59,
+        "skipped": 9,
     }
-    assert report["summary"]["active"] == 63
+    assert report["summary"]["active"] == 61
     good, bad = report["results"][:2]
     assert good["generation"]["responses"][0]["finish_reason"] == "length"
     assert good["generation"]["responses"][0]["content_empty"] is True
@@ -252,4 +252,4 @@ def test_bad_flat_input_does_not_abort_score_report(tmp_path):
     report = json.loads(output.read_text())
     assert report["results"][0]["status"] == "candidate_error"
     assert report["results"][16]["status"] == "matched"
-    assert report["summary"]["active"] == 63
+    assert report["summary"]["active"] == 61

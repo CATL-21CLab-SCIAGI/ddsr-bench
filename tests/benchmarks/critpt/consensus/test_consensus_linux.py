@@ -104,7 +104,7 @@ def test_host_files_credentials_and_reference_bundle_are_hidden(
         str(secret),
         str(DEFAULT_BUNDLE),
         str(DEFAULT_BUNDLE.parents[6] / ".env"),
-        "/app/ddsr_bench/benchmarks/critpt/evaluation/consensus/data/consensus-63-v1.json",
+        "/app/ddsr_bench/benchmarks/critpt/evaluation/consensus/data/consensus-61-v2.json",
         "/proc/self/environ",
         "/proc/self/fd",
         "/root",
