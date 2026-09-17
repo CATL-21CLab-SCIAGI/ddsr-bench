@@ -36,9 +36,37 @@ class CritPtAgent(BaseAgent):
         api_key_env: str | None = None,
         client: ChatClient | None = None,
         client_name: ClientName = "vllm",
+        formatting_max_tokens: int | None = None,
+        require_complete_stages: bool = False,
+        context_window: int | None = None,
+        context_safety_tokens: int = 32,
+        request_profile: str | None = None,
+        timeout: float = 1200,
+        seed_base: int | None = None,
         **kwargs: Any,
     ) -> None:
+        if seed_base is not None:
+            raise ValueError(
+                "seed_base requires the CritPt static runner; use ddsr-solve"
+            )
+        if context_window is not None and client_name != "vllm":
+            raise ValueError("dynamic context budgeting requires vllm")
+        if request_profile is not None and client_name != "aliyun":
+            raise ValueError("request_profile requires aliyun")
         super().__init__(logs_dir, model_name, **kwargs)
+        self.client_options = {"timeout": timeout}
+        if context_window is not None:
+            self.client_options.update(
+                context_window=context_window,
+                context_safety_tokens=context_safety_tokens,
+            )
+        if request_profile is not None:
+            self.client_options["request_profile"] = request_profile
+        self.generation_options = {
+            "formatting_max_tokens": formatting_max_tokens,
+            "require_complete_stages": require_complete_stages,
+            "checkpoint_dir": logs_dir,
+        }
         self.base_url = base_url
         self.style = style
         self.sampling = (
@@ -75,21 +103,31 @@ class CritPtAgent(BaseAgent):
         context: AgentContext,
     ) -> None:
         problem = decode_instruction(instruction)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
         if self.client is None:
             async with CLIENTS[self.client_name](
                 self.base_url,
                 self.sampling,
                 stream=self.stream,
                 api_key=(self._get_env(self.api_key_env) if self.api_key_env else None),
+                **self.client_options,
             ) as client:
                 await client.preflight()
                 answer, record = await generate(
-                    client, problem, self.style, self.sampling
+                    client,
+                    problem,
+                    self.style,
+                    self.sampling,
+                    **self.generation_options,
                 )
         else:
             await self.client.preflight()
             answer, record = await generate(
-                self.client, problem, self.style, self.sampling
+                self.client,
+                problem,
+                self.style,
+                self.sampling,
+                **self.generation_options,
             )
 
         self.logs_dir.mkdir(parents=True, exist_ok=True)

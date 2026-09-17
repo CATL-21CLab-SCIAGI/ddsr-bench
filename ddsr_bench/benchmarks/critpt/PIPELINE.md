@@ -34,6 +34,9 @@ flowchart TD
     O --> W
     V --> W
     W --> X["Collect or export"]
+    W --> Z["Optional independent consensus batch"]
+    Z --> AA["Isolated candidate execution; references stay evaluator-side"]
+    AA --> AB["Per-attempt match results and mean; no reward mutation"]
     X --> Y["Optional explicit 70-main submission"]
 ```
 
@@ -42,6 +45,12 @@ challenge conversation API additionally supports carrying prior subproblem
 history forward or generating subproblems independently. One-step uses one model
 call per problem; two-step uses two calls but still produces one artifact and
 one trial result.
+
+Static concurrency refills free slots as trials finish. Each stage saves a
+checkpoint and optional stream journal. The second stage still runs when the
+first-stage content is empty or truncated unless strict stage checks are
+explicitly enabled. Consensus uses the same original AST validator and never
+recovers code from reasoning-only responses.
 
 Official public challenges do not expose reference answers or testcases, so
 their local Harbor result is format validation. Reference execution is used

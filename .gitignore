@@ -11,3 +11,8 @@ outputs/
 tasks/
 datasets/
 .hydra/
+
+.env
+.env.*
+configs/local/
+.consensus/

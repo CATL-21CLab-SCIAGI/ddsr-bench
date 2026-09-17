@@ -6,6 +6,33 @@
 - Commit: `17c2545c302762d2f2d644d923ea4c301605cb08`
 - Reused: the prompt text and one-step/two-step conversation behavior.
 
+### CritPt consensus and long-context migration
+
+- Source: https://github.com/CATL-21CLab-SCIAGI/critpt-eval
+- Source commit: `93425280f1829bfced2a51ff52f0d0deba540863`.
+- Shared ancestor with DDSR: `aec06ded389df0e60b25b4272c4337269aa4ccda`.
+- Internal policy: `consensus-63-v1`, 70 slots, 63 active, 7 skipped,
+  212 reviewed references. The versioned bundle carries reference provenance
+  and template/code digests. This policy is not official CritPt grading.
+- Reference bundle SHA-256:
+  `fa0facc0082261b6f42d976e07b8bc1c9302eff517e7802c9bf49f87fd4a3f2f`.
+- Original code validator from `d83b0d9`, unchanged in DDSR:
+  `1b388bfd2107206393c9c121b8dcfb25065921880f80fa7b9c52a129e4bb5a50`.
+- Migrated project choices: concurrency slot refill, streaming journals,
+  atomic stage checkpoints, deterministic trial-seed derivation, dynamic vLLM
+  context budgeting and Linux worker isolation. Prompt and fallback behavior
+  remain pinned upstream behavior; these operational additions are local.
+- Historical local inference: Qwen3.8-27B, xhigh, native context 262144 without
+  YaRN, 32 concurrent trials; DeepSeek v4 Flash 0731, max reasoning, PAI Chat
+  Completions, 16 concurrent trials, first-stage cap 393216. Both used five
+  attempts, seed base 42 and an initial formatting cap 65536; selected retries
+  used 131072 with unchanged per-trial seeds. These are recorded run settings,
+  not a claim about unpublished Artificial Analysis request bodies.
+- License: the source CritPt integration does not ship a standalone license
+  file; migration preserves existing provenance and does not grant a new
+  license to reference material. Reference distribution remains subject to
+  the source repositories' terms.
+
 ## Auto_CritPt_Grader
 
 - Repository: https://github.com/CATL-21CLab-SCIAGI/Auto_CritPt_Grader

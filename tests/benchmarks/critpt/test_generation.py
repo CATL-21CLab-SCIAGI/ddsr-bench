@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -125,3 +126,151 @@ async def test_challenge_uses_stored_golden_context_independently() -> None:
     await converse_challenge(challenge(), "one-step", model.complete, use_golden=True)
 
     assert all(len(request) == 2 for request in model.calls)
+
+
+@pytest.mark.asyncio
+async def test_stage_one_survives_stage_two_failure(tmp_path: Path) -> None:
+    from ddsr_bench.benchmarks.critpt.generation.runner import generate
+    from ddsr_bench.generation.client import ChatResponse, Sampling
+
+    class Client:
+        calls = 0
+
+        async def chat(self, messages, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                assert "max_tokens" not in kwargs
+                return ChatResponse(
+                    "first answer", "reasoning", "solver", None, None, 1, {}, "stop"
+                )
+            checkpoint = json.loads((tmp_path / "stage-1.json").read_text())
+            assert checkpoint["responses"][0]["reasoning"] == "reasoning"
+            assert kwargs["max_tokens"] == 65536
+            assert messages[-2] == {"role": "assistant", "content": "first answer"}
+            raise RuntimeError("formatting disconnected")
+
+    with pytest.raises(RuntimeError, match="formatting disconnected"):
+        await generate(
+            Client(),
+            PROBLEM,
+            "two-step",
+            Sampling("solver"),
+            formatting_max_tokens=65536,
+            checkpoint_dir=tmp_path,
+        )
+    assert (tmp_path / "response.json").is_file()
+    assert not (tmp_path / "stage-2.json").exists()
+
+
+@pytest.mark.asyncio
+async def test_truncation_is_saved_and_not_passed_to_formatting(tmp_path: Path) -> None:
+    from ddsr_bench.benchmarks.critpt.generation.runner import generate
+    from ddsr_bench.generation.client import ChatResponse, Sampling
+
+    class Client:
+        calls = 0
+
+        async def chat(self, messages, **kwargs):
+            self.calls += 1
+            return ChatResponse(
+                "unfinished", "thought", "solver", None, None, 1, {}, "length"
+            )
+
+    client = Client()
+    with pytest.raises(ValueError, match="did not finish normally: length"):
+        await generate(
+            client,
+            PROBLEM,
+            "two-step",
+            Sampling("solver"),
+            checkpoint_dir=tmp_path,
+            require_complete_stages=True,
+        )
+    assert client.calls == 1
+    assert (
+        json.loads((tmp_path / "stage-1.json").read_text())["responses"][0][
+            "finish_reason"
+        ]
+        == "length"
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("formatting_cap", [65536, 131072])
+async def test_resume_reuses_stage_one_and_preserves_interrupted_stream(
+    tmp_path, formatting_cap
+):
+    from ddsr_bench.benchmarks.critpt.generation.runner import generate
+    from ddsr_bench.generation.client import ChatResponse, Sampling
+
+    class Interrupted:
+        calls = 0
+
+        async def chat(self, messages, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return ChatResponse(
+                    "derivation", "thought", "solver", None, 42, 1, {}, "stop"
+                )
+            kwargs["stream_path"].write_text("partial formatting stream\n")
+            raise RuntimeError("interrupted")
+
+    sampling = Sampling("solver", seed=42)
+    with pytest.raises(RuntimeError, match="interrupted"):
+        await generate(
+            Interrupted(),
+            PROBLEM,
+            "two-step",
+            sampling,
+            formatting_max_tokens=65536,
+            checkpoint_dir=tmp_path,
+        )
+
+    class Resumed:
+        calls = 0
+
+        async def chat(self, messages, **kwargs):
+            self.calls += 1
+            assert messages[-2] == {"role": "assistant", "content": "derivation"}
+            assert kwargs["seed"] == 42 and kwargs["max_tokens"] == formatting_cap
+            assert not kwargs["stream_path"].exists()
+            return ChatResponse("final code", None, "solver", None, 42, 1, {}, "stop")
+
+    client = Resumed()
+    answer, record = await generate(
+        client,
+        PROBLEM,
+        "two-step",
+        sampling,
+        formatting_max_tokens=formatting_cap,
+        checkpoint_dir=tmp_path,
+        resume=True,
+    )
+    assert client.calls == 1 and answer == "final code"
+    assert len(record["responses"]) == 2
+    assert record["formatting_max_tokens"] == formatting_cap
+    archived = list(tmp_path.glob("stage-2.interrupted-*.stream.jsonl"))
+    assert (
+        len(archived) == 1 and archived[0].read_text() == "partial formatting stream\n"
+    )
+    with pytest.raises(ValueError, match="formatting_max_tokens changed"):
+        await generate(
+            client,
+            PROBLEM,
+            "two-step",
+            sampling,
+            formatting_max_tokens=formatting_cap + 1,
+            checkpoint_dir=tmp_path,
+            resume=True,
+        )
+    assert client.calls == 1
+    with pytest.raises(ValueError, match="sampling changed"):
+        await generate(
+            client,
+            PROBLEM,
+            "two-step",
+            Sampling("solver", seed=43),
+            formatting_max_tokens=65536,
+            checkpoint_dir=tmp_path,
+            resume=True,
+        )

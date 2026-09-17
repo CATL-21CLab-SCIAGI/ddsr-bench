@@ -58,6 +58,32 @@ ddsr-solve --config configs/jobs/critpt/vllm.yaml
 The default job directory is `outputs/static/critpt-official`. Static evaluation
 checks answer structure and safety but does not execute generated code.
 
+Long-context stage budgets, streaming checkpoints, stable per-attempt seeds,
+and resume are described in the [generation guide](../../generation/README.md#critpt-long-context-generation).
+Portable five-attempt examples are in `configs/jobs/critpt/qwen-long-context.yaml`
+and `configs/jobs/critpt/deepseek-pai-max.yaml`. Machine paths and credentials
+belong in ignored `configs/local/` and `.env` files.
+
+### Independent consensus scoring
+
+The [63-challenge consensus evaluator](evaluation/consensus/README.md) scores
+existing answers without model calls. It has a separate CLI and report schema;
+its match results do not populate the mainline `reward` or training filters.
+For a native multi-attempt job:
+
+```bash
+ddsr-critpt-consensus replay --all-references --backend linux --output replay.json
+ddsr-critpt-consensus batch --backend linux \
+  --candidates /path/to/static/job --output /path/to/new-grading-directory
+```
+
+The Linux backend requires bubblewrap and libseccomp and fails closed if
+isolation cannot be established. Docker remains the default backend. Reference
+data lives only on the evaluator side and is excluded from every solver image.
+The model receives public problems; a candidate worker receives only its code,
+template and test inputs. See the [migration notes](MIGRATION.md) for historical
+jobs, path mapping, configuration and validation provenance.
+
 ### Solve one challenge
 
 CritPt can read one existing challenge JSON and generate its answer without
