@@ -1,7 +1,4 @@
 *
 !ddsr_bench/
 !ddsr_bench/**
-
-# Verifier reference answers must not enter solver images.
-ddsr_bench/benchmarks/critpt/evaluation/consensus/data/
 **/__pycache__/

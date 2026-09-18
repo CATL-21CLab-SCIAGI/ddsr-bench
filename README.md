@@ -108,3 +108,5 @@ for saved multi-attempt answers, with Docker or Linux worker isolation. Its
 per-attempt match results and aggregate means remain separate from mainline
 reward and training-data selection. See the [migration notes](ddsr_bench/benchmarks/critpt/MIGRATION.md)
 for long-context runs and historical artifact compatibility.
+The evaluator requires an external reference bundle; its guide documents the
+default asset path and the `--bundle` override.

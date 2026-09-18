@@ -50,6 +50,8 @@ backups, grading reports and launch snapshots belong in shared assets. This
 installation uses `/mnt/workspace/zhizhou/assets/critpt`; DLC mounts the same
 storage under `/mnt/nas/zhizhou/assets/critpt`.
 
+- `references/consensus-61-v2.json`: evaluator-only reference asset; its default
+  absolute path and SHA-256 are recorded in `evaluation/consensus/bundle.py`.
 - `runs/outputs/static/`: original and retry native job directories.
 - `runs/outputs/launches/`: immutable launch configs, manifests, logs and source snapshots.
 - `runs/grading-original/`: immutable CritPt grading and reference replay reports.
@@ -97,8 +99,9 @@ policy as the source repository.
 Docker is the default worker backend. Linux optionally uses bubblewrap,
 libseccomp, namespaces, a mount allowlist, dropped privileges, resource limits
 and wall-clock termination. It never falls back to execution on the host.
-Reference data is shipped for the evaluator but excluded from every DDSR solver
-Docker context. Linux workers mount only the interpreter, scientific libraries,
+Reference data is stored outside the repository and wheel. The evaluator reads
+its configured absolute path (or an explicit `--bundle`); it is not included in
+solver build contexts. Linux workers mount only the interpreter, scientific libraries,
 package initializers and selected execution modules; they cannot read the
 reference bundle, credentials or repository tree.
 
@@ -121,7 +124,7 @@ processes, scripts and symlinks for dependencies on the old path. DDSR's Python
 environment must not import code or packages from that checkout. Keep the
 recoverable archive and all shared results after removal.
 
-### Recorded migration validation (2026-09-17)
+### Recorded migration validation (2026-09-17, before reference externalization)
 
 - 316 tests passed, including all four benchmark contracts and real Linux
   namespace, filesystem, syscall, memory/file limit and worker cleanup tests.

@@ -83,11 +83,11 @@ def test_failed_preflight_fails_closed(sandbox, monkeypatch):
         Runtime(backend="linux")
 
 
-def test_worker_protocol_and_provenance(sandbox):
+def test_worker_protocol_and_provenance(sandbox, sample_bundle_path):
     result = evaluate(sandbox, "print('discard me'); return 42")
     assert result["status"] == "ok"
     assert result["outputs"] == [{"t": "int", "v": "42"}]
-    metadata = provenance(DEFAULT_BUNDLE, sandbox)
+    metadata = provenance(sample_bundle_path, sandbox)
     assert metadata["execution"] == "linux"
     assert metadata["image_id"] is None
     assert metadata["linux_sandbox"]["policy"] == "consensus-linux-v1"
@@ -103,8 +103,7 @@ def test_host_files_credentials_and_reference_bundle_are_hidden(
     paths = [
         str(secret),
         str(DEFAULT_BUNDLE),
-        str(DEFAULT_BUNDLE.parents[6] / ".env"),
-        "/app/ddsr_bench/benchmarks/critpt/evaluation/consensus/data/consensus-61-v2.json",
+        str(Path(__file__).resolve().parents[4] / ".env"),
         "/proc/self/environ",
         "/proc/self/fd",
         "/root",

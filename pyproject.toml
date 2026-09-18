@@ -76,7 +76,6 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-"ddsr_bench.benchmarks.critpt.evaluation.consensus" = ["data/*.json"]
 "ddsr_bench.benchmarks.cmphysbench.evaluation.seed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.phybench.evaluation.eed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]

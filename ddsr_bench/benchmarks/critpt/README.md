@@ -66,6 +66,11 @@ belong in ignored `configs/local/` and `.env` files.
 
 ### Independent consensus scoring
 
+The evaluator reads an external reference asset, defaulting to
+`/mnt/workspace/zhizhou/assets/critpt/references/consensus-61-v2.json`.
+Use `--bundle /absolute/path/to/consensus-61-v2.json` on other installations;
+reference answers are not distributed with the source or wheel.
+
 The [61-challenge consensus evaluator](evaluation/consensus/README.md) scores
 existing answers without model calls. It has a separate CLI and report schema;
 its match results do not populate the mainline `reward` or training filters.

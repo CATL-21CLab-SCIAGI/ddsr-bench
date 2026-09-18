@@ -60,7 +60,7 @@ def parser() -> argparse.ArgumentParser:
             "--bundle",
             type=Path,
             default=DEFAULT_BUNDLE,
-            help="Reference bundle (default: the versioned bundle shipped with this package)",
+            help=f"External reference bundle (default: {DEFAULT_BUNDLE})",
         )
         sub.add_argument("--output", type=Path, required=True)
         sub.add_argument("--jobs", type=int, default=4)

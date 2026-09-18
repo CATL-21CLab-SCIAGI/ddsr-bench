@@ -25,7 +25,7 @@ def test_scicode_image() -> None:
     assert "!datasets/scicode/test_data.h5" in ignored
 
 
-def test_all_solver_contexts_exclude_consensus_references():
+def test_all_solver_contexts_exclude_local_artifacts():
     from docker.utils.build import exclude_paths
 
     for benchmark in ("critpt", "scicode", "cmphysbench", "phybench"):
@@ -37,6 +37,5 @@ def test_all_solver_contexts_exclude_consensus_references():
         visible = set(exclude_paths(ROOT, patterns))
         assert "ddsr_bench/grading/validation.py" in visible
         assert "ddsr_bench/benchmarks/critpt/evaluation/consensus/worker.py" in visible
-        assert not any("consensus/data/" in path for path in visible)
         assert ".env" not in visible
         assert not any(path.startswith("configs/local/") for path in visible)

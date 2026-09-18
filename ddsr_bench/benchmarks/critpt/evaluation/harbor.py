@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
+from contextlib import nullcontext
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, override
@@ -104,36 +104,27 @@ class CritPtAgent(BaseAgent):
     ) -> None:
         problem = decode_instruction(instruction)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
-        if self.client is None:
-            async with CLIENTS[self.client_name](
+        connection = (
+            nullcontext(self.client)
+            if self.client is not None
+            else CLIENTS[self.client_name](
                 self.base_url,
                 self.sampling,
                 stream=self.stream,
                 api_key=(self._get_env(self.api_key_env) if self.api_key_env else None),
                 **self.client_options,
-            ) as client:
-                await client.preflight()
-                answer, record = await generate(
-                    client,
-                    problem,
-                    self.style,
-                    self.sampling,
-                    **self.generation_options,
-                )
-        else:
-            await self.client.preflight()
+            )
+        )
+        async with connection as client:
+            await client.preflight()
             answer, record = await generate(
-                self.client,
+                client,
                 problem,
                 self.style,
                 self.sampling,
                 **self.generation_options,
             )
 
-        self.logs_dir.mkdir(parents=True, exist_ok=True)
-        (self.logs_dir / "response.json").write_text(
-            json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
         code = extract_answer(answer, problem.code_template)
         with NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as file:
             file.write(code)

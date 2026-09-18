@@ -32,7 +32,8 @@ how many trials run at once; it does not combine them or cause their files to
 share a directory.
 
 CritPt also provides an independent consensus scoring path for saved trial
-artifacts. `ddsr-critpt-consensus batch` records each attempt and an aggregate
+artifacts plus an external evaluator-only reference bundle (`--bundle`).
+`ddsr-critpt-consensus batch` records each attempt and an aggregate
 match rate. It does not change the shared reward, collection or export schema.
 
 The benchmark pipelines define what one generated artifact contains and how it

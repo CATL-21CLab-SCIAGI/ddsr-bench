@@ -5,10 +5,6 @@ import pytest
 from harbor.models.job.config import AgentConfig
 
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import (
-    DEFAULT_BUNDLE,
-    load,
-)
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.candidates import load_candidates
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.cli import main
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.evaluator import Evaluator
@@ -39,7 +35,9 @@ def test_bad_candidate_does_not_discard_other_answers(tmp_path, payload):
     assert answers["Challenge_2_main"].code == "def answer(): return 2\n"
 
 
-def test_wrong_paths_and_empty_discovery_fail_instead_of_reporting_zero(tmp_path):
+def test_wrong_paths_and_empty_discovery_fail_instead_of_reporting_zero(
+    tmp_path, sample_bundle_path
+):
     for path in (tmp_path / "missing", tmp_path):
         with pytest.raises(ValueError):
             load_candidates(path)
@@ -50,6 +48,8 @@ def test_wrong_paths_and_empty_discovery_fail_instead_of_reporting_zero(tmp_path
         main(
             [
                 "score",
+                "--bundle",
+                str(sample_bundle_path),
                 "--candidates",
                 str(tmp_path),
                 "--output",
@@ -131,12 +131,12 @@ def test_corrupt_optional_response_metadata_does_not_reject_valid_code(tmp_path)
     assert candidate.metadata_errors
 
 
-def test_input_errors_do_not_execute_references_and_skip_stays_skip():
+def test_input_errors_do_not_execute_references_and_skip_stays_skip(sample_bundle):
     class NoRun:
         def run(self, _):
             raise AssertionError("invalid input or skip executed")
 
-    bundle = load(DEFAULT_BUNDLE)
+    bundle = sample_bundle
     evaluator = Evaluator(bundle, NoRun())
     error = {"stage": "input", "error": "invalid JSON"}
     assert (
@@ -150,8 +150,10 @@ def test_input_errors_do_not_execute_references_and_skip_stays_skip():
 
 
 @pytest.mark.asyncio
-async def test_native_rollout_to_score_keeps_two_step_and_failure_diagnostics(tmp_path):
-    bundle = load(DEFAULT_BUNDLE)
+async def test_native_rollout_to_score_keeps_two_step_and_failure_diagnostics(
+    tmp_path, sample_bundle, sample_bundle_path
+):
+    bundle = sample_bundle
     reference = bundle["problems"][0]["references"][0]["code"]
 
     class Client:
@@ -203,6 +205,8 @@ async def test_native_rollout_to_score_keeps_two_step_and_failure_diagnostics(tm
         main(
             [
                 "score",
+                "--bundle",
+                str(sample_bundle_path),
                 "--candidates",
                 str(job),
                 "--output",
@@ -229,17 +233,21 @@ async def test_native_rollout_to_score_keeps_two_step_and_failure_diagnostics(tm
     assert bad["generation"]["responses"][1]["content_empty"] is True
 
 
-def test_bad_flat_input_does_not_abort_score_report(tmp_path):
+def test_bad_flat_input_does_not_abort_score_report(
+    tmp_path, sample_bundle, sample_bundle_path
+):
     answers = tmp_path / "answers"
     answers.mkdir()
     (answers / "Challenge_1_main.json").write_text("{")
-    reference = load(DEFAULT_BUNDLE)["problems"][16]["references"][0]["code"]
+    reference = sample_bundle["problems"][16]["references"][0]["code"]
     (answers / "Challenge_17_main.py").write_text(reference)
     output = tmp_path / "score.json"
     assert (
         main(
             [
                 "score",
+                "--bundle",
+                str(sample_bundle_path),
                 "--candidates",
                 str(answers),
                 "--output",

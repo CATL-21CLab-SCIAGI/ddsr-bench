@@ -46,9 +46,11 @@ def test_migrated_resume_requires_explicit_path_map_and_equivalent_profile():
     previous, current = JobConfig.model_validate(before), JobConfig.model_validate(
         after
     )
+    original = previous.model_dump()
     with pytest.raises(ValueError, match="only permits"):
         check_resume(previous, current, None)
     check_resume(previous, current, {"path_prefixes": {"/old": "/assets"}})
+    assert previous.model_dump() == original
 
 
 @pytest.mark.parametrize(

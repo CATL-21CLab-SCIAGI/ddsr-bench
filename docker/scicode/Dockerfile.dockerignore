@@ -2,7 +2,4 @@
 !ddsr_bench/
 !ddsr_bench/**
 !datasets/scicode/test_data.h5
-
-# Verifier reference answers must not enter solver images.
-ddsr_bench/benchmarks/critpt/evaluation/consensus/data/
 **/__pycache__/

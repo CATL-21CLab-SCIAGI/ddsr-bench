@@ -3,59 +3,17 @@ from copy import deepcopy
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.evaluation.consensus import POLICY_VERSION
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import (
     DEFAULT_BUNDLE,
     digest,
     load,
 )
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.candidates import load_candidates
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.cli import parser
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.policy import mode
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.cli import main, parser
 
 
-def bundle_fixture():
-    rows = []
-    for n in range(1, 71):
-        active = mode(n) != "skip"
-        template = "def answer():\n    pass"
-        code = "def answer():\n    return 1"
-        refs = (
-            [{"id": "g/model", "group": "g", "code": code, "sha256": digest(code)}]
-            if active
-            else []
-        )
-        groups = [
-            {
-                "id": "g",
-                "models": ["one", "two"],
-                "references": ["g/model"] if active else [],
-            }
-        ]
-        if n == 4:
-            groups.append(
-                {"id": "missing", "models": ["three", "four"], "references": []}
-            )
-        rows.append(
-            {
-                "id": f"Challenge_{n}_main",
-                "number": n,
-                "mode": mode(n),
-                "confidence": 0.4,
-                "reported_max_agreement": 2,
-                "template": template,
-                "template_sha256": digest(template),
-                "parameters": [],
-                "references": refs,
-                "groups": groups,
-                "reference_coverage": "incomplete" if n == 4 else "complete",
-            }
-        )
-    return {"schema_version": 1, "policy_version": POLICY_VERSION, "problems": rows}
-
-
-def test_bundle_checks_scope_reference_hash_and_coverage(tmp_path):
-    bundle = bundle_fixture()
+def test_bundle_checks_scope_reference_hash_and_coverage(tmp_path, sample_bundle):
+    bundle = sample_bundle
     path = tmp_path / "bundle.json"
     path.write_text(json.dumps(bundle))
     assert len(load(path)["problems"]) == 70
@@ -92,8 +50,8 @@ def test_candidate_formats_and_duplicate_id_detection(tmp_path):
         load_candidates(tmp_path)
 
 
-def test_shipped_bundle_is_complete_and_default_works_outside_repo(
-    tmp_path, monkeypatch
+def test_external_bundle_is_complete_and_default_works_outside_repo(
+    tmp_path, monkeypatch, reviewed_bundle
 ):
     monkeypatch.chdir(tmp_path)
     for command in ("score", "replay"):
@@ -113,3 +71,30 @@ def test_shipped_bundle_is_complete_and_default_works_outside_repo(
         assert parser().parse_args(argv + ["--bundle", "custom.json"]).bundle.name == (
             "custom.json"
         )
+
+
+def test_default_bundle_checksum_rejects_changed_asset(monkeypatch, sample_bundle_path):
+    from ddsr_bench.benchmarks.critpt.evaluation.consensus import bundle
+
+    monkeypatch.setattr(bundle, "DEFAULT_BUNDLE", sample_bundle_path)
+    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+        load(sample_bundle_path)
+
+
+def test_missing_external_bundle_fails_without_creating_results(tmp_path, capsys):
+    output = tmp_path / "result.json"
+    assert (
+        main(
+            [
+                "replay",
+                "--bundle",
+                str(tmp_path / "missing.json"),
+                "--output",
+                str(output),
+                "--trusted-local",
+            ]
+        )
+        == 2
+    )
+    assert "--bundle /absolute/path/to/bundle.json" in capsys.readouterr().err
+    assert not output.exists()

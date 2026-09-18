@@ -110,17 +110,14 @@ def test_summary_fixed_denominator_and_uncertainty():
 
 
 @pytest.mark.parametrize("number", [47, 51])
-def test_audited_exclusions_keep_reason_without_executing_bad_candidates(number):
-    from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import (
-        DEFAULT_BUNDLE,
-        load,
-    )
-
+def test_audited_exclusions_keep_reason_without_executing_bad_candidates(
+    number, sample_bundle
+):
     class NoRun:
         def run(self, _):
             raise AssertionError("excluded candidate or reference executed")
 
-    evaluator = Evaluator(load(DEFAULT_BUNDLE), NoRun())
+    evaluator = Evaluator(sample_bundle, NoRun())
     result = evaluator.grade(
         f"Challenge_{number}_main", "nonsense", input_error={"stage": "generation"}
     )

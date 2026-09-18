@@ -1,10 +1,6 @@
 import pytest
 
 from ddsr_bench.benchmarks.critpt.evaluation.consensus import validation
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import (
-    DEFAULT_BUNDLE,
-    load,
-)
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.worker import evaluate
 from ddsr_bench.grading import validation as code_validation
 from ddsr_bench.grading import validation as generation
@@ -55,7 +51,7 @@ def test_extraction_uses_generation_convention(response):
     assert validation.source(response) == "def answer(): return 1\n"
 
 
-def test_existing_reference_bundle_passes_the_original_rules():
-    for row in load(DEFAULT_BUNDLE)["problems"]:
+def test_existing_reference_bundle_passes_the_original_rules(reviewed_bundle):
+    for row in reviewed_bundle["problems"]:
         for reference in row["references"]:
             validation.validate(reference["code"], row["template"])

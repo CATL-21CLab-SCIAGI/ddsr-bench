@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
 from pathlib import Path
 
 from harbor.models.job.config import JobConfig
@@ -15,7 +14,7 @@ def check_resume(
     previous: JobConfig, current: JobConfig, migration: dict | None
 ) -> None:
     """Only concurrency, declared storage paths and equivalent client names may differ."""
-    before = deepcopy(previous.model_dump(exclude={"n_concurrent_trials"}))
+    before = previous.model_dump(exclude={"n_concurrent_trials"})
     after = current.model_dump(exclude={"n_concurrent_trials"})
     if migration is not None:
         if not isinstance(migration, dict) or set(migration) != {"path_prefixes"}:

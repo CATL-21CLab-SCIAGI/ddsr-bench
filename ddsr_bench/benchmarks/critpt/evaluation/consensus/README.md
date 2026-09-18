@@ -36,7 +36,7 @@
 
 主命中率分母固定为61；未决、缺失、执行失败不会缩小分母。另报状态数量和按confidence分层的结果。加权命中率为 `sum(confidence * matched) / 43.6`。该规则使全匹配时结果为1。
 
-## 安装与内置参考包
+## 安装与外部参考包
 
 以下命令在仓库根目录执行。安装方式沿用仓库的Python 3.12环境：
 
@@ -46,11 +46,19 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.consensus --help
 # 同一入口也注册为 ddsr-critpt-consensus
 ```
 
-仓库已包含 [`data/consensus-61-v2.json`](data/consensus-61-v2.json)，大小为420,292字节（约410 KiB）。它随Git和Python安装包一起分发。`score`和`replay`默认使用此文件，路径不依赖当前工作目录；也可用`--bundle /path/to/custom.json`显式指定其他包。正常评测不再需要原始模型JSON、外部清单或题面目录。
+参考包存放在仓库外，Git 和 Python 安装包只保留默认绝对路径及 SHA-256 校验值，不分发答案 JSON：
 
-包内保存70个题号、61道启用题的204份参考代码、模板、confidence、共识组和来源哈希。其SHA-256为`6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`；47、51 的历史参考保存在 Git 的 v1 版本和审计记录中。204份记录包含重复来源，不能视为204份独立证据。
+```text
+/mnt/workspace/zhizhou/assets/critpt/references/consensus-61-v2.json
+```
 
-参考包仅供评测端使用。各 `docker/*/Dockerfile.dockerignore`明确排除`ddsr_bench/benchmarks/critpt/evaluation/consensus/data/`，因此标准solver/worker镜像只复制执行代码，不包含参考包。含标答的完整仓库或安装包不作为solver的可见工作目录。候选执行请求仍只携带当前候选、模板和输入。
+`score`、`replay` 和 `batch` 默认读取此路径，与当前工作目录无关。默认资产缺失或 SHA-256 不符会直接报错，不生成成绩。其他机器需自行提供参考包，并用 `--bundle /absolute/path/to/consensus-61-v2.json` 指定位置；DLC 上同一资产的挂载路径为 `/mnt/nas/zhizhou/assets/critpt/references/consensus-61-v2.json`。显式指定的包继续检查政策版本、模板和参考代码哈希，实际包哈希保存在评分报告中。
+
+包大小为420,292字节（约410 KiB），包含70个题号、61道启用题的204份参考代码、模板、confidence、共识组和来源哈希。SHA-256 为 `6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`。204份记录包含重复来源，不能视为204份独立证据。正常评测只需要此包，无需原始模型JSON、外部清单或题面目录。
+
+参考包仅供评测端使用，不放入 solver 工作目录、镜像构建上下文或安装包。Docker 构建配置无需再按仓库内参考目录单独排除；候选执行请求仍只携带当前候选、模板和输入。
+
+普通功能测试使用合成参考数据，不依赖上述本地路径。两项真实参考包检查在资产存在时执行，缺失时明确标记 skipped；完整参考验证仍使用下面的 `replay --all-references` 命令。
 
 ### 从原始材料重建（可选）
 
@@ -223,5 +231,5 @@ ddsr-critpt-consensus batch \
 
 DDSR 中共享校验器直接使用 `ddsr_bench/grading/validation.py`，其内容与原始
 校验器逐字节相同。consensus 只共享结构校验规则，不调用现有 reward grader。
-参考包跟随评测安装包分发，但每个 solver Docker 构建上下文都排除该包；Linux
+参考包仅从外部资产路径加载，不随源码、安装包或 solver 镜像分发；Linux
 候选进程只挂载白名单执行模块，无法读取参考包、`.env` 或整个仓库。

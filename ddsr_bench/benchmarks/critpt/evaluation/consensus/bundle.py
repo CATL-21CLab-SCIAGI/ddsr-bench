@@ -11,7 +11,12 @@ from . import POLICY_VERSION
 from .policy import NOTES, mode
 from .validation import parameters, source, validate
 
-DEFAULT_BUNDLE = Path(__file__).with_name("data") / f"{POLICY_VERSION}.json"
+DEFAULT_BUNDLE = (
+    Path("/mnt/workspace/zhizhou/assets/critpt/references") / f"{POLICY_VERSION}.json"
+)
+DEFAULT_BUNDLE_SHA256 = (
+    "6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc"
+)
 
 
 def digest(text: str) -> str:
@@ -112,7 +117,19 @@ def build(manifest_path: Path, source_root: Path, destination: Path) -> dict:
 
 
 def load(path: Path) -> dict:
-    bundle = json.loads(path.read_text())
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError as error:
+        raise FileNotFoundError(
+            f"Reference bundle not found: {path}. Reference data is stored outside "
+            "the repository; provide its location with --bundle /absolute/path/to/bundle.json."
+        ) from error
+    if (
+        path.resolve() == DEFAULT_BUNDLE.resolve()
+        and digest(raw) != DEFAULT_BUNDLE_SHA256
+    ):
+        raise ValueError("default reference bundle SHA-256 mismatch")
+    bundle = json.loads(raw)
     if (
         bundle.get("schema_version") != 1
         or bundle.get("policy_version") != POLICY_VERSION
