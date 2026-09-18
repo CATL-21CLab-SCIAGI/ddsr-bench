@@ -103,6 +103,12 @@ with only the saved first stage copied, then `run_trial(..., resume=True)`.
 Never overwrite a completed trial to retry it without first preserving its
 original artifacts and provenance.
 
+Injected clients with the original `chat(messages)` interface remain supported;
+their sampling settings remain client-managed. Per-trial `seed_base` and an
+explicit formatting budget require `seed` and `max_tokens` keyword support,
+respectively, and fail explicitly when unsupported. Stream journals require
+`stream_path` support; stage checkpoints do not.
+
 ## Amazon Bedrock
 
 `BedrockClient` uses Bedrock's OpenAI-compatible request format. Replace the

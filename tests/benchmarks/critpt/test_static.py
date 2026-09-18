@@ -23,14 +23,19 @@ class FakeClient:
     async def preflight(self) -> None:
         self.preflights += 1
 
-    async def chat(self, messages: ChatMessages, **kwargs) -> ChatResponse:
+    async def chat(self, messages: ChatMessages) -> ChatResponse:
         content = "```python\ndef answer():\n    return 42\n```"
         return ChatResponse(content, None, "local", None, None, 0.1, {})
 
 
 class InvalidClient(FakeClient):
-    async def chat(self, messages: ChatMessages, **kwargs) -> ChatResponse:
+    async def chat(self, messages: ChatMessages) -> ChatResponse:
         return ChatResponse("not Python", None, "local", None, None, 0.1, {})
+
+
+class OptionClient(FakeClient):
+    async def chat(self, messages: ChatMessages, **kwargs) -> ChatResponse:
+        return await super().chat(messages)
 
 
 def test_trial_seeds_are_stable_and_distinct():
@@ -96,6 +101,8 @@ async def test_seeded_trial_still_formats_empty_first_stage(tmp_path):
         assert len(record["responses"]) == 2
         seeds.append(expected)
     assert seeds[0] == seeds[1] != seeds[2]
+    with pytest.raises(TypeError, match="seed_base requires"):
+        await run_trial(problem, 0, tmp_path / "unsupported", FakeClient(), agent)
 
 
 @pytest.mark.asyncio
@@ -152,7 +159,10 @@ async def test_invalid_trial_has_no_reward(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("provider", ["vllm", "openai"])
-async def test_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, provider) -> None:
+@pytest.mark.parametrize("seed_base", [None, 42])
+async def test_job(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, provider, seed_base
+) -> None:
     problem = ProblemSpec(
         "p1",
         "main",
@@ -166,19 +176,23 @@ async def test_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, provider) ->
     task.mkdir(parents=True)
     (task / "instruction.md").write_text(encode_instruction(problem))
     config = tmp_path / "job.yaml"
-    config.write_text("""job_name: batch
+    config.write_text(
+        """job_name: batch
 jobs_dir: outputs/harbor
 n_attempts: 2
 n_concurrent_trials: 2
 agents:
   - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
     model_name: local
-    kwargs: {client_name: PROVIDER, style: one-step, seed_base: 42}
+    kwargs: {client_name: PROVIDER, style: one-step, seed_base: SEED}
 datasets:
   - path: tasks
-""".replace("PROVIDER", provider))
+""".replace("PROVIDER", provider).replace(
+            "SEED", "null" if seed_base is None else str(seed_base)
+        )
+    )
     monkeypatch.chdir(tmp_path)
-    client = FakeClient()
+    client = FakeClient() if seed_base is None else OptionClient()
 
     result = await run_job(config, client)
 
@@ -196,7 +210,10 @@ datasets:
         record = json.loads(
             (output / f"p1__attempt-{attempt}/agent/response.json").read_text()
         )
-        assert record["seed"] == trial_seed(42, "p1", attempt)
+        expected_seed = (
+            None if seed_base is None else trial_seed(seed_base, "p1", attempt)
+        )
+        assert record["seed"] == expected_seed
 
     summary = collect_trials(output)
     assert summary["complete_batches"] == 2

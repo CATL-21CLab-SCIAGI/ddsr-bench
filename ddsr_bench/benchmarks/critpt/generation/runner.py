@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass, fields
 from datetime import UTC, datetime
 from hashlib import sha256
+from inspect import Parameter, signature
 from pathlib import Path
 from typing import Any, Literal
 
@@ -101,6 +102,18 @@ def _hash(content: str) -> str:
     return sha256(content.encode()).hexdigest()
 
 
+def chat_options(client: ChatClient) -> set[str]:
+    """Keep message-only injected clients compatible with the original interface."""
+    parameters = signature(client.chat).parameters
+    if any(p.kind == Parameter.VAR_KEYWORD for p in parameters.values()):
+        return {"seed", "max_tokens", "stream_path"}
+    return {
+        name
+        for name, p in parameters.items()
+        if p.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
+    }
+
+
 async def generate(
     client: ChatClient,
     problem: ProblemSpec,
@@ -114,6 +127,13 @@ async def generate(
 ) -> tuple[str, dict[str, Any]]:
     """Run one conversation and return its public audit record."""
     responses: list[ChatResponse] = []
+    options = chat_options(client)
+    if (
+        style == "two-step"
+        and formatting_max_tokens is not None
+        and "max_tokens" not in options
+    ):
+        raise TypeError("formatting_max_tokens requires client.chat(max_tokens=...)")
 
     def record(messages, status):
         return {
@@ -189,11 +209,11 @@ async def generate(
                 raise ValueError(f"saved stage {stage} did not complete normally")
             return response.content
         kwargs = {}
-        if sampling.seed is not None:
+        if sampling.seed is not None and "seed" in options:
             kwargs["seed"] = sampling.seed
         if style == "two-step" and stage == 2 and formatting_max_tokens is not None:
             kwargs["max_tokens"] = formatting_max_tokens
-        if checkpoint_dir is not None:
+        if checkpoint_dir is not None and "stream_path" in options:
             journal = checkpoint_dir / f"stage-{stage}.stream.jsonl"
             if resume and journal.exists():
                 stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")

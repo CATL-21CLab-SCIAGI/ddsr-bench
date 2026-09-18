@@ -18,7 +18,7 @@ class FakeClient:
     async def preflight(self) -> None:
         self.ready = True
 
-    async def chat(self, messages: ChatMessages, **kwargs) -> ChatResponse:
+    async def chat(self, messages: ChatMessages) -> ChatResponse:
         self.calls.append(messages)
         content = (
             "reasoned answer"

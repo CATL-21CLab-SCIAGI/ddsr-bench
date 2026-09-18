@@ -16,7 +16,7 @@ from harbor.models.job.config import AgentConfig, JobConfig
 
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
 from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
-from ddsr_bench.benchmarks.critpt.generation.runner import generate
+from ddsr_bench.benchmarks.critpt.generation.runner import chat_options, generate
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling
 from ddsr_bench.grading.validation import extract_answer
 
@@ -47,6 +47,8 @@ async def run_trial(
     if seed_base is not None:
         if sampling.seed is not None:
             raise ValueError("set seed_base or sampling.seed, not both")
+        if "seed" not in chat_options(client):
+            raise TypeError("seed_base requires client.chat(seed=...)")
         sampling = replace(sampling, seed=trial_seed(seed_base, problem.id, attempt))
     style: PromptStyle = agent.kwargs.get("style", "one-step")
     client_name = agent.kwargs.get("client_name", "vllm")

@@ -129,6 +129,21 @@ async def test_challenge_uses_stored_golden_context_independently() -> None:
 
 
 @pytest.mark.asyncio
+async def test_formatting_budget_is_not_silently_dropped_for_legacy_client():
+    from ddsr_bench.benchmarks.critpt.generation.runner import generate
+    from ddsr_bench.generation.client import Sampling
+
+    class Client:
+        async def chat(self, messages):
+            raise AssertionError("unsupported budget must fail before generation")
+
+    with pytest.raises(TypeError, match="formatting_max_tokens requires"):
+        await generate(
+            Client(), PROBLEM, "two-step", Sampling("solver"), formatting_max_tokens=128
+        )
+
+
+@pytest.mark.asyncio
 async def test_stage_one_survives_stage_two_failure(tmp_path: Path) -> None:
     from ddsr_bench.benchmarks.critpt.generation.runner import generate
     from ddsr_bench.generation.client import ChatResponse, Sampling

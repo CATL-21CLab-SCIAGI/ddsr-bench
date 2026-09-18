@@ -10,8 +10,9 @@ SymPy 1.14.0、NumPy 1.26.4、SciPy 1.17.1、mpmath 1.3.0。
 
 | 检查 | 结果 |
 | --- | --- |
-| 全仓库测试 | 320 passed |
-| 无外部参考资产时的全仓库测试 | 318 passed、2 skipped；仅跳过真实参考包检查 |
+| 全仓库测试 | 323 passed |
+| 迁移前 main 的原始测试原样运行 | 212 passed；覆盖旧版客户端接口和四个 benchmark |
+| 无外部参考资产时的全仓库测试 | 321 passed、2 skipped；仅跳过真实参考包检查 |
 | Black、Ruff、git diff --check | 通过 |
 | 外部参考包的完整 Linux 回放 | 204 matched、9 skipped，healthy=true |
 | 干净源码构建 wheel，独立安装目录与空工作目录检查 | 不含参考答案、凭据或本地配置；可读取外部默认资产 |
