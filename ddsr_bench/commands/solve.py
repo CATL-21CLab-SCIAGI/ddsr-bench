@@ -21,7 +21,9 @@ from ddsr_bench.grading.validation import extract_answer
 from .utils import read_api_key
 
 
-async def run_job(path: Path, task_name: str | None = None) -> dict[str, Any]:
+async def run_job(
+    path: Path, task_name: str | None = None, *, resume: bool = False
+) -> dict[str, Any]:
     """Dispatch one static job to its benchmark adapter."""
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(config, dict):
@@ -29,7 +31,11 @@ async def run_job(path: Path, task_name: str | None = None) -> dict[str, Any]:
     name = config.get("benchmark", "critpt")
     if not isinstance(name, str):
         raise TypeError("job benchmark must be a name")
-    return await static_runner(name)(path, task_name=task_name)
+    if resume and name != "critpt":
+        raise ValueError("--resume is currently supported only for CritPt")
+    return await static_runner(name)(
+        path, task_name=task_name, **({"resume": True} if resume else {})
+    )
 
 
 def _select(path: Path, task_name: str | None) -> ProblemSpec:
@@ -98,6 +104,7 @@ def main() -> None:
     parser.add_argument("challenge", type=Path, nargs="?")
     parser.add_argument("output", type=Path, nargs="?")
     parser.add_argument("--config", type=Path)
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--include-task-name")
     parser.add_argument("--style", choices=("one-step", "two-step"), default="one-step")
     parser.add_argument(
@@ -122,8 +129,12 @@ def main() -> None:
     if args.config:
         if args.challenge or args.output:
             parser.error("--config cannot be combined with a challenge or output")
-        result = asyncio.run(run_job(args.config, args.include_task_name))
+        result = asyncio.run(
+            run_job(args.config, args.include_task_name, resume=args.resume)
+        )
     else:
+        if args.resume:
+            parser.error("--resume requires --config")
         if args.challenge is None or args.output is None:
             parser.error("challenge and output are required without --config")
         result = asyncio.run(_run(args))

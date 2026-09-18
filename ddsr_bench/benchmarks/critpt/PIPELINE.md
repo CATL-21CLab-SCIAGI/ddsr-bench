@@ -34,6 +34,9 @@ flowchart TD
     O --> W
     V --> W
     W --> X["Collect or export"]
+    W --> Z["Optional independent consensus batch"]
+    Z --> AA["Isolated candidate execution; references stay evaluator-side"]
+    AA --> AB["Per-attempt match results and mean; no reward mutation"]
     X --> Y["Optional explicit 70-main submission"]
 ```
 
@@ -43,9 +46,19 @@ history forward or generating subproblems independently. One-step uses one model
 call per problem; two-step uses two calls but still produces one artifact and
 one trial result.
 
+Static concurrency refills free slots as trials finish. Each stage saves a
+checkpoint and optional stream journal. The second stage still runs when the
+first-stage content is empty or truncated unless strict stage checks are
+explicitly enabled. Consensus uses the same original AST validator and never
+recovers code from reasoning-only responses.
+
 Official public challenges do not expose reference answers or testcases, so
 their local Harbor result is format validation. Reference execution is used
 only when verifier-side answer data is available. Artificial Analysis
 submission is a separate, explicit action after collecting one complete batch.
 
 See the [CritPt guide](README.md) for commands and data setup.
+
+The current CritPt consensus policy scores 61 of 70 main problems. Nine skipped
+problems, including audited exclusions 47 and 51, retain per-attempt records and
+are omitted from score denominators; generation still covers all requested tasks.

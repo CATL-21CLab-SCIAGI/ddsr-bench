@@ -31,6 +31,11 @@ A trial is one evaluation of one problem for one attempt. Concurrency controls
 how many trials run at once; it does not combine them or cause their files to
 share a directory.
 
+CritPt also provides an independent consensus scoring path for saved trial
+artifacts plus an external evaluator-only reference bundle (`--bundle`).
+`ddsr-critpt-consensus batch` records each attempt and an aggregate
+match rate. It does not change the shared reward, collection or export schema.
+
 The benchmark pipelines define what one generated artifact contains and how it
 is verified:
 
@@ -38,3 +43,7 @@ is verified:
 - [SciCode pipeline](ddsr_bench/benchmarks/scicode/PIPELINE.md)
 - [CMPhysBench pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md)
 - [PHYBench pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md)
+
+The current CritPt consensus policy scores 61 of 70 main problems. Nine skipped
+problems, including audited exclusions 47 and 51, retain per-attempt records and
+are omitted from score denominators; generation still covers all requested tasks.

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from contextlib import nullcontext
+from dataclasses import dataclass, replace
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal, Protocol, Self
 
@@ -47,6 +49,7 @@ class ChatResponse:
     raw: dict[str, Any]
     finish_reason: str | None = None
     stop_reason: str | int | None = None
+    request_budget: dict[str, int] | None = None
 
 
 class ChatClient(Protocol):
@@ -54,7 +57,14 @@ class ChatClient(Protocol):
 
     async def preflight(self) -> None: ...
 
-    async def chat(self, messages: ChatMessages) -> ChatResponse: ...
+    async def chat(
+        self,
+        messages: ChatMessages,
+        *,
+        max_tokens: int | None = None,
+        stream_path: Path | None = None,
+        seed: int | None = None,
+    ) -> ChatResponse: ...
 
 
 class BaseClient(ABC):
@@ -125,10 +135,34 @@ class BaseClient(ABC):
     @abstractmethod
     def _payload(self, messages: ChatMessages) -> dict[str, Any]: ...
 
-    async def chat(self, messages: ChatMessages) -> ChatResponse:
+    async def _prepare_payload(
+        self,
+        messages: ChatMessages,
+        max_tokens: int | None,
+    ) -> tuple[dict[str, Any], dict[str, int]]:
         payload = self._payload(messages)
+        key = "max_tokens" if "max_tokens" in payload else "max_completion_tokens"
+        if max_tokens is not None:
+            if max_tokens <= 0:
+                raise ValueError("max_tokens must be positive")
+            payload[key] = max_tokens
+        return payload, {"max_tokens": payload[key]}
+
+    async def chat(
+        self,
+        messages: ChatMessages,
+        *,
+        max_tokens: int | None = None,
+        stream_path: Path | None = None,
+        seed: int | None = None,
+    ) -> ChatResponse:
+        payload, budget = await self._prepare_payload(messages, max_tokens)
+        if seed is not None:
+            payload["seed"] = seed
+        request_seed = payload.get("seed", self.sampling.seed)
         if self.stream:
-            return await self._stream(payload)
+            response = await self._stream(payload, stream_path, budget)
+            return replace(response, request_budget=budget, seed=request_seed)
         started = perf_counter()
         data = self._json(await self._request("POST", "chat/completions", json=payload))
         latency = perf_counter() - started
@@ -160,14 +194,37 @@ class BaseClient(ABC):
                 else self.sampling.model
             ),
             usage=data.get("usage") if isinstance(data.get("usage"), dict) else None,
-            seed=self.sampling.seed,
+            seed=request_seed,
             latency=latency,
             raw=data,
             finish_reason=finish_reason,
             stop_reason=choice.get("stop_reason"),
+            request_budget=budget,
         )
 
-    async def _stream(self, payload: dict[str, Any]) -> ChatResponse:
+    async def _stream(
+        self,
+        payload: dict[str, Any],
+        stream_path: Path | None = None,
+        budget: dict[str, int] | None = None,
+    ) -> ChatResponse:
+        # A journal retains partial output on disconnect and avoids keeping every
+        # SSE dictionary in RAM during many concurrent long-context generations.
+        context = (
+            stream_path.open("x", encoding="utf-8") if stream_path else nullcontext()
+        )
+        with context as journal:
+            if journal is not None:
+                journal.write(
+                    json.dumps(
+                        {"request": payload, "budget": budget}, ensure_ascii=False
+                    )
+                    + "\n"
+                )
+                journal.flush()
+            return await self._stream_response(payload, journal, stream_path)
+
+    async def _stream_response(self, payload, journal, stream_path) -> ChatResponse:
         payload |= {"stream": True, "stream_options": {"include_usage": True}}
         chunks: list[dict[str, Any]] = []
         content: list[str] = []
@@ -177,6 +234,8 @@ class BaseClient(ABC):
         finish_reason = None
         stop_reason = None
         started = perf_counter()
+        flushed_at = started
+        received = False
 
         for attempt in range(self.retries + 1):
             try:
@@ -200,7 +259,14 @@ class BaseClient(ABC):
                             raise ClientError(
                                 "server stream chunk must be a JSON object"
                             )
-                        chunks.append(chunk)
+                        received = True
+                        if journal is None:
+                            chunks.append(chunk)
+                        else:
+                            journal.write(json.dumps(chunk, ensure_ascii=False) + "\n")
+                            if perf_counter() - flushed_at >= 1:
+                                journal.flush()
+                                flushed_at = perf_counter()
                         if isinstance(chunk.get("model"), str):
                             model = chunk["model"]
                         if isinstance(chunk.get("usage"), dict):
@@ -234,7 +300,7 @@ class BaseClient(ABC):
                             reasoning.append(reason)
                 break
             except httpx.TransportError as error:
-                if chunks or attempt == self.retries:
+                if received or attempt == self.retries:
                     raise ClientError("POST chat/completions stream failed") from error
             except httpx.HTTPError as error:
                 raise ClientError("POST chat/completions stream failed") from error
@@ -248,7 +314,9 @@ class BaseClient(ABC):
             usage=usage,
             seed=self.sampling.seed,
             latency=perf_counter() - started,
-            raw={"stream": chunks},
+            raw=(
+                {"stream_file": str(stream_path)} if stream_path else {"stream": chunks}
+            ),
             finish_reason=finish_reason,
             stop_reason=stop_reason,
         )
@@ -256,6 +324,59 @@ class BaseClient(ABC):
 
 class VLLMClient(BaseClient):
     """Chat client using vLLM request extensions."""
+
+    def __init__(
+        self,
+        base_url: str,
+        sampling: Sampling,
+        *,
+        context_window: int | None = None,
+        context_safety_tokens: int = 32,
+        **kwargs: Any,
+    ) -> None:
+        if context_window is not None and context_window <= 0:
+            raise ValueError("context_window must be positive")
+        if context_safety_tokens < 0:
+            raise ValueError("context_safety_tokens cannot be negative")
+        super().__init__(base_url, sampling, **kwargs)
+        self.context_window = context_window
+        self.context_safety_tokens = context_safety_tokens
+
+    async def _prepare_payload(
+        self,
+        messages: ChatMessages,
+        max_tokens: int | None,
+    ) -> tuple[dict[str, Any], dict[str, int]]:
+        payload, budget = await super()._prepare_payload(messages, max_tokens)
+        if self.context_window is None:
+            return payload, budget
+        request = {
+            "model": payload["model"],
+            "messages": payload["messages"],
+            "add_generation_prompt": True,
+            "chat_template_kwargs": payload.get("chat_template_kwargs", {}),
+        }
+        url = str(self.http.base_url.copy_with(path="/tokenize"))
+        tokenized = self._json(await self._request("POST", url, json=request))
+        count = tokenized.get("count")
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            raise ClientError("tokenizer response requires a nonnegative token count")
+        limit = min(
+            self.context_window, tokenized.get("max_model_len", self.context_window)
+        )
+        available = limit - count - self.context_safety_tokens
+        if available <= 0:
+            raise ClientError(
+                f"input of {count} tokens exhausts context window {limit}"
+            )
+        payload["max_tokens"] = min(payload["max_tokens"], available)
+        return payload, {
+            "context_window": limit,
+            "prompt_tokens": count,
+            "safety_tokens": self.context_safety_tokens,
+            "requested_max_tokens": budget["max_tokens"],
+            "max_tokens": payload["max_tokens"],
+        }
 
     def _payload(self, messages: ChatMessages) -> dict[str, Any]:
         payload = {
@@ -306,11 +427,26 @@ class BedrockClient(OpenAIClient):
 class AliyunClient(BaseClient):
     """Chat client using Alibaba Cloud's OpenAI-compatible parameters."""
 
+    def __init__(
+        self,
+        base_url: str,
+        sampling: Sampling,
+        *,
+        request_profile: Literal["native", "openai"] = "native",
+        **kwargs: Any,
+    ) -> None:
+        if request_profile not in ("native", "openai"):
+            raise ValueError("request_profile must be native or openai")
+        super().__init__(base_url, sampling, **kwargs)
+        self.request_profile = request_profile
+
     def _payload(self, messages: ChatMessages) -> dict[str, Any]:
-        if self.sampling.reasoning_effort is not None:
-            raise ValueError("Aliyun uses enable_thinking, not reasoning_effort")
         if self.sampling.top_k is not None:
             raise ValueError("Aliyun does not document top_k for this endpoint")
+        if self.request_profile == "openai":
+            if self.sampling.enable_thinking is not None:
+                raise ValueError("enable_thinking requires the native request profile")
+            return OpenAIClient._payload(self, messages)
         payload = {
             "model": self.sampling.model,
             "messages": list(messages),
@@ -322,6 +458,8 @@ class AliyunClient(BaseClient):
             payload["seed"] = self.sampling.seed
         if self.sampling.enable_thinking is not None:
             payload["enable_thinking"] = self.sampling.enable_thinking
+        if self.sampling.reasoning_effort is not None:
+            payload["reasoning_effort"] = self.sampling.reasoning_effort
         return payload
 
 

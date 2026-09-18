@@ -1,4 +1,6 @@
+import asyncio
 import json
+from pathlib import Path
 
 import httpx
 import pytest
@@ -301,3 +303,176 @@ async def test_requires_finish() -> None:
 def test_thinking_options() -> None:
     with pytest.raises(ValueError, match="mutually exclusive"):
         Sampling("solver", reasoning_effort="low", enable_thinking=False)
+
+
+@pytest.mark.asyncio
+async def test_dynamic_budget_and_per_request_cap_are_concurrency_safe() -> None:
+    bodies = []
+
+    async def handler(request):
+        body = json.loads(request.content)
+        if request.url.path == "/tokenize":
+            assert body["chat_template_kwargs"] == {"reasoning_effort": "xhigh"}
+            assert body["add_generation_prompt"] is True
+            await asyncio.sleep(0)
+            return httpx.Response(200, json={"count": 4000, "max_model_len": 262144})
+        bodies.append(body)
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {"content": "answer"},
+                        "finish_reason": "stop",
+                    }
+                ]
+            },
+        )
+
+    async with VLLMClient(
+        "http://localhost:8000/v1",
+        Sampling("solver", max_tokens=262144, reasoning_effort="xhigh"),
+        context_window=262144,
+        context_safety_tokens=32,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        first, second = await asyncio.gather(
+            client.chat(MESSAGES, seed=101),
+            client.chat(MESSAGES, max_tokens=65536, seed=202),
+        )
+        assert client.sampling.max_tokens == 262144
+        assert client.sampling.seed is None
+    assert sorted(b["max_tokens"] for b in bodies) == [65536, 258112]
+    assert first.request_budget["prompt_tokens"] == 4000
+    assert second.request_budget["max_tokens"] == 65536
+    assert {(b["seed"], b["max_tokens"]) for b in bodies} == {
+        (101, 258112),
+        (202, 65536),
+    }
+    assert (first.seed, second.seed) == (101, 202)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("count, expected", [(250000, 12112), (262112, None)])
+async def test_formatting_budget_respects_remaining_context(count, expected) -> None:
+    bodies = []
+
+    def handler(request):
+        if request.url.path == "/tokenize":
+            return httpx.Response(200, json={"count": count, "max_model_len": 262144})
+        bodies.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {"content": "answer"},
+                        "finish_reason": "stop",
+                    }
+                ]
+            },
+        )
+
+    async with VLLMClient(
+        "http://localhost/v1",
+        Sampling("solver"),
+        context_window=262144,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        if expected is None:
+            with pytest.raises(ClientError, match="exhausts context"):
+                await client.chat(MESSAGES, max_tokens=65536)
+            assert not bodies
+        else:
+            await client.chat(MESSAGES, max_tokens=65536)
+            assert bodies[0]["max_tokens"] == expected
+
+
+@pytest.mark.asyncio
+async def test_stream_journal_retains_partial_output_on_failure(tmp_path: Path) -> None:
+    class BrokenStream(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            yield b'data: {"choices":[{"delta":{"reasoning":"partial thought"}}]}\n\n'
+            raise httpx.ReadError("disconnected")
+
+    calls = 0
+
+    def handler(request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, stream=BrokenStream())
+
+    journal = tmp_path / "stream.jsonl"
+    async with VLLMClient(
+        "http://localhost/v1",
+        Sampling("solver"),
+        stream=True,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(ClientError, match="stream failed"):
+            await client.chat(MESSAGES, stream_path=journal)
+    assert calls == 1  # Never silently retry an already-started answer.
+    lines = [json.loads(line) for line in journal.read_text().splitlines()]
+    assert lines[0]["budget"]["max_tokens"] == 32768
+    assert lines[1]["choices"][0]["delta"]["reasoning"] == "partial thought"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "profile,token_key", [("native", "max_tokens"), ("openai", "max_completion_tokens")]
+)
+async def test_aliyun_reasoning_profiles_preserve_requests_and_trial_seeds(
+    profile, token_key
+):
+    bodies = []
+
+    async def handler(request):
+        body = json.loads(request.content)
+        bodies.append(body)
+        await asyncio.sleep(0)
+        event = {"choices": [{"delta": {"content": "42"}, "finish_reason": "stop"}]}
+        return httpx.Response(
+            200, text="data: " + json.dumps(event) + "\n\ndata: [DONE]\n\n"
+        )
+
+    sampling = Sampling(
+        "deepseek-v4-flash-0731",
+        max_tokens=393216,
+        temperature=1,
+        top_p=1,
+        reasoning_effort="max",
+    )
+    async with AliyunClient(
+        "https://example.com/v1",
+        sampling,
+        request_profile=profile,
+        stream=True,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        results = await asyncio.gather(
+            client.chat(MESSAGES, seed=42),
+            client.chat(MESSAGES, seed=43, max_tokens=131072),
+        )
+    assert {b[token_key] for b in bodies} == {393216, 131072}
+    assert {b["seed"] for b in bodies} == {42, 43}
+    assert all(b["reasoning_effort"] == "max" for b in bodies)
+    assert [r.seed for r in results] == [42, 43]
+    if profile == "openai":
+        expected = OpenAIClient("https://example.com/v1", sampling)
+        try:
+            legacy = expected._payload(MESSAGES)
+            assert bodies[0] == legacy | {
+                "seed": 42,
+                "stream": True,
+                "stream_options": {"include_usage": True},
+            }
+            assert "temperature" not in bodies[0] and "top_p" not in bodies[0]
+        finally:
+            await expected.http.aclose()
+
+
+def test_aliyun_rejects_incompatible_profiles():
+    with pytest.raises(ValueError, match="request_profile"):
+        AliyunClient(
+            "https://example.com/v1", Sampling("solver"), request_profile="guess"
+        )
