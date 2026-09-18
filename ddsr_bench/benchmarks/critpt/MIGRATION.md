@@ -81,10 +81,12 @@ and shared assets instead.
 
 `ddsr-critpt-consensus batch` reads one native job, keeps every attempt result,
 and averages over all active policy problems and available attempts. For five
-attempts the denominator is 315. Generation errors, missing candidates and
-unknown comparisons count as zero in that mean, while their distinct statuses
-and diagnostics remain available. Seven excluded problems are reported as
-skipped. These are internal consensus match rates, not official accuracy.
+attempts the current `consensus-61-v2` denominator is 305. Generation errors,
+missing candidates and unknown comparisons count as zero in that mean, while their distinct statuses
+and diagnostics remain available. Nine excluded problems are reported as
+skipped, including challenges 47 and 51 after the reference audit documented in
+[EXCLUSIONS.md](evaluation/consensus/EXCLUSIONS.md). These are internal consensus
+match rates, not official accuracy.
 
 The original generation validator is reused byte-for-byte. Helper functions,
 `lambda`, and `try` remain prohibited. Missing/invalid answer artifacts retain
@@ -102,11 +104,15 @@ reference bundle, credentials or repository tree.
 
 ## Validation and cleanup gates
 
-Validation requires unchanged reference/validator hashes, a full 212-reference
-replay with 7 skipped slots, and all 700 historical trial results compared by
-identity, status, match decision and error category. Expected aggregates are
-Qwen 60/315 and DeepSeek 92/315. Unit tests cover request profiles, seeds,
-resume rejection, stage checkpoints, batching and OS isolation. The complete
+The original migration validation required unchanged reference/validator hashes,
+a full 212-reference replay with 7 skipped slots, and all 700 historical trial
+results compared by identity, status, match decision and error category. Its
+aggregates were Qwen 60/315 and DeepSeek 92/315 under `consensus-63-v1`.
+The current `consensus-61-v2` reference replay has 204 matches and 9 skipped
+slots; the same historical trials score Qwen 58/305 and DeepSeek 92/305 after
+excluding challenges 47 and 51. See [VALIDATION.md](evaluation/consensus/VALIDATION.md)
+for both policy versions and their reference hashes. Unit tests cover request
+profiles, seeds, resume rejection, stage checkpoints, batching and OS isolation. The complete
 DDSR suite also checks the other three benchmark contracts and export paths.
 
 Before removing the old checkout, preserve its complete Git history and every
