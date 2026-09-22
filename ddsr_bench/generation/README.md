@@ -82,6 +82,7 @@ Use `ddsr-solve --config JOB.yaml --resume` for CritPt, CMPhysBench, and PHYBenc
 Completed trials, including recorded failures, are reused; this is not a retry
 failed trials option. Keep job settings and selected inputs unchanged, except
 for concurrency. SciCode has no static runner; its execution remains in Harbor.
+For SciCode, use [Harbor job recovery](../benchmarks/scicode/README.md#recovery).
 
 CMPhysBench and PHYBench save `resume.json` with job settings and an input hash.
 Jobs predating that snapshot cannot be resumed safely. Interrupted trial folders

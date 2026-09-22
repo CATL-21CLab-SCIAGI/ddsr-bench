@@ -62,6 +62,30 @@ raw-data `ddsr-solve` shortcut: without the prepared assertions, HDF5 targets,
 and container execution it could generate functions but could not evaluate them
 under SciCode's contract.
 
+### Recovery
+
+Use Harbor's existing recovery command, not `ddsr-solve --resume`:
+
+```bash
+harbor job resume --job-path outputs/harbor/scicode-validation
+```
+
+Harbor 0.22.0 reloads the saved `config.json` and retains trials with valid saved
+results, including exceptions. It deletes trial directories without `result.json`
+and schedules replacements. **Back up the job outside its directory first** if
+you need interrupted logs. To rerun a recorded cancellation, add
+`--filter-error-type CancelledError`; this explicitly deletes matching trial
+directories. Inspect recorded exception types before choosing that filter.
+
+SciCode has no per-step generation checkpoints: restarting an unfinished trial
+regenerates its steps from the beginning. Recovery does not require collection.
+Automated tests cover Harbor's job reconciliation and an interrupted SciCode
+agent. A live Docker smoke check also exercised two attempts of fixture problem
+19 using a mock Chat Completions endpoint: interruption on call three followed
+by resume produced five calls total, with the completed trial unchanged. Both
+trials executed the verifier; deliberately incorrect mock code earned zero.
+This checks recovery and container execution, not model accuracy.
+
 ### Static
 
 Static evaluation is not supported because SciCode's score requires executing
