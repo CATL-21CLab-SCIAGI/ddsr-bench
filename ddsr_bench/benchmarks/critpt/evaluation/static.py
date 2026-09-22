@@ -17,7 +17,8 @@ from harbor.models.job.config import AgentConfig, JobConfig
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
 from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
 from ddsr_bench.benchmarks.critpt.generation.runner import chat_options, generate
-from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling
+from ddsr_bench.benchmarks.utils import write_json
+from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling, read_api_key
 from ddsr_bench.grading.validation import extract_answer
 
 from .prepare import decode_instruction
@@ -97,13 +98,15 @@ async def run_trial(
             "message": str(error),
         }
 
-    (validation / "result.json").write_text(
-        json.dumps(result, indent=2), encoding="utf-8"
-    )
+    write_json(validation / "result.json", result)
     trial = {
         "task_name": f"critpt/{problem.id}",
         "trial_name": directory.name,
         "attempt": attempt,
+        "problem": {
+            "statement": problem.statement,
+            "code_template": problem.code_template,
+        },
         "started_at": started_at,
         "finished_at": datetime.now(UTC).isoformat(),
         "agent_info": {
@@ -128,9 +131,7 @@ async def run_trial(
         },
         "static_result": result,
     }
-    (directory / "result.json").write_text(
-        json.dumps(trial, indent=2), encoding="utf-8"
-    )
+    write_json(directory / "result.json", trial)
     print(
         json.dumps({"event": "trial_finished", "trial": directory.name, **result}),
         flush=True,
@@ -213,7 +214,7 @@ async def run_job(
             kwargs.get("base_url", "http://127.0.0.1:8000/v1"),
             sampling,
             stream=bool(kwargs.get("stream", False)),
-            api_key=_api_key(kwargs.get("api_key_env")),
+            api_key=read_api_key(kwargs.get("api_key_env")),
             timeout=kwargs.get("timeout", 1200),
             **client_options,
         )
@@ -239,6 +240,21 @@ async def run_job(
                     or result.get("attempt") != attempt
                 ):
                     raise ValueError(f"invalid completed trial identity: {directory}")
+                inputs = result.get("problem")
+                if inputs is None:  # Legacy trials may retain inputs in the response.
+                    record = directory / "agent" / "response.json"
+                    inputs = (
+                        json.loads(record.read_text()).get("problem")
+                        if record.exists()
+                        else None
+                    )
+                if inputs != {
+                    "statement": problem.statement,
+                    "code_template": problem.code_template,
+                }:
+                    raise ValueError(
+                        f"cannot resume changed or unrecorded problem: {problem.id}"
+                    )
                 return result["static_result"]["status"]
             return await run_trial(
                 problem,
@@ -266,14 +282,3 @@ async def run_job(
         "validated": statuses.count("validated"),
         "errors": statuses.count("error"),
     }
-
-
-def _api_key(name: str | None) -> str | None:
-    if not name:
-        return None
-    import os
-
-    value = os.environ.get(name)
-    if not value:
-        raise ValueError(f"environment variable {name!r} is not set")
-    return value

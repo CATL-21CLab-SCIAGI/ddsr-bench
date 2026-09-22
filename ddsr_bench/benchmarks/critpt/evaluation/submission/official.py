@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -8,19 +7,10 @@ from typing import Any
 import httpx
 
 from ddsr_bench.benchmarks.collect import load_batch
+from ddsr_bench.benchmarks.utils import read_json
 
 ENDPOINT = "https://artificialanalysis.ai/api/v2/critpt/evaluate"
 OFFICIAL_IDS = {f"Challenge_{number}_main" for number in range(1, 71)}
-
-
-def _read(path: Path) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"cannot read {path}") from error
-    if not isinstance(value, dict):
-        raise TypeError(f"{path} must contain a JSON object")
-    return value
 
 
 def _attempt(job_dir: str | Path, attempt: int) -> dict[str, Any]:
@@ -42,7 +32,7 @@ def _attempt(job_dir: str | Path, attempt: int) -> dict[str, Any]:
         artifact = trial.get("artifact")
         if not isinstance(artifact, str) or not (job / artifact).is_file():
             raise ValueError(f"{trial['problem_id']} has no answer artifact")
-        record = _read(job / trial["trial_name"] / "agent" / "response.json")
+        record = read_json(job / trial["trial_name"] / "agent" / "response.json")
         responses = record.get("responses")
         messages = record.get("messages")
         if not isinstance(responses, list) or not responses:

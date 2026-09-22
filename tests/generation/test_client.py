@@ -12,9 +12,34 @@ from ddsr_bench.generation.client import (
     OpenAIClient,
     Sampling,
     VLLMClient,
+    read_api_key,
 )
 
 MESSAGES = ({"role": "user", "content": "Solve."},)
+
+
+def test_api_key(monkeypatch):
+    monkeypatch.setenv("TEST_API_KEY", "secret")
+    assert read_api_key("TEST_API_KEY") == "secret"
+    assert read_api_key(None) is None
+    with pytest.raises(ValueError, match="must not be empty"):
+        read_api_key("")
+    monkeypatch.setenv("TEST_API_KEY", "")
+    with pytest.raises(ValueError, match="is not set"):
+        read_api_key("TEST_API_KEY")
+    monkeypatch.delenv("TEST_API_KEY")
+    with pytest.raises(ValueError, match="is not set"):
+        read_api_key("TEST_API_KEY")
+
+
+def test_key_lookup(monkeypatch):
+    monkeypatch.setenv("TEST_API_KEY", "host-key")
+    # Harbor's injected environment takes precedence over the host environment.
+    lookup = {"TEST_API_KEY": "agent-key"}.get
+    assert read_api_key("TEST_API_KEY", lookup=lookup) == "agent-key"
+    assert read_api_key(None, lookup=lookup) is None
+    with pytest.raises(ValueError, match="is not set"):
+        read_api_key("TEST_API_KEY", lookup={}.get)
 
 
 @pytest.mark.asyncio

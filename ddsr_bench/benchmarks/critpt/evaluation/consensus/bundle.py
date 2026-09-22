@@ -7,6 +7,8 @@ import json
 import re
 from pathlib import Path
 
+from ddsr_bench.benchmarks.utils import write_json
+
 from . import POLICY_VERSION
 from .policy import NOTES, mode
 from .validation import parameters, source, validate
@@ -110,9 +112,7 @@ def build(manifest_path: Path, source_root: Path, destination: Path) -> dict:
         "problems": sorted(rows, key=lambda p: p["number"]),
     }
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with destination.open("x") as handle:
-        json.dump(result, handle, ensure_ascii=False, indent=2)
-        handle.write("\n")
+    write_json(destination, result, overwrite=False, newline=True)
     return result
 
 

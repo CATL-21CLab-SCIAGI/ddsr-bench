@@ -226,6 +226,12 @@ datasets:
     )
     replay = await run_job(config, InvalidClient(), resume=True)
     assert replay == result
+    instruction = task / "instruction.md"
+    original = instruction.read_text()
+    instruction.write_text(original.replace("Return 42.", "Return 43."))
+    with pytest.raises(ValueError, match="changed or unrecorded problem"):
+        await run_job(config, InvalidClient(), resume=True)
+    instruction.write_text(original)
     config.write_text(config.read_text().replace("n_attempts: 2", "n_attempts: 3"))
     with pytest.raises(ValueError, match="only permits changing n_concurrent_trials"):
         await run_job(config, FakeClient(), resume=True)

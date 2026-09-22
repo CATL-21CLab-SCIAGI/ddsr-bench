@@ -8,6 +8,20 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.registry import result_adapter, summarizer
+from ddsr_bench.benchmarks.utils import read_json, write_json
+
+
+def group_results(
+    trials: list[dict[str, Any]],
+    field: str,
+    metrics: Callable[[list[dict[str, Any]]], dict[str, float | int]],
+) -> dict[str, dict[str, float | int]]:
+    """Summarize groups using the benchmark's own metric calculation."""
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for trial in trials:
+        value = trial[field] if field == "attempt" else trial["benchmark_config"][field]
+        groups.setdefault(str(value), []).append(trial)
+    return {name: metrics(groups[name]) for name in sorted(groups)}
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,16 +38,6 @@ class Trial:
     status: str
     artifact: str | None
     attempt: int = -1
-
-
-def _read(path: Path) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"cannot read {path}") from error
-    if not isinstance(value, dict):
-        raise TypeError(f"{path} must contain a JSON object")
-    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,7 +83,7 @@ def _trial(record: TrialRecord, job: Path) -> Trial:
     if isinstance(reward, bool) or not isinstance(reward, int | float):
         reward = None
     verifier_path = result_path.parent / "verifier" / "result.json"
-    verifier = _read(verifier_path) if verifier_path.exists() else {}
+    verifier = read_json(verifier_path) if verifier_path.exists() else {}
     status = (
         static.get("status", "missing")
         if isinstance(static, dict)
@@ -113,7 +117,7 @@ def load_trials[T](
     *,
     adapter: Callable[[TrialRecord, Path], T] = _trial,
     paths: Iterable[Path] | None = None,
-    reader: Callable[[Path], dict[str, Any]] = _read,
+    reader: Callable[[Path], dict[str, Any]] = read_json,
 ) -> list[T]:
     """Read trials without filtering attempts or writing collection summaries.
 
@@ -142,7 +146,7 @@ def load_batch(job_dir: str | Path, attempt: int) -> list[dict[str, Any]]:
     """
     if type(attempt) is not int or attempt < 0:
         raise ValueError("attempt must be a nonnegative integer")
-    batches = _read(Path(job_dir) / "summary.json").get("batches")
+    batches = read_json(Path(job_dir) / "summary.json").get("batches")
     if not isinstance(batches, list) or any(not isinstance(b, dict) for b in batches):
         raise TypeError("summary batches must be a list of objects")
     selected = [b for b in batches if b.get("attempt") == attempt]
@@ -236,7 +240,7 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
     summarize = summarizer(trials[0].benchmark)
     if summarize is not None and rows:
         summary["metrics"] = summarize([asdict(trial) for trial in rows])
-    (job / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    write_json(job / "summary.json", summary)
     with (job / "summary.csv").open("w", newline="", encoding="utf-8") as file:
         fields = tuple(Trial.__dataclass_fields__)
         writer = csv.DictWriter(file, fieldnames=fields)

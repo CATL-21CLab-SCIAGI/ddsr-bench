@@ -6,17 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.registry import sft_adapter, trajectory_adapter
+from ddsr_bench.benchmarks.utils import read_json
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
-
-
-def _json(path: Path) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"cannot load JSON object from {path}") from error
-    if not isinstance(value, dict):
-        raise TypeError(f"{path} must contain a JSON object")
-    return value
 
 
 def _benchmark(trial: Path, record: dict[str, Any]) -> str:
@@ -33,12 +24,12 @@ def load_trajectory(trial_dir: str | Path) -> Trajectory:
     """Load one canonical trajectory from a static or Harbor trial directory."""
     trial = Path(trial_dir)
     response_path = trial / "agent" / "response.json"
-    response_record = _json(response_path)
-    trial_record = _json(trial / "result.json")
+    response_record = read_json(response_path)
+    trial_record = read_json(trial / "result.json")
     validation_path = trial / "validation" / "result.json"
     if not validation_path.exists():
         validation_path = trial / "verifier" / "result.json"
-    validation = _json(validation_path)
+    validation = read_json(validation_path)
     benchmark = _benchmark(trial, trial_record)
     return trajectory_adapter(benchmark)(
         trial, response_record, trial_record, validation
@@ -51,7 +42,9 @@ def export_trajectories(job_dir: str | Path, output: str | Path) -> Path:
     trials = sorted(path.parent.parent for path in job.glob("*/agent/response.json"))
     if not trials:
         raise ValueError(f"no response records found in {job}")
-    benchmarks = {_benchmark(trial, _json(trial / "result.json")) for trial in trials}
+    benchmarks = {
+        _benchmark(trial, read_json(trial / "result.json")) for trial in trials
+    }
     if len(benchmarks) != 1:
         raise ValueError("cannot export multiple benchmarks together")
     destination = Path(output)

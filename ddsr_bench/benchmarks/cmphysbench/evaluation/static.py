@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from contextlib import nullcontext
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -19,15 +18,9 @@ from ddsr_bench.benchmarks.cmphysbench.evaluation.prepare import decode_instruct
 from ddsr_bench.benchmarks.cmphysbench.evaluation.verifier import verify
 from ddsr_bench.benchmarks.cmphysbench.generation.runner import generate
 from ddsr_bench.benchmarks.registry import benchmark_config
+from ddsr_bench.benchmarks.utils import write_json as _write
 from ddsr_bench.commands.resume import completed, prepare_job
-from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling
-
-
-def _write(path: Path, value: dict[str, Any]) -> None:
-    path.write_text(
-        json.dumps(value, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling, read_api_key
 
 
 async def run_trial(
@@ -102,15 +95,6 @@ async def run_trial(
     }
     _write(directory / "result.json", trial)
     return result
-
-
-def _api_key(name: str | None) -> str | None:
-    if name is None:
-        return None
-    value = os.environ.get(name)
-    if not value:
-        raise ValueError(f"environment variable {name!r} is not set")
-    return value
 
 
 def _prepared(config: JobConfig) -> list[Problem]:
@@ -194,7 +178,7 @@ async def run_job(
             kwargs.get("base_url", "http://127.0.0.1:8000/v1"),
             sampling,
             stream=bool(kwargs.get("stream", False)),
-            api_key=_api_key(kwargs.get("api_key_env")),
+            api_key=read_api_key(kwargs.get("api_key_env")),
         )
     )
     work = [

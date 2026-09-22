@@ -16,6 +16,7 @@ from ddsr_bench.benchmarks.critpt.generation.prompts import (
     parse_prompt,
     system_prompt,
 )
+from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.generation.client import ChatClient, ChatResponse, Sampling
 
 
@@ -153,13 +154,6 @@ async def generate(
             "responses": [asdict(r) | {"sha256": _hash(r.content)} for r in responses],
         }
 
-    def save(path, data):
-        temporary = path.with_suffix(path.suffix + ".tmp")
-        temporary.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        temporary.replace(path)
-
     async def complete(messages: tuple[Message, ...]) -> str:
         stage = len(responses) + 1
         checkpoint = checkpoint_dir / f"stage-{stage}.json" if checkpoint_dir else None
@@ -229,8 +223,8 @@ async def generate(
             snapshot = record(
                 (*messages, Message("assistant", response.content)), "in_progress"
             )
-            save(checkpoint_dir / f"stage-{stage}.json", snapshot)
-            save(checkpoint_dir / "response.json", snapshot)
+            write_json(checkpoint_dir / f"stage-{stage}.json", snapshot)
+            write_json(checkpoint_dir / "response.json", snapshot)
         if require_complete_stages and response.finish_reason not in (None, "stop"):
             raise ValueError(
                 f"stage {stage} did not finish normally: {response.finish_reason}"
@@ -242,5 +236,5 @@ async def generate(
     result = await converse(problem, style, complete)
     final = record(result.messages, "completed")
     if checkpoint_dir is not None:
-        save(checkpoint_dir / "response.json", final)
+        write_json(checkpoint_dir / "response.json", final)
     return result.content, final

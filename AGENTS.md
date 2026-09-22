@@ -6,6 +6,33 @@ benchmark adapter and preserve its style. Keep handwritten increments near 200
 lines when practical, stop for review between increments, and never commit
 generated tasks, outputs, caches, secrets, or empty directories.
 
+## Maintaining guidance
+
+When an agreed project rule changes, update its concise contributor-facing form
+here or in CONTRIBUTING.md and align the personal `ddsr-bench-maintenance` skill
+when available. Keep detailed rationale in the skill, not duplicated wholesale
+here. Repository guidance must stand alone without personal files. Remove
+superseded rules; report any skill update that cannot be completed.
+
+## Documentation changes
+
+After moving, removing, or renaming sections, check incoming links and prose
+references across tracked Markdown. Validate section anchors as well as file
+paths, including headings changed by numbering or emojis. Code-layout references
+belong in [CONTRIBUTING.md](CONTRIBUTING.md#code-layout), not the root README.
+Fix stale references rather than restoring intentionally removed sections.
+
+## Shared-helper review
+
+Before adding helpers, search for equivalent operations across the package,
+including inline code and differently named functions. Audit related readers,
+writers, credential lookup, and validation together. Preserve atomic writes,
+exclusive-create rules, streaming JSONL, strict consensus checks, and Harbor's
+credential precedence. Prefer existing utility modules; do not deduplicate
+benchmark-specific or vendored scoring behavior merely because it looks alike.
+Test failure semantics, remove obsolete helpers, and report deliberate duplicates
+or deferred work explicitly.
+
 ## Benchmark integration review
 
 When adding or auditing a benchmark:

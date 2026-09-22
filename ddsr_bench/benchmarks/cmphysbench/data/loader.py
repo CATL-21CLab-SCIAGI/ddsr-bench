@@ -3,17 +3,12 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any, get_args
 
+from ddsr_bench.benchmarks.utils import read_text
+
 from .schemas import AnswerSpec, AnswerType, Problem, ProblemSpec
 
 DATASET = "weidawang/CMPhysBench"
 REVISION = "43d185851f731e23aa5737c3667b3a9e87bf8cd1"
-
-
-def _text(record: Mapping[str, Any], key: str, label: str) -> str:
-    value = record.get(key)
-    if not isinstance(value, str):
-        raise TypeError(f"{label} requires text at {key!r}")
-    return value
 
 
 def load_problem(record: Mapping[str, Any]) -> Problem:
@@ -22,7 +17,7 @@ def load_problem(record: Mapping[str, Any]) -> Problem:
     if isinstance(raw_id, bool) or not isinstance(raw_id, int | str):
         raise TypeError("CMPhysBench problem requires an integer or text ID")
     problem_id = str(raw_id)
-    answer_type = _text(record, "answer_type", problem_id)
+    answer_type = read_text(record, "answer_type", problem_id)
     if answer_type not in get_args(AnswerType):
         raise ValueError(f"unsupported CMPhysBench answer type {answer_type!r}")
 
@@ -38,10 +33,10 @@ def load_problem(record: Mapping[str, Any]) -> Problem:
     spec = ProblemSpec(
         id=problem_id,
         context=context,
-        question=_text(record, "question", problem_id),
-        symbols=_text(record, "symbol", problem_id),
+        question=read_text(record, "question", problem_id),
+        symbols=read_text(record, "symbol", problem_id),
         answer_type=answer_type,
-        topic=_text(record, "topic", problem_id),
+        topic=read_text(record, "topic", problem_id),
     )
     answer = AnswerSpec(final_answers[0]) if final_answers else None
     return Problem(spec=spec, answer=answer)

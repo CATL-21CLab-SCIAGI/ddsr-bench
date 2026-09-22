@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -14,7 +13,15 @@ from ddsr_bench import __version__
 from ddsr_bench.benchmarks.cmphysbench.data.schemas import ProblemSpec
 from ddsr_bench.benchmarks.cmphysbench.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.cmphysbench.generation.runner import generate
-from ddsr_bench.generation.client import CLIENTS, ChatClient, ClientName, Sampling
+from ddsr_bench.benchmarks.utils import write_json
+from ddsr_bench.generation.client import (
+    API_KEY_ENV,
+    CLIENTS,
+    ChatClient,
+    ClientName,
+    Sampling,
+    read_api_key,
+)
 
 
 class CMPhysBenchAgent(BaseAgent):
@@ -41,11 +48,7 @@ class CMPhysBenchAgent(BaseAgent):
             else Sampling(model_name, **dict(sampling or {}))
         )
         self.stream = stream
-        self.api_key_env = api_key_env or {
-            "openai": "OPENAI_API_KEY",
-            "bedrock": "AWS_BEARER_TOKEN_BEDROCK",
-            "aliyun": "ALIYUN_API_KEY",
-        }.get(client_name)
+        self.api_key_env = api_key_env or API_KEY_ENV.get(client_name)
         self.client = client
         self.client_name = client_name
 
@@ -70,7 +73,7 @@ class CMPhysBenchAgent(BaseAgent):
             self.base_url,
             self.sampling,
             stream=self.stream,
-            api_key=(self._get_env(self.api_key_env) if self.api_key_env else None),
+            api_key=read_api_key(self.api_key_env, lookup=self._get_env),
         ) as client:
             await client.preflight()
             return await generate(problem, client, self.sampling)
@@ -85,9 +88,7 @@ class CMPhysBenchAgent(BaseAgent):
         problem = decode_instruction(instruction)
         answer, record = await self._generate(problem)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
-        (self.logs_dir / "response.json").write_text(
-            json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        write_json(self.logs_dir / "response.json", record)
         with NamedTemporaryFile("w", suffix=".txt", encoding="utf-8") as file:
             file.write(answer)
             file.flush()

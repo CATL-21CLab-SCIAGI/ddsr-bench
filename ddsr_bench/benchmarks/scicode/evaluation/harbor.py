@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import asdict
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -14,11 +13,14 @@ from ddsr_bench import __version__
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem
 from ddsr_bench.benchmarks.scicode.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.scicode.generation.runner import StepGeneration, generate
+from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.generation.client import (
+    API_KEY_ENV,
     CLIENTS,
     ChatClient,
     ClientName,
     Sampling,
+    read_api_key,
 )
 
 
@@ -47,10 +49,7 @@ class SciCodeAgent(BaseAgent):
             else Sampling(model_name, **dict(sampling or {}))
         )
         self.stream = stream
-        self.api_key_env = api_key_env or {
-            "openai": "OPENAI_API_KEY",
-            "bedrock": "AWS_BEARER_TOKEN_BEDROCK",
-        }.get(client_name)
+        self.api_key_env = api_key_env or API_KEY_ENV.get(client_name)
         self.client = client
         self.client_name = client_name
         self.with_background = with_background
@@ -78,7 +77,7 @@ class SciCodeAgent(BaseAgent):
             self.base_url,
             self.sampling,
             stream=self.stream,
-            api_key=(self._get_env(self.api_key_env) if self.api_key_env else None),
+            api_key=read_api_key(self.api_key_env, lookup=self._get_env),
         ) as client:
             await client.preflight()
             return await generate(problem, client, with_background=self.with_background)
@@ -100,9 +99,7 @@ class SciCodeAgent(BaseAgent):
             "with_background": self.with_background,
             "steps": [asdict(step) for step in steps],
         }
-        (self.logs_dir / "response.json").write_text(
-            json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        write_json(self.logs_dir / "response.json", record)
         with NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as file:
             file.write(solution)
             file.flush()

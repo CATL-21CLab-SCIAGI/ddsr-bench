@@ -8,7 +8,7 @@ symbolic expression tree with the official reference.
 The adapter pins the official dataset, prompt, and EED implementation. See the
 [PHYBench pipeline](PIPELINE.md) for the data and scoring flow. Shared client
 setup, collection, and trajectory export are documented by the root
-[workflow](../../../README.md#workflow).
+[workflow](../../../README.md).
 
 ## Data and preparation
 
@@ -74,8 +74,8 @@ pinned dataset cannot be imported or reached.
 
 ## Results and teacher data
 
-Use the shared [collection](../../../README.md#4-collect-results) and
-[teacher-data export](../../../README.md#5-export-teacher-data) commands with
+Use the shared [collection](../../../README.md#-collect-results) and
+[teacher-data export](../../../README.md#-export-teacher-data) commands with
 either job directory. The `native` and `full` SFT views both preserve the
 single visible solution call. Provider reasoning remains separate in canonical
 trajectories and is not copied into visible SFT completions.

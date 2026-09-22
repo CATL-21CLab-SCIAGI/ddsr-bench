@@ -1,6 +1,15 @@
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
+
+
+def test_submission_packaged():
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    assert (
+        "ddsr_bench.benchmarks.critpt.evaluation.submission"
+        in config["tool"]["setuptools"]["packages"]
+    )
 
 
 def test_critpt_image() -> None:

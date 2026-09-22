@@ -15,10 +15,12 @@ from ddsr_bench.benchmarks.critpt.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
 from ddsr_bench.generation.client import (
+    API_KEY_ENV,
     CLIENTS,
     ChatClient,
     ClientName,
     Sampling,
+    read_api_key,
 )
 from ddsr_bench.grading.validation import extract_answer
 
@@ -75,10 +77,7 @@ class CritPtAgent(BaseAgent):
             else Sampling(model_name, **dict(sampling or {}))
         )
         self.stream = stream
-        self.api_key_env = api_key_env or {
-            "openai": "OPENAI_API_KEY",
-            "bedrock": "AWS_BEARER_TOKEN_BEDROCK",
-        }.get(client_name)
+        self.api_key_env = api_key_env or API_KEY_ENV.get(client_name)
         self.client = client
         self.client_name = client_name
 
@@ -111,7 +110,7 @@ class CritPtAgent(BaseAgent):
                 self.base_url,
                 self.sampling,
                 stream=self.stream,
-                api_key=(self._get_env(self.api_key_env) if self.api_key_env else None),
+                api_key=read_api_key(self.api_key_env, lookup=self._get_env),
                 **self.client_options,
             )
         )
