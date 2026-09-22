@@ -69,28 +69,47 @@ def test_export_action(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "dataset/sft-answer.jsonl" in result
 
 
-def test_submit_action(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("selection", [0, 2, [2], [0, 1, 2, 3, 4]])
+def test_submit_action(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, selection
+) -> None:
     monkeypatch.setenv("TEST_API_KEY", "secret")
+    selected = [selection] if isinstance(selection, int) else selection
+    from ddsr_bench.benchmarks.critpt.evaluation import submission
+
+    def build(job, attempts):
+        assert job == tmp_path
+        assert attempts == selected
+        assert isinstance(attempts, list)
+        return {"attempts": attempts}
+
+    monkeypatch.setattr(submission, "build_batch", build)
     monkeypatch.setattr(
-        "ddsr_bench.commands.dispatch.submitter",
-        lambda _: lambda *args: {"attempt": args[1]},
+        submission,
+        "submit_batch",
+        lambda payload, *args, **kwargs: payload,
     )
     config = SimpleNamespace(
         action="submit",
         benchmark=SimpleNamespace(
             name="critpt",
-            get=lambda _: SimpleNamespace(
-                endpoint="endpoint", timeout_sec=10, api_key_env="TEST_API_KEY"
-            ),
+            get=lambda _: {
+                "endpoint": "endpoint",
+                "timeout_sec": 10,
+                "api_key_env": "TEST_API_KEY",
+                "attempts": selection,
+            },
         ),
         paths=SimpleNamespace(input=tmp_path, output=None),
-        submission=SimpleNamespace(attempt=2),
     )
 
     result = dispatch(config)
 
-    assert "submitted attempt 2" in result
-    assert json.loads((tmp_path / "submission-2.json").read_text()) == {"attempt": 2}
+    assert f"submitted attempts {selected}" in result
+    label = "-".join(map(str, selected))
+    assert json.loads((tmp_path / f"submission-{label}.json").read_text()) == {
+        "attempts": selected
+    }
 
 
 def test_logging_is_idempotent() -> None:

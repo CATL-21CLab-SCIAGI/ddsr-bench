@@ -34,10 +34,10 @@ flowchart TD
     O --> W
     V --> W
     W --> X["Collect or export"]
-    X --> Z["Explicit submit: local backend, selected attempt"]
+    X --> Z["Explicit submit: internal backend, selected attempt"]
     Z --> AA["Isolated candidate execution; references stay evaluator-side"]
     AA --> AB["Internal match report; no reward mutation"]
-    X --> Y["Explicit submit: official backend, complete 70-main batch"]
+    X --> Y["Official submit: selected complete attempts, one AA request"]
 ```
 
 Prepared job runs generate every problem as an independent trial. The lower-level
@@ -56,7 +56,7 @@ Official public challenges do not expose reference answers or testcases, so
 their local Harbor result is format validation. Reference execution is used
 only when verifier-side answer data is available. Artificial Analysis
 submission is a separate, explicit action after collecting one complete batch.
-Local submission reads artifact paths from the same selected collected batch
+Internal submission reads artifact paths from the same selected collected batch
 and counts missing active answers as zero. Only the official backend requires
 all 70 main IDs and answer artifacts. The
 compatibility CLI retains multi-attempt aggregation and reference replay.

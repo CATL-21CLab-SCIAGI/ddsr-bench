@@ -6,9 +6,9 @@ from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
 from ddsr_bench.benchmarks.collect import collect_trials, load_batch
-from ddsr_bench.benchmarks.critpt.evaluation import local as submission
 from ddsr_bench.benchmarks.critpt.evaluation.consensus import cli
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.runtime import Runtime
+from ddsr_bench.benchmarks.critpt.evaluation.submission import internal as submission
 from ddsr_bench.commands.dispatch import dispatch
 
 
@@ -17,12 +17,12 @@ def test_config_scope(benchmark):
     configs = Path(__file__).resolve().parents[4] / "configs"
     with initialize_config_dir(version_base="1.3", config_dir=str(configs)):
         config = compose(config_name="config", overrides=[f"benchmark={benchmark}"])
-    assert "local" not in config.submission
+    assert "submission" not in config
     submission = config.benchmark.get("submission", {})
-    assert ("local" in submission) == (benchmark == "critpt")
+    assert ("internal" in submission) == (benchmark == "critpt")
 
 
-def test_local_submission(tmp_path, sample_bundle_path, monkeypatch):
+def test_internal_submission(tmp_path, sample_bundle_path, monkeypatch):
     """Both entry points must retain the same report and incomplete attempt."""
     job = tmp_path / "job"
     artifacts = job / "Challenge_1_main__attempt-0" / "artifacts"
@@ -49,20 +49,20 @@ def test_local_submission(tmp_path, sample_bundle_path, monkeypatch):
             "action": "submit",
             "benchmark": {
                 "name": "critpt",
-                "submission": {"local": {"bundle": str(sample_bundle_path), "jobs": 1}},
+                "submission": {
+                    "backend": "internal",
+                    "attempts": [0],
+                    "internal": {"bundle": str(sample_bundle_path), "jobs": 1},
+                },
             },
             "paths": {"input": str(job)},
-            "submission": {
-                "backend": "local",
-                "attempt": 0,
-            },
         }
     )
     official = job / "submission-0.json"
     official.write_text('{"existing": true}')
 
     dispatch(config)
-    local = json.loads((job / "submission-local-0.json").read_text())
+    internal = json.loads((job / "submission-internal-0.json").read_text())
     old = tmp_path / "cli.json"
     assert (
         cli.main(
@@ -84,25 +84,25 @@ def test_local_submission(tmp_path, sample_bundle_path, monkeypatch):
         == 0
     )
     original = json.loads(old.read_text())
-    assert local["candidate_input"]["layout"] == "collected"
-    local["candidate_input"]["layout"] = original["candidate_input"]["layout"]
-    assert local == original
-    assert local["summary"]["statuses"] == {
+    assert internal["candidate_input"]["layout"] == "collected"
+    internal["candidate_input"]["layout"] = original["candidate_input"]["layout"]
+    assert internal == original
+    assert internal["summary"]["statuses"] == {
         "matched": 1,
         "missing_candidate": 60,
         "skipped": 9,
     }
-    assert local["summary"]["match_rate"] == pytest.approx(1 / 61)
+    assert internal["summary"]["match_rate"] == pytest.approx(1 / 61)
     assert json.loads(official.read_text()) == {"existing": True}
     with pytest.raises(ValueError, match="already exists"):
         dispatch(config)
 
 
 def test_unknown_backend(tmp_path):
-    from ddsr_bench.benchmarks.critpt.evaluation.submit import submit_attempt
+    from ddsr_bench.benchmarks.critpt.evaluation.submission import submit
 
     with pytest.raises(ValueError, match="unknown submission backend"):
-        submit_attempt(tmp_path, 0, {}, {"backend": "typo"})
+        submit(tmp_path, {"attempts": [0], "backend": "typo"})
 
 
 def test_collection_required(tmp_path, sample_bundle_path, monkeypatch):
@@ -113,7 +113,7 @@ def test_collection_required(tmp_path, sample_bundle_path, monkeypatch):
         submission, "Runtime", lambda **_: pytest.fail("must not start execution")
     )
     with pytest.raises(ValueError, match="summary.json"):
-        submission.submit(tmp_path, 0, bundle=str(sample_bundle_path))
+        submission.submit(tmp_path, [0], bundle=str(sample_bundle_path))
 
 
 def test_collected_names(tmp_path):

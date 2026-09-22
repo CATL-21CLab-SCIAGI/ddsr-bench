@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
 import logging
 import sys
 from collections.abc import Callable
-from pathlib import Path
 
 import hydra
 from omegaconf import DictConfig
@@ -65,23 +63,14 @@ def export(config: DictConfig) -> str:
 
 
 def submit(config: DictConfig) -> str:
-    if config.paths.input is None or config.submission.attempt is None:
-        raise ValueError("paths.input and submission.attempt are required for submit")
-    job = Path(config.paths.input)
-    attempt = int(config.submission.attempt)
-    backend = getattr(config.submission, "backend", "official")
-    suffix = "" if backend == "official" else f"-{backend}"
-    output = job / f"submission{suffix}-{attempt}.json"
-    if output.exists():
-        raise ValueError(f"submission result already exists: {output}")
+    if config.paths.input is None:
+        raise ValueError("paths.input is required for submit")
     benchmark = str(config.benchmark.name)
     send = submitter(benchmark)
     submission = config.benchmark.get("submission")
     if submission is None:
         raise ValueError(f"benchmark {benchmark!r} has no submission configuration")
-    result = send(job, attempt, submission, config.submission)
-    output.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    return f"submitted attempt {attempt}; result saved to {output}"
+    return send(config.paths.input, submission)
 
 
 ACTIONS: dict[str, Action] = {

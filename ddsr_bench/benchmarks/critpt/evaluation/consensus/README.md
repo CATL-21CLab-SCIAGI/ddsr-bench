@@ -1,6 +1,6 @@
 # 独立的 CritPt 内部共识评测
 
-`ddsr_bench.benchmarks.critpt.evaluation.consensus` 对候选答案做内部共识参考匹配，作为 `action=submit submission.backend=local` 的评分实现。参考包和执行设置位于 `benchmark.submission.local`，命令示例见 [CritPt 指南](../../README.md#local-submission)。原 CLI 保留用于兼容、批量汇总和参考回放。评分不调用官方 API，不修改 trial reward 或训练导出结果。当前版本为 `consensus-61-v2`。
+`ddsr_bench.benchmarks.critpt.evaluation.consensus` 对候选答案做内部共识参考匹配，作为 `action=submit benchmark.submission.backend=internal` 的评分实现。参考包和执行设置位于 `benchmark.submission.internal`，命令示例见 [CritPt 指南](../../README.md#internal-submission)。原 CLI 保留用于兼容、批量汇总和参考回放。评分不调用官方 API，不修改 trial reward 或训练导出结果。当前版本为 `consensus-61-v2`。
 
 运行时不使用LLM judge。参考匹配不等于官方正确性标签；历史confidence也不是校准后的正确概率。
 

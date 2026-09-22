@@ -9,7 +9,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from ..local import score
+from ..submission.internal import score
 from .bundle import DEFAULT_BUNDLE, build, load
 from .candidates import load_candidates
 from .grader import Grader

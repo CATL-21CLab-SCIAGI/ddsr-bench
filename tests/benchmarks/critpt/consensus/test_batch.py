@@ -6,7 +6,7 @@ import pytest
 
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.batch import score_batch
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.candidates import load_candidates
-from ddsr_bench.benchmarks.critpt.evaluation.local import score
+from ddsr_bench.benchmarks.critpt.evaluation.submission.internal import score
 
 
 class Grader:

@@ -26,7 +26,7 @@ flowchart TD
     N --> Q["Benchmark trajectory adapter"]
     Q --> R["trajectories.jsonl + sft.jsonl"]
     N --> S["Explicit submission, when supported"]
-    S --> T["Benchmark official or local grader"]
+    S --> T["Benchmark official or internal grader"]
     T --> U["Separate submission report"]
 ```
 
@@ -35,7 +35,7 @@ how many trials run at once; it does not combine them or cause their files to
 share a directory.
 
 Submission is explicit and never runs automatically after generation. CritPt's
-local backend uses an external evaluator-only reference bundle and isolated
+internal backend uses an external evaluator-only reference bundle and isolated
 execution. Its report does not change trial rewards or training-data selection.
 The compatibility CLI also supports multi-attempt aggregation and reference replay.
 
