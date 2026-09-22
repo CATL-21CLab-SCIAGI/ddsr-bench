@@ -1,12 +1,12 @@
-"""Local submission using the existing consensus reference policy."""
+"""Internal submission using the existing consensus reference policy."""
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from .consensus.bundle import DEFAULT_BUNDLE, load
-from .consensus.candidates import CandidateBatch, load_collected
-from .consensus.grader import Grader, grade_candidate, report
-from .consensus.runtime import Runtime, provenance
+from ..consensus.bundle import DEFAULT_BUNDLE, load
+from ..consensus.candidates import CandidateBatch, load_collected
+from ..consensus.grader import Grader, grade_candidate, report
+from ..consensus.runtime import Runtime, provenance
 
 
 def score(directory: Path, submitted: CandidateBatch, grader: Grader, jobs: int):
@@ -23,7 +23,7 @@ def score(directory: Path, submitted: CandidateBatch, grader: Grader, jobs: int)
 
 def submit(
     job: Path,
-    attempt: int,
+    attempts: list[int],
     *,
     bundle: str | None = None,
     execution: str = "docker",
@@ -31,11 +31,13 @@ def submit(
     timeout: float = 60,
     jobs: int = 4,
 ) -> dict:
+    if len(attempts) != 1:
+        raise ValueError("internal submission currently requires one attempt")
     if not 1 <= jobs <= 16:
         raise ValueError("jobs must be between 1 and 16")
     path = Path(bundle) if bundle is not None else DEFAULT_BUNDLE
     references = load(path)
-    submitted = load_collected(job, attempt)
+    submitted = load_collected(job, attempts[0])
     runtime = Runtime(backend=execution, image=image, timeout=timeout)
     return {
         "provenance": provenance(path, runtime),

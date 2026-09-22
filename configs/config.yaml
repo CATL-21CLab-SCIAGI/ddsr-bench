@@ -12,9 +12,6 @@ run:
   name: default
 training:
   view: full
-submission:
-  backend: official
-  attempt: null
 
 hydra:
   job:

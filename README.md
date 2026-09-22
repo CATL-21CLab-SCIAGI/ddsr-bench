@@ -104,5 +104,5 @@ their benchmark-specific behavior.
 - [Upstream sources](UPSTREAM.md): pinned repositories, datasets, and provenance
 
 Benchmarks may support explicit submission of saved answers to an official or
-local grader. See the [CritPt submission guide](ddsr_bench/benchmarks/critpt/README.md#local-submission)
+internal grader. See the [CritPt submission guide](ddsr_bench/benchmarks/critpt/README.md#internal-submission)
 for its external reference bundle, isolated execution, and internal match scores.

@@ -55,6 +55,6 @@ def test_preparation_capabilities() -> None:
 
 
 def test_submission_capabilities() -> None:
-    assert submitter("critpt").__name__ == "submit_attempt"
+    assert submitter("critpt").__name__ == "submit"
     with pytest.raises(ValueError, match="does not support submission"):
         submitter("cmphysbench")

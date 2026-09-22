@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,7 @@ def _read(path: Path) -> dict[str, Any]:
     return value
 
 
-def build_batch(job_dir: str | Path, attempt: int) -> dict[str, Any]:
+def _attempt(job_dir: str | Path, attempt: int) -> dict[str, Any]:
     """Build one explicit official batch from a collected attempt."""
     job = Path(job_dir)
     trials = load_batch(job, attempt)
@@ -85,6 +86,20 @@ def build_batch(job_dir: str | Path, attempt: int) -> dict[str, Any]:
     }
 
 
+def build_batch(job_dir: str | Path, attempts: list[int]) -> dict[str, Any]:
+    """Preflight every selected run before making any AA request.
+
+    Each attempt selects one answer per problem. All selected attempts are
+    flattened into one request, as in upstream evaluate_all_results.py.
+    This function only reads local records; it never contacts the grading API.
+    """
+    batches = [_attempt(job_dir, attempt) for attempt in attempts]
+    return {
+        "submissions": [item for batch in batches for item in batch["submissions"]],
+        "batch_metadata": {"attempts": list(attempts)},
+    }
+
+
 def submit_batch(
     payload: dict[str, Any],
     api_key: str,
@@ -102,7 +117,11 @@ def submit_batch(
     ):
         raise TypeError("submissions must be a list of objects")
     ids = [item.get("problem_id") for item in submissions]
-    if len(ids) != 70 or len(set(ids)) != 70 or set(ids) != OFFICIAL_IDS:
+    if any(not isinstance(pid, str) for pid in ids):
+        raise TypeError("submission problem IDs must be strings")
+    counts = Counter(ids)
+    # Repeated IDs are expected across attempts, but coverage must be balanced.
+    if set(counts) != OFFICIAL_IDS or len(set(counts.values())) != 1:
         raise ValueError("refusing to submit an incomplete official batch")
     with httpx.Client(timeout=timeout, transport=transport) as client:
         response = client.post(endpoint, json=payload, headers={"x-api-key": api_key})

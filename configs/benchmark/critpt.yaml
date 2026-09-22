@@ -1,9 +1,11 @@
 name: critpt
 submission:
+  backend: official
+  attempts: null # Official: [0, 1, 2, 3, 4] combines 350 answers in one request.
   endpoint: https://artificialanalysis.ai/api/v2/critpt/evaluate
   api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
   timeout_sec: 7200
-  local:
+  internal:
     bundle: null # Use the grader's default external reference path.
     execution: docker # docker or linux; separate from the submission backend.
     image: ddsr-critpt-consensus:local

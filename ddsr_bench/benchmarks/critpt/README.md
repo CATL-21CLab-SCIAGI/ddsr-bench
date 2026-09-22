@@ -64,22 +64,22 @@ Portable five-attempt examples are in `configs/jobs/critpt/qwen-long-context.yam
 and `configs/jobs/critpt/deepseek-pai-max.yaml`. Machine paths and credentials
 belong in ignored `configs/local/` and `.env` files.
 
-### Local submission
+### Internal submission
 
-Submit one collected attempt to the local consensus grader without calling the
-official API. Grader settings belong to `benchmark.submission.local`:
+Submit one collected attempt to the internal consensus grader without calling the
+official API. Grader settings belong to `benchmark.submission.internal`:
 
 ```bash
 ddsr-bench action=collect paths.input=outputs/static/my-job
 ddsr-bench action=submit benchmark=critpt \
-  paths.input=outputs/static/my-job submission.attempt=0 \
-  submission.backend=local \
-  benchmark.submission.local.bundle=/absolute/path/to/consensus-61-v2.json
+  paths.input=outputs/static/my-job 'benchmark.submission.attempts=[0]' \
+  benchmark.submission.backend=internal \
+  benchmark.submission.internal.bundle=/absolute/path/to/consensus-61-v2.json
 ```
 
-This writes `submission-local-0.json` and includes missing answers as zero.
-Both backends require `summary.json` and an explicit `submission.attempt`.
-Local grading follows the selected batch's artifact paths; raw legacy inputs
+This writes `submission-internal-0.json` and includes missing answers as zero.
+Both backends require `summary.json` and explicit attempt selection.
+Internal grading follows the selected batch's artifact paths; raw legacy inputs
 remain supported by the compatibility CLI, not by the submit action.
 Docker is the default execution backend; Linux sandboxing is also supported.
 These are internal consensus scores, not official accuracy. The compatibility
@@ -141,20 +141,31 @@ derived one-step answer sample.
 ## Submission
 
 Submission is explicit and requires exactly one answer for each of the 70
-official main problems:
+official main problems **within each selected attempt**:
 
 ```bash
 export ARTIFICIAL_ANALYSIS_API_KEY='...'
 ddsr-bench \
   action=submit \
   paths.input=outputs/harbor/critpt-official \
-  submission.attempt=0
+  'benchmark.submission.attempts=[0]'
 ```
 
 The command rejects missing, duplicate, and mixed-attempt batches before making
 one request. It writes `submission-0.json` without overwriting an existing
 response. The payload retains CritPt's official `problem_id`, `generated_code`,
 `model`, `generation_config`, and `messages` fields.
+
+`benchmark.submission.attempts=0` is also accepted and normalized to `[0]`;
+the integer selects an attempt index, not a number of runs.
+
+For a five-run score, replace `'benchmark.submission.attempts=[0]'` with
+`'benchmark.submission.attempts=[0,1,2,3,4]'`. This sends all 350 response strings in **one
+AA request**, following upstream `evaluate_all_results.py`, and saves the returned
+aggregate metrics to `submission-0-1-2-3-4.json`. Repeated problem IDs across
+attempts are expected; duplicates within an attempt are rejected. AA's accuracy
+over these 350 answers equals the five-run mean. The client does not retry failed
+requests automatically. Internal submission still accepts one attempt at a time.
 
 ## Compatibility and limitations
 

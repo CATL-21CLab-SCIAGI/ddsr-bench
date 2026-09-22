@@ -33,7 +33,7 @@ Preparer = Callable[
     [Mapping[str, Any], str | Path | None, str | Path, Resources],
     tuple[Path, ...],
 ]
-Submitter = Callable[[Path, int, Mapping[str, Any], Mapping[str, Any]], dict[str, Any]]
+Submitter = Callable[[str | Path, Mapping[str, Any]], str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,7 +56,7 @@ BENCHMARKS = {
         trajectory_adapter="ddsr_bench.benchmarks.critpt.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.critpt.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.critpt.evaluation.prepare:prepare_tasks",
-        submitter="ddsr_bench.benchmarks.critpt.evaluation.submit:submit_attempt",
+        submitter="ddsr_bench.benchmarks.critpt.evaluation.submission:submit",
     ),
     "scicode": Benchmark(
         result_adapter="ddsr_bench.benchmarks.scicode.result:trial_fields",
