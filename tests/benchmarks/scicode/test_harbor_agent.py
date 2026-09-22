@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 
@@ -69,3 +70,24 @@ async def test_generates_cumulative_solution(tmp_path: Path) -> None:
     assert [step["id"] for step in record["steps"]] == ["19.1", "19.2"]
     assert context.n_input_tokens == 20
     assert context.n_output_tokens == 10
+
+
+@pytest.mark.asyncio
+async def test_interrupted_steps_restart(tmp_path: Path) -> None:
+    problem = load_problem(json.loads(FIXTURE.read_text()))
+
+    class InterruptedClient(FakeClient):
+        async def chat(self, messages):
+            if len(self.calls) == 1:
+                raise asyncio.CancelledError
+            return await super().chat(messages)
+
+    agent = SciCodeAgent(tmp_path, "teacher", client=InterruptedClient())
+    with pytest.raises(asyncio.CancelledError):
+        await agent.run(encode_instruction(problem), FakeEnvironment(), AgentContext())
+    assert not (tmp_path / "response.json").exists()
+
+    client = FakeClient()
+    restarted = SciCodeAgent(tmp_path, "teacher", client=client)
+    await restarted.run(encode_instruction(problem), FakeEnvironment(), AgentContext())
+    assert len(client.calls) == 2  # No per-step checkpoint reuse in SciCode.

@@ -34,6 +34,10 @@ the official assertions and targets from `test_data.h5`. The complete problem
 passes only when every evaluated step passes. SciCode has no static runner and
 no Artificial Analysis submission stage.
 
+Harbor resumes saved jobs at the trial boundary; unfinished SciCode trials
+regenerate all steps. See [recovery](README.md#recovery) for the command and
+backup warning: Harbor may delete interrupted trial directories.
+
 Trajectory export emits one training sample per model-generated step. Bundled
 fixed steps remain context, not training targets.
 
