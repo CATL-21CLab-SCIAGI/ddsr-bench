@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import digest
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.evaluator import (
-    Evaluator,
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.grader import (
+    Grader,
     summarize,
 )
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.runtime import Runtime
@@ -36,14 +36,14 @@ def test_tied_references_require_one_whole_function():
     ]
     candidate = template.replace("pass", "return mc_x * mv_y != mc_y * mv_x")
     p = row(45, refs, template)
-    ev = Evaluator({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
+    ev = Grader({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
     assert ev.grade(p["id"], candidate)["status"] == "different"
     assert ev.grade(p["id"], refs[1])["status"] == "matched"
 
 
 def test_candidate_and_reference_failures_are_separate():
     p = row(1, ["def answer():\n    return 1"])
-    ev = Evaluator({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
+    ev = Grader({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
     assert (
         ev.grade(p["id"], "def answer():\n    return 1/0")["status"]
         == "candidate_error"
@@ -52,7 +52,7 @@ def test_candidate_and_reference_failures_are_separate():
         ev.grade(p["id"], "def wrong():\n    return 1")["status"] == "candidate_error"
     )
     bad = row(1, ["def answer():\n    return 1/0"])
-    ev = Evaluator({"problems": [bad]}, Runtime(trusted_local=True, timeout=15))
+    ev = Grader({"problems": [bad]}, Runtime(trusted_local=True, timeout=15))
     assert (
         ev.grade(bad["id"], "def answer():\n    return 1")["status"]
         == "reference_error"
@@ -78,7 +78,7 @@ def test_skip_never_invokes_execution_or_produces_reward():
             raise AssertionError("skip executed")
 
     p = {**row(25, []), "mode": "skip"}
-    result = Evaluator({"problems": [p]}, NoRun()).grade(p["id"], "nonsense")
+    result = Grader({"problems": [p]}, NoRun()).grade(p["id"], "nonsense")
     assert result["status"] == "skipped"
     assert result["matched"] is None
     assert "reward" not in result and "verified" not in result
@@ -117,8 +117,8 @@ def test_audited_exclusions_keep_reason_without_executing_bad_candidates(
         def run(self, _):
             raise AssertionError("excluded candidate or reference executed")
 
-    evaluator = Evaluator(sample_bundle, NoRun())
-    result = evaluator.grade(
+    grader = Grader(sample_bundle, NoRun())
+    result = grader.grade(
         f"Challenge_{number}_main", "nonsense", input_error={"stage": "generation"}
     )
     assert result["status"] == "skipped" and result["matched"] is None
@@ -148,7 +148,7 @@ def test_consensus_does_not_import_reward_graders():
 
 def test_nonfinite_reference_is_not_a_matching_target():
     p = row(1, ["def answer():\n    return float('nan')"])
-    ev = Evaluator({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
+    ev = Grader({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
     assert (
         ev.grade(p["id"], "def answer():\n    return float('nan')")["status"]
         == "reference_error"

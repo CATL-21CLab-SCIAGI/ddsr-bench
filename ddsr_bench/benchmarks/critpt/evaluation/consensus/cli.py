@@ -1,39 +1,19 @@
-"""Standalone consensus CLI; deliberately absent from legacy Hydra dispatch."""
+"""Compatibility CLI for consensus scoring, batch reports, and reference replay."""
 
 from __future__ import annotations
 
 import argparse
-import importlib.metadata
 import json
-import platform
 import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from ddsr_bench.grading import validation as code_validation
-
-from . import POLICY_VERSION
-from .bundle import DEFAULT_BUNDLE, build, digest, load
+from ..local import score
+from .bundle import DEFAULT_BUNDLE, build, load
 from .candidates import load_candidates
-from .evaluator import Evaluator, summarize
-from .runtime import Runtime
-
-
-def provenance(bundle_path: Path, runtime: Runtime) -> dict:
-    return {
-        "bundle_sha256": digest(bundle_path.read_text()),
-        "policy_version": POLICY_VERSION,
-        "code_validation_sha256": digest(Path(code_validation.__file__).read_text()),
-        "execution": runtime.backend,
-        "image": runtime.image if runtime.backend == "docker" else None,
-        "image_id": runtime.image_id,
-        **({"linux_sandbox": runtime.linux.info} if runtime.linux else {}),
-        "host_python": platform.python_version(),
-        "host_dependencies": {
-            p: importlib.metadata.version(p) for p in ("sympy", "numpy", "scipy")
-        },
-    }
+from .grader import Grader
+from .runtime import Runtime, provenance
 
 
 def write(path: Path, data: dict):
@@ -128,14 +108,14 @@ def main(argv: list[str] | None = None) -> int:
             image=args.image,
             timeout=args.timeout,
         )
-        evaluator = Evaluator(bundle, runtime)
+        grader = Grader(bundle, runtime)
         if args.command == "batch":
             from .batch import score_batch
 
             summary = score_batch(
                 args.candidates,
                 args.output,
-                evaluator,
+                grader,
                 jobs=args.jobs,
                 metadata={**provenance(args.bundle, runtime), "timeout": args.timeout},
                 model_label=args.model_label,
@@ -143,35 +123,9 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({k: v for k, v in summary.items() if k != "problems"}))
             return 0
         if args.command == "score":
-
-            def score(row):
-                candidate = submitted.answers.get(row["id"])
-                result = evaluator.grade(
-                    row["id"],
-                    candidate.code if candidate else None,
-                    input_error=candidate.error if candidate else None,
-                )
-                if candidate:
-                    result.update(
-                        candidate_source=str(candidate.path),
-                        generation=candidate.generation,
-                        metadata_errors=candidate.metadata_errors,
-                    )
-                return result
-
-            with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-                results = list(pool.map(score, bundle["problems"]))
             report = {
                 "provenance": provenance(args.bundle, runtime),
-                "candidate_input": {
-                    "directory": str(args.candidates),
-                    "layout": submitted.layout,
-                    "attempt": submitted.attempt,
-                    "available_attempts": submitted.available_attempts,
-                    "recognized_candidates": len(submitted.answers),
-                },
-                "summary": summarize(results),
-                "results": results,
+                **score(args.candidates, submitted, grader, args.jobs),
             }
         else:
             selected = (
@@ -197,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
                 problem_id, ref = job
                 return {
                     "source_reference": ref["id"] if ref else None,
-                    "result": evaluator.grade(problem_id, ref["code"] if ref else None),
+                    "result": grader.grade(problem_id, ref["code"] if ref else None),
                 }
 
             with ThreadPoolExecutor(max_workers=args.jobs) as pool:

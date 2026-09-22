@@ -64,7 +64,26 @@ Portable five-attempt examples are in `configs/jobs/critpt/qwen-long-context.yam
 and `configs/jobs/critpt/deepseek-pai-max.yaml`. Machine paths and credentials
 belong in ignored `configs/local/` and `.env` files.
 
-### Independent consensus scoring
+### Local submission
+
+Submit one collected attempt to the local consensus grader without calling the
+official API. Grader settings belong to `benchmark.submission.local`:
+
+```bash
+ddsr-bench action=collect paths.input=outputs/static/my-job
+ddsr-bench action=submit benchmark=critpt \
+  paths.input=outputs/static/my-job submission.attempt=0 \
+  submission.backend=local \
+  benchmark.submission.local.bundle=/absolute/path/to/consensus-61-v2.json
+```
+
+This writes `submission-local-0.json` and includes missing answers as zero.
+Both backends require `summary.json` and an explicit `submission.attempt`.
+Local grading follows the selected batch's artifact paths; raw legacy inputs
+remain supported by the compatibility CLI, not by the submit action.
+Docker is the default execution backend; Linux sandboxing is also supported.
+These are internal consensus scores, not official accuracy. The compatibility
+CLI below additionally supports reference replay and multi-attempt reports.
 
 The evaluator reads an external reference asset, defaulting to
 `/mnt/workspace/zhizhou/assets/critpt/references/consensus-61-v2.json`.

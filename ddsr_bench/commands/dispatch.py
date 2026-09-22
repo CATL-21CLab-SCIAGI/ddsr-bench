@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -70,7 +69,9 @@ def submit(config: DictConfig) -> str:
         raise ValueError("paths.input and submission.attempt are required for submit")
     job = Path(config.paths.input)
     attempt = int(config.submission.attempt)
-    output = job / f"submission-{attempt}.json"
+    backend = getattr(config.submission, "backend", "official")
+    suffix = "" if backend == "official" else f"-{backend}"
+    output = job / f"submission{suffix}-{attempt}.json"
     if output.exists():
         raise ValueError(f"submission result already exists: {output}")
     benchmark = str(config.benchmark.name)
@@ -78,13 +79,7 @@ def submit(config: DictConfig) -> str:
     submission = config.benchmark.get("submission")
     if submission is None:
         raise ValueError(f"benchmark {benchmark!r} has no submission configuration")
-    result = send(
-        job,
-        attempt,
-        os.environ.get(str(submission.api_key_env), ""),
-        str(submission.endpoint),
-        float(submission.timeout_sec),
-    )
+    result = send(job, attempt, submission, config.submission)
     output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     return f"submitted attempt {attempt}; result saved to {output}"
 

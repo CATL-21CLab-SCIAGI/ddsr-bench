@@ -1,34 +1,38 @@
-# Generation only: use ddsr-solve, five attempts per problem.
+benchmark: critpt
+
+# Evaluation layer: five attempts; use ddsr-solve for execution-free runs.
 job_name: qwen-long-context
 jobs_dir: outputs/harbor
 n_attempts: 5
 n_concurrent_trials: 32
+
+# Generation layer: local Qwen served through vLLM's OpenAI-compatible API.
 agents:
-- name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
-  model_name: ddsr-local
-  include_logs:
-  - response.json
-  extra_allowed_hosts:
-  - 127.0.0.1
-  kwargs:
-    client_name: vllm
-    base_url: http://127.0.0.1:8000/v1
-    style: two-step
-    stream: true
-    timeout: 7200
-    context_window: 262144
-    context_safety_tokens: 32
-    formatting_max_tokens: 131072
-    require_complete_stages: false
-    seed_base: 42
-    sampling:
-      max_tokens: 262144
-      temperature: 1.0
-      top_p: 0.95
-      top_k: 20
-      seed: null
-      reasoning_effort: xhigh
-      enable_thinking: null
+  - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
+    model_name: ddsr-local
+    include_logs: [response.json]
+    extra_allowed_hosts: [127.0.0.1]
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      style: two-step
+      stream: true
+      timeout: 7200
+      # The client subtracts input tokens and this margin from the context window.
+      context_window: 262144
+      context_safety_tokens: 32
+      formatting_max_tokens: 131072
+      require_complete_stages: false
+      seed_base: 42
+      sampling:
+        max_tokens: 262144
+        temperature: 1.0
+        top_p: 0.95
+        top_k: 20
+        seed: null
+        reasoning_effort: xhigh
+        enable_thinking: null
+
+# Dataset layer: normalized Harbor tasks.
 datasets:
-- path: tasks/critpt-official
-benchmark: critpt
+  - path: tasks/critpt-official

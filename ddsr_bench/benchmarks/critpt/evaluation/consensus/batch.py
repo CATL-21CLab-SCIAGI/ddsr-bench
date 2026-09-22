@@ -7,14 +7,13 @@ import json
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
-from hashlib import sha256
 from pathlib import Path
 
-from .candidates import MAX_BYTES, TRIAL, load_candidates
-from .evaluator import Evaluator, summarize
+from .candidates import TRIAL, candidate_digest, load_candidates
+from .grader import Grader, grade_candidate, report
 
 
-def save(path: Path, data: dict) -> None:
+def _save(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(
@@ -24,20 +23,10 @@ def save(path: Path, data: dict) -> None:
     temporary.replace(path)
 
 
-def candidate_digest(path: Path) -> str | None:
-    """Input errors still get a report without unbounded or unreadable hash reads."""
-    try:
-        with path.open("rb") as handle:
-            raw = handle.read(MAX_BYTES + 1)
-    except OSError:
-        return None
-    return sha256(raw).hexdigest() if len(raw) <= MAX_BYTES else None
-
-
 def score_batch(
     directory: Path,
     output: Path,
-    evaluator: Evaluator,
+    grader: Grader,
     *,
     jobs: int,
     metadata: dict,
@@ -60,7 +49,7 @@ def score_batch(
     batches = [load_candidates(directory, attempt) for attempt in attempts]
     output.mkdir(parents=True, exist_ok=False)
     model = model_label or directory.name
-    rows = list(evaluator.rows.values())
+    rows = list(grader.rows.values())
     total = len(rows) * len(attempts)
     metadata = {
         **metadata,
@@ -71,25 +60,16 @@ def score_batch(
         "mean_definition": "matched / (active policy problems * attempts); errors, missing and unknown count as zero",
         "started_at": datetime.now(UTC).isoformat(),
     }
-    save(output / "manifest.json", metadata)
+    _save(output / "manifest.json", metadata)
     all_results, summaries = [], []
     for batch in batches:
 
         def score(row, batch=batch):
             candidate = batch.answers.get(row["id"])
-            result = evaluator.grade(
-                row["id"],
-                candidate.code if candidate else None,
-                input_error=candidate.error if candidate else None,
-            )
+            result = grade_candidate(grader, row["id"], candidate)
             result.update(model=model, attempt=batch.attempt)
             if candidate:
-                result.update(
-                    candidate_source=str(candidate.path),
-                    candidate_sha256=candidate_digest(candidate.path),
-                    generation=candidate.generation,
-                    metadata_errors=candidate.metadata_errors,
-                )
+                result["candidate_sha256"] = candidate_digest(candidate.path)
             return result
 
         results = []
@@ -98,7 +78,7 @@ def score_batch(
             for future in as_completed(futures):
                 result = future.result()
                 name = f"{result['problem_id']}__attempt-{batch.attempt}.json"
-                save(output / "trials" / name, result)
+                _save(output / "trials" / name, result)
                 results.append(result)
                 all_results.append(result)
                 progress = {
@@ -107,26 +87,16 @@ def score_batch(
                     "total": total,
                     "updated_at": datetime.now(UTC).isoformat(),
                 }
-                save(output / "progress.json", progress)
+                _save(output / "progress.json", progress)
                 if len(all_results) % 10 == 0:
                     print(json.dumps(progress), flush=True)
         results.sort(key=lambda r: int(r["problem_id"].split("_")[1]))
-        summary = summarize(results)
+        attempt_report = report(directory, batch, results)
+        summary = attempt_report["summary"]
         summaries.append({"attempt": batch.attempt, **summary})
-        save(
+        _save(
             output / f"attempt-{batch.attempt}.json",
-            {
-                "provenance": metadata,
-                "candidate_input": {
-                    "directory": str(directory),
-                    "layout": batch.layout,
-                    "attempt": batch.attempt,
-                    "available_attempts": batch.available_attempts,
-                    "recognized_candidates": len(batch.answers),
-                },
-                "summary": summary,
-                "results": results,
-            },
+            {"provenance": metadata, **attempt_report},
         )
     matched = sum(r["matched"] is True for r in all_results)
     active = sum(a["active"] for a in summaries)
@@ -197,8 +167,8 @@ def score_batch(
                     "error_stage": result.get("error", {}).get("stage", ""),
                 }
             )
-    save(output / "summary.json", {"provenance": metadata, **summary})
-    save(
+    _save(output / "summary.json", {"provenance": metadata, **summary})
+    _save(
         output / "progress.json",
         {"status": "completed", "completed": total, "total": total},
     )

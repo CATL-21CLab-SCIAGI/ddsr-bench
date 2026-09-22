@@ -25,16 +25,19 @@ flowchart TD
     O --> P["summary.json + summary.csv"]
     N --> Q["Benchmark trajectory adapter"]
     Q --> R["trajectories.jsonl + sft.jsonl"]
+    N --> S["Explicit submission, when supported"]
+    S --> T["Benchmark official or local grader"]
+    T --> U["Separate submission report"]
 ```
 
 A trial is one evaluation of one problem for one attempt. Concurrency controls
 how many trials run at once; it does not combine them or cause their files to
 share a directory.
 
-CritPt also provides an independent consensus scoring path for saved trial
-artifacts plus an external evaluator-only reference bundle (`--bundle`).
-`ddsr-critpt-consensus batch` records each attempt and an aggregate
-match rate. It does not change the shared reward, collection or export schema.
+Submission is explicit and never runs automatically after generation. CritPt's
+local backend uses an external evaluator-only reference bundle and isolated
+execution. Its report does not change trial rewards or training-data selection.
+The compatibility CLI also supports multi-attempt aggregation and reference replay.
 
 The benchmark pipelines define what one generated artifact contains and how it
 is verified:
@@ -43,7 +46,3 @@ is verified:
 - [SciCode pipeline](ddsr_bench/benchmarks/scicode/PIPELINE.md)
 - [CMPhysBench pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md)
 - [PHYBench pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md)
-
-The current CritPt consensus policy scores 61 of 70 main problems. Nine skipped
-problems, including audited exclusions 47 and 51, retain per-attempt records and
-are omitted from score denominators; generation still covers all requested tasks.

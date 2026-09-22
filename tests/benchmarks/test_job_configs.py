@@ -6,6 +6,27 @@ from harbor.models.job.config import JobConfig
 
 
 @pytest.mark.parametrize(
+    ("name", "client", "tokens"),
+    [("deepseek-pai-max", "aliyun", 393216), ("qwen-long-context", "vllm", 262144)],
+)
+def test_long_context_config(name: str, client: str, tokens: int) -> None:
+    path = Path("configs/jobs/critpt") / f"{name}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+    kwargs = config.agents[0].kwargs
+    assert raw["benchmark"] == "critpt"
+    assert config.n_attempts == 5
+    assert kwargs["client_name"] == client
+    assert kwargs["sampling"]["max_tokens"] == tokens
+    assert kwargs["formatting_max_tokens"] == 131072
+    if client == "aliyun":
+        assert kwargs["api_key_env"] == "PAI_API_KEY"
+        assert kwargs["request_profile"] == "openai"
+    else:
+        assert kwargs["context_window"] == 262144
+
+
+@pytest.mark.parametrize(
     ("name", "client"),
     [
         ("vllm", "vllm"),

@@ -103,10 +103,6 @@ their benchmark-specific behavior.
 - [Contributing](CONTRIBUTING.md): repository structure and development checks
 - [Upstream sources](UPSTREAM.md): pinned repositories, datasets, and provenance
 
-CritPt additionally supports 61-problem [independent consensus scoring](ddsr_bench/benchmarks/critpt/evaluation/consensus/README.md)
-for saved multi-attempt answers, with Docker or Linux worker isolation. Its
-per-attempt match results and aggregate means remain separate from mainline
-reward and training-data selection. See the [migration notes](ddsr_bench/benchmarks/critpt/MIGRATION.md)
-for long-context runs and historical artifact compatibility.
-The evaluator requires an external reference bundle; its guide documents the
-default asset path and the `--bundle` override.
+Benchmarks may support explicit submission of saved answers to an official or
+local grader. See the [CritPt submission guide](ddsr_bench/benchmarks/critpt/README.md#local-submission)
+for its external reference bundle, isolated execution, and internal match scores.

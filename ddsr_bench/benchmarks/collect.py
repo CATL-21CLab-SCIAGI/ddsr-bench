@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -35,8 +36,20 @@ def _read(path: Path) -> dict[str, Any]:
     return value
 
 
-def _trial(result_path: Path, job: Path) -> Trial:
-    data = _read(result_path)
+@dataclass(frozen=True, slots=True)
+class TrialRecord:
+    """A trial's raw result, including read failures for tolerant adapters."""
+
+    path: Path
+    data: dict[str, Any] | None
+    error: Exception | None = None
+
+
+def _trial(record: TrialRecord, job: Path) -> Trial:
+    if record.error is not None:
+        raise record.error
+    result_path, data = record.path, record.data
+    assert data is not None
     task_name = data.get("task_name")
     trial_name = data.get("trial_name")
     if not isinstance(task_name, str):
@@ -95,10 +108,65 @@ def _trial(result_path: Path, job: Path) -> Trial:
     )
 
 
+def load_trials[T](
+    job_dir: str | Path,
+    *,
+    adapter: Callable[[TrialRecord, Path], T] = _trial,
+    paths: Iterable[Path] | None = None,
+    reader: Callable[[Path], dict[str, Any]] = _read,
+) -> list[T]:
+    """Read trials without filtering attempts or writing collection summaries.
+
+    Adapters decide whether malformed/missing results are fatal. A caller may
+    supply discovered paths (including missing results) and a bounded reader.
+    """
+    job = Path(job_dir)
+    records = []
+    for path in job.glob("*/result.json") if paths is None else paths:
+        try:
+            record = TrialRecord(path, reader(path))
+        except (OSError, ValueError, TypeError, RecursionError) as error:
+            record = TrialRecord(path, None, error)
+        records.append(adapter(record, job))
+    return records
+
+
+def load_batch(job_dir: str | Path, attempt: int) -> list[dict[str, Any]]:
+    """Load one attempt batch from the saved collection summary.
+
+    A batch contains one trial per collected problem, all with the same attempt
+    index. For example, 70 problems run five times produce five 70-trial batches;
+    attempt 2 selects the third. This is not an API batch or a concurrency group.
+    Benchmark-specific submission checks determine whether all required problems
+    are present and their answers are usable.
+    """
+    if type(attempt) is not int or attempt < 0:
+        raise ValueError("attempt must be a nonnegative integer")
+    batches = _read(Path(job_dir) / "summary.json").get("batches")
+    if not isinstance(batches, list) or any(not isinstance(b, dict) for b in batches):
+        raise TypeError("summary batches must be a list of objects")
+    selected = [b for b in batches if b.get("attempt") == attempt]
+    if len(selected) != 1 or not isinstance(selected[0].get("trials"), list):
+        raise ValueError(f"summary has no unique attempt {attempt}")
+    trials = selected[0]["trials"]
+    if any(not isinstance(t, dict) for t in trials):
+        raise TypeError("summary trials must be objects")
+    if any(
+        type(t.get("attempt")) is not int or t["attempt"] != attempt for t in trials
+    ):
+        raise ValueError("submission cannot mix attempt indices")
+    ids = [t.get("problem_id") for t in trials]
+    if any(not isinstance(pid, str) or not pid for pid in ids):
+        raise TypeError("summary trials require problem IDs")
+    if len(set(ids)) != len(ids):
+        raise ValueError("summary problem IDs must be unique")
+    return trials
+
+
 def collect_trials(job_dir: str | Path) -> dict[str, Any]:
     """Group Harbor or static trials into deterministic attempt batches."""
     job = Path(job_dir)
-    trials = [_trial(path, job) for path in job.glob("*/result.json")]
+    trials = load_trials(job)
     if not trials:
         raise ValueError(f"no trial results found in {job}")
     identities = {

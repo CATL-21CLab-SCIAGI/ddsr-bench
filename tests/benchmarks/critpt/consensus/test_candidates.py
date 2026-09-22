@@ -1,15 +1,35 @@
 import json
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
 from harbor.models.job.config import AgentConfig
 
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.candidates import load_candidates
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.candidates import (
+    MAX_BYTES,
+    candidate_digest,
+    load_candidates,
+)
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.cli import main
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.evaluator import Evaluator
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.grader import Grader
 from ddsr_bench.benchmarks.critpt.evaluation.static import run_trial
 from ddsr_bench.generation.client import ChatResponse
+
+
+@pytest.mark.parametrize("payload", [b"", b"\xff", b"x" * MAX_BYTES])
+def test_candidate_digest(tmp_path, payload):
+    path = tmp_path / "answer.py"
+    path.write_bytes(payload)
+    assert candidate_digest(path) == sha256(payload).hexdigest()
+
+
+def test_unhashable_candidate(tmp_path):
+    path = tmp_path / "answer.py"
+    assert candidate_digest(path) is None
+    assert candidate_digest(tmp_path) is None
+    path.write_bytes(b"x" * (MAX_BYTES + 1))
+    assert candidate_digest(path) is None
 
 
 @pytest.mark.parametrize(
@@ -137,15 +157,14 @@ def test_input_errors_do_not_execute_references_and_skip_stays_skip(sample_bundl
             raise AssertionError("invalid input or skip executed")
 
     bundle = sample_bundle
-    evaluator = Evaluator(bundle, NoRun())
+    grader = Grader(bundle, NoRun())
     error = {"stage": "input", "error": "invalid JSON"}
     assert (
-        evaluator.grade("Challenge_1_main", None, input_error=error)["status"]
+        grader.grade("Challenge_1_main", None, input_error=error)["status"]
         == "candidate_error"
     )
     assert (
-        evaluator.grade("Challenge_6_main", None, input_error=error)["status"]
-        == "skipped"
+        grader.grade("Challenge_6_main", None, input_error=error)["status"] == "skipped"
     )
 
 
