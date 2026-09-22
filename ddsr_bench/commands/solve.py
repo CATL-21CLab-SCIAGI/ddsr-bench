@@ -31,8 +31,6 @@ async def run_job(
     name = config.get("benchmark", "critpt")
     if not isinstance(name, str):
         raise TypeError("job benchmark must be a name")
-    if resume and name != "critpt":
-        raise ValueError("--resume is currently supported only for CritPt")
     return await static_runner(name)(
         path, task_name=task_name, **({"resume": True} if resume else {})
     )
