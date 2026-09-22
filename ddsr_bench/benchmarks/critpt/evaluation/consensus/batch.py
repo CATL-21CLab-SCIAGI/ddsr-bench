@@ -9,18 +9,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from pathlib import Path
 
+from ddsr_bench.benchmarks.utils import write_json
+
 from .candidates import TRIAL, candidate_digest, load_candidates
 from .grader import Grader, grade_candidate, report
 
 
 def _save(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
-    temporary.replace(path)
+    write_json(path, data, allow_nan=False, newline=True)
 
 
 def score_batch(

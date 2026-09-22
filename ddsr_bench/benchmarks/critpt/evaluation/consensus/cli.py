@@ -9,6 +9,8 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from ddsr_bench.benchmarks.utils import write_json
+
 from ..submission.internal import score
 from .bundle import DEFAULT_BUNDLE, build, load
 from .candidates import load_candidates
@@ -18,9 +20,7 @@ from .runtime import Runtime, provenance
 
 def write(path: Path, data: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("x") as handle:
-        json.dump(data, handle, ensure_ascii=False, indent=2, allow_nan=False)
-        handle.write("\n")
+    write_json(path, data, allow_nan=False, overwrite=False, newline=True)
 
 
 def parser() -> argparse.ArgumentParser:

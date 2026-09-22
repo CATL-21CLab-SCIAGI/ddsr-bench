@@ -9,35 +9,29 @@ import h5py
 import scipy.sparse
 
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
+from ddsr_bench.benchmarks.utils import read_text
 
 _FIXED_STEPS = {"13.6", "62.1", "76.3"}
 
 
-def _text(record: Mapping[str, Any], key: str, label: str) -> str:
-    value = record.get(key)
-    if not isinstance(value, str):
-        raise TypeError(f"{label} requires text at {key!r}")
-    return value
-
-
 def _step(record: Mapping[str, Any], problem_id: str) -> SciCodeStep:
-    step_id = _text(record, "step_number", problem_id)
+    step_id = read_text(record, "step_number", problem_id)
     tests = record.get("test_cases")
     if not isinstance(tests, list) or any(not isinstance(test, str) for test in tests):
         raise TypeError(f"SciCode step {step_id!r} requires text test cases")
     return SciCodeStep(
         id=step_id,
-        statement=_text(record, "step_description_prompt", step_id),
-        function=_text(record, "function_header", step_id),
-        return_line=_text(record, "return_line", step_id),
-        background=_text(record, "step_background", step_id),
+        statement=read_text(record, "step_description_prompt", step_id),
+        function=read_text(record, "function_header", step_id),
+        return_line=read_text(record, "return_line", step_id),
+        background=read_text(record, "step_background", step_id),
         tests=tuple(tests),
     )
 
 
 def load_problem(record: Mapping[str, Any]) -> SciCodeProblem:
     """Normalize one problem from the official SciCode dataset."""
-    problem_id = _text(record, "problem_id", "SciCode problem")
+    problem_id = read_text(record, "problem_id", "SciCode problem")
     records = record.get("sub_steps")
     if not isinstance(records, list) or any(
         not isinstance(item, Mapping) for item in records
@@ -51,8 +45,8 @@ def load_problem(record: Mapping[str, Any]) -> SciCodeProblem:
         raise ValueError(f"SciCode problem {problem_id!r} has duplicate step IDs")
     return SciCodeProblem(
         id=problem_id,
-        dependencies=_text(record, "required_dependencies", problem_id),
-        background=_text(record, "problem_background_main", problem_id),
+        dependencies=read_text(record, "required_dependencies", problem_id),
+        background=read_text(record, "problem_background_main", problem_id),
         steps=steps,
     )
 

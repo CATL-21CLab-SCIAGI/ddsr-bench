@@ -13,9 +13,8 @@ from ddsr_bench.generation.client import (
     ChatResponse,
     ClientName,
     Sampling,
+    read_api_key,
 )
-
-from .utils import read_api_key
 
 
 async def smoke(client: ChatClient) -> ChatResponse:

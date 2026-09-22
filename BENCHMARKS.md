@@ -11,5 +11,5 @@ across all benchmarks.
 | CMPhysBench | Condensed-matter reasoning with boxed LaTeX answers | Direct static SEED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/cmphysbench/README.md) · [Pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md) |
 | PHYBench | Advanced physics reasoning with boxed LaTeX answers | Direct static EED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/phybench/README.md) · [Pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md) |
 
-New integrations should follow the capability layout in the root
-[README](README.md#repository-layout) and provide both a guide and a pipeline.
+New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
+and provide both a guide and a pipeline.

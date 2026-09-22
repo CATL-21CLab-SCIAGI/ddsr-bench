@@ -1,13 +1,14 @@
 """Dispatch CritPt submissions; normalize attempt selection once here."""
 
-import json
 import logging
-import os
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 from omegaconf import ListConfig
+
+from ddsr_bench.benchmarks.utils import write_json
+from ddsr_bench.generation.client import read_api_key
 
 from .official import build_batch, submit_batch
 
@@ -38,7 +39,7 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
     if backend == "official":
         result = submit_batch(
             build_batch(job, attempts),
-            os.environ.get(str(config["api_key_env"]), ""),
+            read_api_key(config["api_key_env"]) or "",
             endpoint=str(config["endpoint"]),
             timeout=float(config["timeout_sec"]),
         )
@@ -46,5 +47,5 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
         from .internal import submit as submit_internal
 
         result = submit_internal(job, attempts, **dict(config["internal"]))
-    output.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    write_json(output, result)
     return f"submitted attempts {attempts}; result saved to {output}"

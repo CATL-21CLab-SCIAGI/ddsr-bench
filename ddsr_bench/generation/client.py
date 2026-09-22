@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -12,6 +14,28 @@ import httpx
 
 ClientName = Literal["vllm", "openai", "bedrock", "aliyun"]
 ChatMessages = tuple[dict[str, str], ...]
+API_KEY_ENV: dict[ClientName, str] = {
+    "openai": "OPENAI_API_KEY",
+    "bedrock": "AWS_BEARER_TOKEN_BEDROCK",
+    "aliyun": "ALIYUN_API_KEY",
+}
+
+
+def read_api_key(
+    name: str | None, *, lookup: Callable[[str], str | None] = os.environ.get
+) -> str | None:
+    """Read credentials; Harbor can supply its environment-aware lookup.
+
+    None explicitly disables authentication; a configured name must resolve.
+    """
+    if name is None:
+        return None
+    if not name:
+        raise ValueError("API key environment variable name must not be empty")
+    value = lookup(name)
+    if not value:
+        raise ValueError(f"environment variable {name!r} is not set")
+    return value
 
 
 class ClientError(RuntimeError):

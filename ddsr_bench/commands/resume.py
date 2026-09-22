@@ -6,6 +6,8 @@ from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
+from ddsr_bench.benchmarks.utils import write_json
+
 
 def prepare_job(output: Path, config: dict, problems: list, *, resume: bool) -> None:
     # Fingerprint selected inputs, including references, without storing them.
@@ -19,14 +21,17 @@ def prepare_job(output: Path, config: dict, problems: list, *, resume: bool) -> 
             raise ValueError("resume requires unchanged job settings and inputs")
     else:
         output.mkdir(parents=True)
-        path.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
+        write_json(path, snapshot)
 
 
 def completed(directory: Path, task_name: str, attempt: int) -> dict | None:
     """Reuse terminal results, including failures; archive unfinished trials."""
     path = directory / "result.json"
-    if path.exists():
+    try:
         trial = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError):
+        trial = None
+    if trial is not None:
         if trial.get("task_name") != task_name or trial.get("attempt") != attempt:
             raise ValueError(f"invalid completed trial identity: {directory}")
         result = trial.get("static_result")

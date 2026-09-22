@@ -7,6 +7,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+from ddsr_bench.benchmarks.utils import write_json
+
 _SKIPPED = {"13.6", "62.1", "76.3"}
 
 
@@ -99,7 +101,7 @@ def main() -> None:
     )
     logs = Path("/logs/verifier")
     logs.mkdir(parents=True, exist_ok=True)
-    (logs / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    write_json(logs / "result.json", result)
     (logs / "reward.txt").write_text(str(result["reward"]), encoding="utf-8")
 
 

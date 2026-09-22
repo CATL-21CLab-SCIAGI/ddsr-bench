@@ -4,7 +4,27 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.collect import collect_trials
+from ddsr_bench.benchmarks.collect import collect_trials, group_results
+
+
+def test_group_results():
+    trials = [
+        {"attempt": 2, "benchmark_config": {"tag": "z"}, "reward": 0.25},
+        {"attempt": 0, "benchmark_config": {"tag": "a"}, "reward": 1.0},
+        {"attempt": 2, "benchmark_config": {"tag": "a"}, "reward": 0.5},
+    ]
+
+    def metrics(rows):
+        return {"total": sum(row["reward"] for row in rows)}
+
+    by_tag = group_results(trials, "tag", metrics)
+    assert list(by_tag) == ["a", "z"]
+    assert by_tag == {"a": {"total": 1.5}, "z": {"total": 0.25}}
+    assert group_results(trials, "attempt", metrics) == {
+        "0": {"total": 1.0},
+        "2": {"total": 0.75},
+    }
+    assert group_results([], "tag", metrics) == {}
 
 
 def write_trial(

@@ -7,7 +7,7 @@ compares that expression with the official reference and awards partial credit.
 The adapter pins both the upstream implementation and Hugging Face dataset. See
 the [CMPhysBench pipeline](PIPELINE.md) for the data boundary and scoring flow.
 Shared client setup, collection, and trajectory export are documented by the
-root [workflow](../../../README.md#workflow). Client configuration is covered
+root [workflow](../../../README.md). Client configuration is covered
 by the [generation guide](../../generation/README.md).
 
 ## Data and preparation
@@ -89,8 +89,8 @@ connection error, `ddsr-solve` falls back to the prepared tasks.
 
 ## Results and teacher data
 
-Use the shared [collection](../../../README.md#4-collect-results) and
-[teacher-data export](../../../README.md#5-export-teacher-data) commands with
+Use the shared [collection](../../../README.md#-collect-results) and
+[teacher-data export](../../../README.md#-export-teacher-data) commands with
 either job directory. CMPhysBench `native` and `full` exports both preserve its
 single recorded answer call, including separate reasoning metadata when the
 client provides it.

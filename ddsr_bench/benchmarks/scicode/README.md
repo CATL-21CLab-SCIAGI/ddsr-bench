@@ -9,7 +9,7 @@ test behavior without requiring its Python package or a repository checkout.
 See the [SciCode pipeline](PIPELINE.md) for the sequential generation and
 verification flow.
 
-Use the root [workflow](../../../README.md#workflow) for shared model setup,
+Use the root [workflow](../../../README.md) for shared model setup,
 collection, and export. Client configuration is covered by the
 [generation guide](../../generation/README.md).
 
@@ -93,8 +93,8 @@ the generated functions against its assertions and numeric targets.
 
 ## Results and teacher data
 
-Use the shared [collection](../../../README.md#4-collect-results) and
-[teacher-data export](../../../README.md#5-export-teacher-data) commands with the
+Use the shared [collection](../../../README.md#-collect-results) and
+[teacher-data export](../../../README.md#-export-teacher-data) commands with the
 job directory above. For SciCode, `native` and `full` both emit one training
 sample per model-generated step. Bundled compatibility steps remain context and
 are not training targets.

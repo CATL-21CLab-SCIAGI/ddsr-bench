@@ -42,6 +42,18 @@ def test_unfinished_trial(tmp_path: Path) -> None:
     assert archived[0].read_text() == "saved stream"
 
 
+def test_truncated_result(tmp_path: Path) -> None:
+    trial = tmp_path / "trial"
+    trial.mkdir()
+    (trial / "result.json").write_text('{"task_name":')
+    assert completed(trial, "cmphysbench/7", 0) is None
+    assert not trial.exists()
+    assert (
+        next((tmp_path / ".interrupted").glob("*/result.json")).read_text()
+        == '{"task_name":'
+    )
+
+
 @pytest.mark.parametrize("status", ["passed", "error"])
 def test_completed_trial(tmp_path: Path, status: str) -> None:
     result = {"status": status, "reward": 0}

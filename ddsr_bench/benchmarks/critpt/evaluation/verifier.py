@@ -7,6 +7,7 @@ import runpy
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.grading.compare import compare
 from ddsr_bench.grading.validation import validate_code
 
@@ -135,7 +136,7 @@ def main() -> None:
     )
     logs = Path("/logs/verifier")
     logs.mkdir(parents=True, exist_ok=True)
-    (logs / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    write_json(logs / "result.json", result)
     (logs / "reward.txt").write_text(str(result["reward"]), encoding="utf-8")
 
 

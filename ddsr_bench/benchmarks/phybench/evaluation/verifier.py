@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.phybench.evaluation.eed import score
+from ddsr_bench.benchmarks.utils import write_json
 
 
 def _escaped(text: str, index: int) -> bool:
@@ -125,7 +126,7 @@ def main() -> None:
     )
     logs = Path("/logs/verifier")
     logs.mkdir(parents=True, exist_ok=True)
-    (logs / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    write_json(logs / "result.json", result)
     (logs / "reward.txt").write_text(str(result["reward"]), encoding="utf-8")
 
 

@@ -15,10 +15,9 @@ from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
 from ddsr_bench.benchmarks.registry import static_runner
-from ddsr_bench.generation.client import CLIENTS, Sampling
+from ddsr_bench.benchmarks.utils import write_json
+from ddsr_bench.generation.client import CLIENTS, Sampling, read_api_key
 from ddsr_bench.grading.validation import extract_answer
-
-from .utils import read_api_key
 
 
 async def run_job(
@@ -70,9 +69,7 @@ async def _run(args: argparse.Namespace) -> dict[str, Any]:
         response, record = await generate(client, problem, args.style, sampling)
 
     args.output.mkdir(parents=True)
-    (args.output / "response.json").write_text(
-        json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    write_json(args.output / "response.json", record)
     try:
         code = extract_answer(response, problem.code_template)
         (args.output / "answer.py").write_text(code, encoding="utf-8")
@@ -89,9 +86,7 @@ async def _run(args: argparse.Namespace) -> dict[str, Any]:
             "error": type(error).__name__,
             "message": str(error),
         }
-    (args.output / "result.json").write_text(
-        json.dumps(result, indent=2), encoding="utf-8"
-    )
+    write_json(args.output / "result.json", result)
     return result
 
 
