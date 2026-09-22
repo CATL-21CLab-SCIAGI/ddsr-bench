@@ -97,8 +97,16 @@ jobs select `request_profile: openai` to preserve the actual old request:
 `temperature` and `top_p` are omitted. API URL and key environment-variable
 names do not change. Unsupported options are not silently downgraded.
 
-A normal `--resume` permits only concurrency changes. A job imported from
-CritPt can explicitly declare storage mappings:
+### Legacy resume compatibility
+
+`resume_migration` is an opt-in compatibility feature for historical runs,
+including Zhizhou's imported jobs. New jobs should omit it. It does not implement
+stage-checkpoint recovery and is not required for normal `--resume`, which
+permits only concurrency changes. Retain it while historical runs still depend
+on the old paths or names; removal requires confirming those runs are no longer
+needed or converting copies while preserving the originals.
+
+A historical job can explicitly declare storage mappings:
 
 ```yaml
 resume_migration:

@@ -15,7 +15,7 @@ from .utils import Resources
 
 class StaticRunner(Protocol):
     async def __call__(
-        self, path: Path, *, task_name: str | None = None
+        self, path: Path, *, task_name: str | None = None, resume: bool = False
     ) -> dict[str, Any]: ...
 
 

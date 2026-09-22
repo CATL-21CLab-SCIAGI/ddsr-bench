@@ -63,6 +63,23 @@ async def test_trial(tmp_path: Path) -> None:
     assert trial["task_name"] == "phybench/133"
     assert trial["attempt"] == 0
 
+    class NoCalls:
+        async def chat(self, *args, **kwargs):
+            pytest.fail("completed trial must not call the model")
+
+    assert (
+        await run_trial(
+            problem(),
+            0,
+            directory,
+            NoCalls(),
+            Sampling("teacher"),
+            client_name="vllm",
+            resume=True,
+        )
+        == result
+    )
+
 
 @pytest.mark.asyncio
 async def test_reference_required(tmp_path: Path) -> None:

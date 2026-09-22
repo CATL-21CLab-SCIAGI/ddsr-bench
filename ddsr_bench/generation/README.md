@@ -76,6 +76,19 @@ That profile sends `max_completion_tokens` and `reasoning_effort`, omitting
 Both use the same Chat Completions endpoint and the configured `api_key_env`;
 neither switches to Responses API.
 
+## Resuming static jobs
+
+Use `ddsr-solve --config JOB.yaml --resume` for CritPt, CMPhysBench, and PHYBench.
+Completed trials, including recorded failures, are reused; this is not a retry
+failed trials option. Keep job settings and selected inputs unchanged, except
+for concurrency. SciCode has no static runner; its execution remains in Harbor.
+
+CMPhysBench and PHYBench save `resume.json` with job settings and an input hash.
+Jobs predating that snapshot cannot be resumed safely. Interrupted trial folders
+are preserved under `.interrupted/` before the whole trial restarts. This may
+repeat a model request if its response was not saved as a completed trial.
+CritPt additionally reuses completed generation stages, as described below.
+
 ## CritPt long-context generation
 
 CritPt static jobs can connect directly to an already running vLLM server.
@@ -102,6 +115,10 @@ resume. Increasing a formatting budget requires a separate retry directory
 with only the saved first stage copied, then `run_trial(..., resume=True)`.
 Never overwrite a completed trial to retry it without first preserving its
 original artifacts and provenance.
+
+CritPt's optional `resume_migration` setting is **legacy compatibility**, not a
+normal resume requirement. Omit it for new jobs. It supports historical path and
+agent/client-name mappings; see [legacy resume compatibility](../benchmarks/critpt/MIGRATION.md#legacy-resume-compatibility).
 
 Injected clients with the original `chat(messages)` interface remain supported;
 their sampling settings remain client-managed. Per-trial `seed_base` and an

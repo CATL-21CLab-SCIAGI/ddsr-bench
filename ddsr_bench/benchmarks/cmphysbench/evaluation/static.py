@@ -19,6 +19,7 @@ from ddsr_bench.benchmarks.cmphysbench.evaluation.prepare import decode_instruct
 from ddsr_bench.benchmarks.cmphysbench.evaluation.verifier import verify
 from ddsr_bench.benchmarks.cmphysbench.generation.runner import generate
 from ddsr_bench.benchmarks.registry import benchmark_config
+from ddsr_bench.commands.resume import completed, prepare_job
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling
 
 
@@ -38,11 +39,16 @@ async def run_trial(
     *,
     client_name: str,
     timeout_sec: float = 120,
+    resume: bool = False,
 ) -> dict[str, Any]:
     """Generate and score one CMPhysBench problem attempt locally."""
     if problem.answer is None:
         raise ValueError(f"CMPhysBench problem {problem.spec.id!r} has no reference")
 
+    if resume:
+        saved = completed(directory, f"cmphysbench/{problem.spec.id}", attempt)
+        if saved is not None:
+            return saved
     started_at = datetime.now(UTC).isoformat()
     directory.mkdir(parents=True)
     agent_dir = directory / "agent"
@@ -136,6 +142,7 @@ async def run_job(
     client: ChatClient | None = None,
     *,
     task_name: str | None = None,
+    resume: bool = False,
 ) -> dict[str, Any]:
     """Run a CMPhysBench static job directly from its pinned dataset."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -172,7 +179,9 @@ async def run_job(
         if not problems:
             raise ValueError(f"task {task_name!r} was not found")
     output = config.jobs_dir.parent / "static" / config.job_name
-    output.mkdir(parents=True)
+    prepare_job(
+        output, {**raw, "benchmark_settings": benchmark}, problems, resume=resume
+    )
     kwargs = agent.kwargs
     client_name = kwargs.get("client_name", "vllm")
     if client_name not in CLIENTS:
@@ -208,6 +217,7 @@ async def run_job(
                             sampling,
                             client_name=client_name,
                             timeout_sec=config.verifier.override_timeout_sec or 120,
+                            resume=resume,
                         )
                         for problem, attempt in group
                     )

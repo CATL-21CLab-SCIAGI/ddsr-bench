@@ -1,4 +1,10 @@
-"""Explicit path and namespace compatibility for migrated CritPt job records."""
+"""CritPt resume checks, including opt-in legacy job compatibility.
+
+Normal resume allows only concurrency changes. ``resume_migration`` preserves
+access to historical runs with relocated paths or the former agent/client names;
+it is not required for new jobs or for generation-stage checkpoint recovery.
+Keep this compatibility path until historical runs no longer depend on it.
+"""
 
 from __future__ import annotations
 
@@ -17,6 +23,7 @@ def check_resume(
     before = previous.model_dump(exclude={"n_concurrent_trials"})
     after = current.model_dump(exclude={"n_concurrent_trials"})
     if migration is not None:
+        # Legacy only: explicitly requested equivalences, not relaxed validation.
         if not isinstance(migration, dict) or set(migration) != {"path_prefixes"}:
             raise ValueError("resume_migration requires only path_prefixes")
         prefixes = migration["path_prefixes"]
