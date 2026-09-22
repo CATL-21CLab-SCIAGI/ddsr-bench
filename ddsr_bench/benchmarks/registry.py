@@ -33,7 +33,7 @@ Preparer = Callable[
     [Mapping[str, Any], str | Path | None, str | Path, Resources],
     tuple[Path, ...],
 ]
-Submitter = Callable[[Path, int, str, str, float], dict[str, Any]]
+Submitter = Callable[[Path, int, Mapping[str, Any], Mapping[str, Any]], dict[str, Any]]
 
 
 @dataclass(frozen=True, slots=True)

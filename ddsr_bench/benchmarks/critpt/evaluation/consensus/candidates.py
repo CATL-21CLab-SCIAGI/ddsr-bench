@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from hashlib import sha256
 from pathlib import Path
+
+from ddsr_bench.benchmarks.collect import TrialRecord, load_batch, load_trials
 
 from .validation import source
 
@@ -31,12 +34,24 @@ class CandidateBatch:
     available_attempts: list[int]
 
 
-def _text(path: Path) -> str:
+def _bytes(path: Path) -> bytes:
     with path.open("rb") as handle:
         raw = handle.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
         raise ValueError("input file exceeds 8 MB")
-    return raw.decode("utf-8")
+    return raw
+
+
+def _text(path: Path) -> str:
+    return _bytes(path).decode("utf-8")
+
+
+def candidate_digest(path: Path) -> str | None:
+    """Hash even malformed text, but never read beyond the candidate size limit."""
+    try:
+        return sha256(_bytes(path)).hexdigest()
+    except (OSError, ValueError):
+        return None
 
 
 def _json(path: Path) -> dict:
@@ -88,10 +103,19 @@ def _metadata(path: Path, candidate: Candidate) -> dict | None:
         return None
 
 
-def _native(directory: Path, problem_id: str, attempt: int) -> Candidate:
+def _native(record: TrialRecord, job: Path) -> Candidate:
+    """Adapt a shared trial record without requiring complete collection metadata."""
+    directory = record.path.parent
+    match = TRIAL.fullmatch(directory.name)
+    assert match is not None
+    problem_id, attempt = _id(match[1]), int(match[2])
     path = directory / "artifacts" / "answer.py"
     candidate = _answer(path, problem_id) if path.exists() else Candidate(None, path)
-    trial = _metadata(directory / "result.json", candidate)
+    trial = record.data
+    if record.error is not None and record.path.exists():
+        candidate.metadata_errors.append(
+            {"source": str(record.path), "error": str(record.error)[:300]}
+        )
     if trial is not None:
         if trial.get("task_name") != f"critpt/{problem_id}" or (
             type(trial.get("attempt")) is not int or trial["attempt"] != attempt
@@ -113,6 +137,11 @@ def _native(directory: Path, problem_id: str, attempt: int) -> Candidate:
                 **_error("generation", "rollout did not produce an answer artifact"),
                 "upstream": validation,
             }
+    _generation(directory, problem_id, candidate)
+    return candidate
+
+
+def _generation(directory: Path, problem_id: str, candidate: Candidate) -> None:
     record = _metadata(directory / "agent" / "response.json", candidate)
     if record is not None:
         if record.get("problem_id") != problem_id:
@@ -136,7 +165,6 @@ def _native(directory: Path, problem_id: str, attempt: int) -> Candidate:
                     if isinstance(response, dict)
                 ],
             }
-    return candidate
 
 
 def _id(name: str) -> str:
@@ -144,6 +172,49 @@ def _id(name: str) -> str:
     if not 1 <= number <= 70 or name != f"Challenge_{number}_main":
         raise ValueError(f"unknown or noncanonical problem ID: {name}")
     return name
+
+
+def load_collected(job: Path, attempt: int) -> CandidateBatch:
+    """Adapt the collector's selected batch, including arbitrary Harbor names."""
+    answers = {}
+    for trial in load_batch(job, attempt):
+        problem_id = trial["problem_id"]
+        if not re.fullmatch(PROBLEM, problem_id):
+            raise ValueError(f"not a CritPt main problem: {problem_id}")
+        _id(problem_id)
+        if trial.get("benchmark", "critpt") != "critpt":
+            raise ValueError("local CritPt submission requires CritPt trials")
+        name = trial.get("trial_name")
+        if (
+            not isinstance(name, str)
+            or not name
+            or name in (".", "..")
+            or Path(name).name != name
+        ):
+            raise ValueError("summary requires a trial directory name")
+        directory = job / name
+        if not directory.resolve().is_relative_to(job.resolve()):
+            raise ValueError("summary trial must stay inside its job")
+        artifact = trial.get("artifact")
+        if artifact is not None and not isinstance(artifact, str):
+            raise TypeError("summary artifact must be a path or null")
+        path = (
+            job / artifact
+            if artifact is not None
+            else directory / "artifacts/answer.py"
+        )
+        if not path.resolve().is_relative_to(job.resolve()):
+            raise ValueError("summary artifact must stay inside its job")
+        candidate = (
+            _answer(path, problem_id) if artifact is not None else Candidate(None, path)
+        )
+        if artifact is None and trial.get("status") == "error":
+            candidate.error = _error(
+                "generation", "collected trial has no answer artifact"
+            )
+        _generation(directory, problem_id, candidate)
+        answers[problem_id] = candidate
+    return CandidateBatch(answers, "collected", attempt, [attempt])
 
 
 def load_candidates(directory: Path, attempt: int | None = None) -> CandidateBatch:
@@ -193,13 +264,22 @@ def load_candidates(directory: Path, attempt: int | None = None) -> CandidateBat
         selected = flat
     if not selected:
         raise ValueError("no recognized candidates or rollout trials found")
-    answers = {}
-    for problem_id, path in selected:
-        if problem_id in answers:
+    ids = [problem_id for problem_id, _ in selected]
+    seen = set()
+    for problem_id in ids:
+        if problem_id in seen:
             raise ValueError(f"multiple candidate files or trials for {problem_id}")
-        answers[problem_id] = (
-            _native(path, problem_id, attempt) if native else _answer(path, problem_id)
+        seen.add(problem_id)
+    if native:
+        candidates = load_trials(
+            directory,
+            paths=[path / "result.json" for _, path in selected],
+            reader=_json,
+            adapter=_native,
         )
+    else:
+        candidates = [_answer(path, pid) for pid, path in selected]
+    answers = dict(zip(ids, candidates, strict=True))
     return CandidateBatch(
         answers, "native_rollout" if native else "flat", attempt, available
     )

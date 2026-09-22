@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from pathlib import Path
 from threading import Lock
 
 from . import POLICY_VERSION
 from .bundle import digest
+from .candidates import Candidate, CandidateBatch
 from .fixtures import inputs
 from .runtime import Runtime
 from .wire import encode
 
 
-class Evaluator:
+class Grader:
+    """Match candidates against approved references, caching bounded executions."""
+
     def __init__(self, bundle: dict, runtime: Runtime):
         self.rows = {p["id"]: p for p in bundle["problems"]}
         self.runtime = runtime
@@ -133,6 +137,39 @@ class Evaluator:
             "reference_errors": errors,
             "comparisons": comparisons,
         }
+
+
+def grade_candidate(
+    grader: Grader, problem_id: str, candidate: Candidate | None
+) -> dict:
+    """Grade one policy slot and attach available candidate provenance."""
+    result = grader.grade(
+        problem_id,
+        candidate.code if candidate else None,
+        input_error=candidate.error if candidate else None,
+    )
+    if candidate:
+        result.update(
+            candidate_source=str(candidate.path),
+            generation=candidate.generation,
+            metadata_errors=candidate.metadata_errors,
+        )
+    return result
+
+
+def report(directory: Path, batch: CandidateBatch, results: list[dict]) -> dict:
+    """Assemble one attempt without changing result order or batch-only fields."""
+    return {
+        "candidate_input": {
+            "directory": str(directory),
+            "layout": batch.layout,
+            "attempt": batch.attempt,
+            "available_attempts": batch.available_attempts,
+            "recognized_candidates": len(batch.answers),
+        },
+        "summary": summarize(results),
+        "results": results,
+    }
 
 
 def summarize(results: list[dict]) -> dict:

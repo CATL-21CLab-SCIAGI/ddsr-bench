@@ -3,3 +3,9 @@ submission:
   endpoint: https://artificialanalysis.ai/api/v2/critpt/evaluate
   api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
   timeout_sec: 7200
+  local:
+    bundle: null # Use the grader's default external reference path.
+    execution: docker # docker or linux; separate from the submission backend.
+    image: ddsr-critpt-consensus:local
+    timeout: 60 # Per worker, in seconds.
+    jobs: 4

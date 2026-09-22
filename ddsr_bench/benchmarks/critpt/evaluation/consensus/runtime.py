@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
 import os
+import platform
 import shutil
 import signal
 import subprocess
@@ -12,6 +14,27 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
+
+from ddsr_bench.grading import validation as code_validation
+
+from . import POLICY_VERSION
+from .bundle import digest
+
+
+def provenance(bundle_path: Path, runtime: Runtime) -> dict:
+    return {
+        "bundle_sha256": digest(bundle_path.read_text()),
+        "policy_version": POLICY_VERSION,
+        "code_validation_sha256": digest(Path(code_validation.__file__).read_text()),
+        "execution": runtime.backend,
+        "image": runtime.image if runtime.backend == "docker" else None,
+        "image_id": runtime.image_id,
+        **({"linux_sandbox": runtime.linux.info} if runtime.linux else {}),
+        "host_python": platform.python_version(),
+        "host_dependencies": {
+            p: importlib.metadata.version(p) for p in ("sympy", "numpy", "scipy")
+        },
+    }
 
 
 class Runtime:
