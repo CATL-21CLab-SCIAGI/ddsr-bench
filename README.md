@@ -26,7 +26,8 @@ README and pipeline. The catalog records which benchmarks support static
 evaluation, Harbor isolation, result collection, and trajectory export.
 
 Shared model-client setup is documented in the
-[generation guide](ddsr_bench/generation/README.md). Job configurations follow
+[generation quick start](ddsr_bench/generation/README.md#generation-quick-start),
+from a one-task check through batch generation and resume. Job configurations follow
 `configs/jobs/BENCHMARK/CLIENT.yaml` for local vLLM and hosted providers.
 
 ## 🧠 Check model access
@@ -59,8 +60,8 @@ harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml
 ```
 
 Harbor schedules independent problem attempts and isolates executable
-verification. Benchmarks that do not require execution can also use the static
-runner:
+verification. For supported benchmarks, generate answers without executing
+generated code using the static runner:
 
 ```bash
 ddsr-solve --config configs/jobs/BENCHMARK/CLIENT.yaml

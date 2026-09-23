@@ -64,8 +64,9 @@ checks answer structure and safety but does not execute generated code.
 
 Long-context stage budgets, streaming checkpoints, stable per-attempt seeds,
 and resume are described in the [generation guide](../../generation/README.md#critpt-long-context-generation).
-Portable five-attempt examples are in `configs/jobs/critpt/qwen-long-context.yaml`
-and `configs/jobs/critpt/deepseek-pai-max.yaml`. Machine paths and credentials
+Long-generation examples are in `configs/jobs/critpt/vllm-long-context.yaml`
+and `configs/jobs/critpt/aliyun-deepseek.yaml`; their `seed_base` requires
+`ddsr-solve`. Machine paths and credentials
 belong in ignored `configs/local/` and `.env` files.
 
 ### Solve one challenge

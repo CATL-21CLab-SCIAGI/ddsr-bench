@@ -3,18 +3,62 @@
 ddsr-bench supports local and hosted Chat Completions clients. Use `ddsr-smoke`
 to check an endpoint, then pass the same settings to a benchmark job.
 
-Harbor job examples live in `configs/jobs/BENCHMARK`. Their `agents[].kwargs`
-sections make the endpoint, strategy, streaming behavior, and request-time
-sampling parameters explicit. Run one with
-`harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml`.
-The CritPt `qwen-long-context.yaml` and `deepseek-pai-max.yaml` examples use
-static-only `seed_base`: run them with `ddsr-solve --config`, or remove that field
-and choose a fixed `sampling.seed` before running them with Harbor.
+Job examples live in `configs/jobs/BENCHMARK`. Use `ddsr-solve --config` for
+supported static runs, or `harbor run --config` when isolated execution is needed.
+Static CritPt generation still produces Python answers; it validates their
+structure without executing them or establishing their correctness.
 
 Shared API clients live in `ddsr_bench/generation`. Benchmark prompt and
 conversation behavior lives in each `benchmarks/BENCHMARK/generation` package;
 Harbor and static evaluation adapters live beside one another under
 `benchmarks/BENCHMARK/evaluation`.
+
+## Generation quick start
+
+After [installation](../../README.md#-installation) and benchmark preparation,
+activate your environment and work from the repository root. This example uses
+[prepared CritPt tasks](../benchmarks/critpt/README.md#data-and-preparation)
+and PAI, without Docker. Export the configured API key and check access using
+the [provider example](#alibaba-cloud-pai-token-service) below; `.env` files are
+not loaded automatically. Model requests consume API quota.
+
+```bash
+mkdir -p configs/local
+cp configs/jobs/critpt/aliyun.yaml configs/local/critpt-check.yaml
+```
+
+In the copy, set `job_name: critpt-check`, one attempt, and concurrency one.
+Check the dataset path, model, endpoint, credential variable, and sampling limits.
+Then test one task:
+
+```bash
+ddsr-solve --config configs/local/critpt-check.yaml \
+  --include-task-name Challenge_1_main
+```
+
+Inspect `agent/response.json`, `artifacts/answer.py` (if valid), and
+`validation/result.json` under
+`outputs/static/critpt-check/Challenge_1_main__attempt-0/`.
+Validation does not establish answer correctness.
+
+Copy the config to `configs/local/critpt-batch.yaml`, set `job_name: critpt-batch`
+to avoid colliding with the check, and choose the attempt count and concurrency:
+
+```bash
+# Generate the full batch.
+ddsr-solve --config configs/local/critpt-batch.yaml
+# Only if interrupted: resume with unchanged generation settings and task selection.
+ddsr-solve --config configs/local/critpt-batch.yaml --resume
+# Once complete: summarize without model calls.
+ddsr-bench action=collect paths.input=outputs/static/critpt-batch
+```
+
+With the default `jobs_dir: outputs/harbor`, static outputs go to
+`outputs/static/JOB_NAME`. Relative paths resolve from the working directory;
+use persistent output storage on remote machines. See below for
+[resume](#resuming-static-jobs) and [long-context settings](#critpt-long-context-generation),
+or use the [direct JSON example](../benchmarks/critpt/README.md#solve-one-challenge)
+to skip task preparation.
 
 ## vLLM
 
@@ -94,6 +138,13 @@ repeat a model request if its response was not saved as a completed trial.
 CritPt additionally reuses completed generation stages, as described below.
 
 ## CritPt long-context generation
+
+Examples: `configs/jobs/critpt/vllm-long-context.yaml` and
+`configs/jobs/critpt/aliyun-deepseek.yaml`. Both default to one attempt and
+concurrency four. Check the configured budgets against your endpoint's limits.
+Run them with `ddsr-solve --config`: both set `seed_base: 42` for stable
+per-problem, per-attempt seeds. For Harbor, remove `seed_base` and use a fixed
+`sampling.seed` instead; this does not reproduce the per-trial seed schedule.
 
 CritPt static jobs can connect directly to an already running vLLM server.
 Set `context_window` and optional `context_safety_tokens` (default 32) to count

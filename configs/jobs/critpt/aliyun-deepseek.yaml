@@ -1,13 +1,13 @@
 benchmark: critpt
 
-# Evaluation layer: five attempts; run with ddsr-solve --config THIS_FILE.
-# seed_base is static-only; for Harbor remove it and set sampling.seed instead.
-job_name: deepseek-pai-max
+# Evaluation layer: static scheduling; run with ddsr-solve --config THIS_FILE.
+# For Harbor, remove seed_base and set sampling.seed instead.
+job_name: critpt-official-aliyun-deepseek
 jobs_dir: outputs/harbor
-n_attempts: 5
-n_concurrent_trials: 16
+n_attempts: 1
+n_concurrent_trials: 4
 
-# Generation layer: retain the historical PAI_API_KEY environment variable.
+# Generation layer: ALIYUN_API_KEY is read from the environment.
 agents:
   - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
     model_name: deepseek-v4-flash-0731
@@ -16,23 +16,18 @@ agents:
     kwargs:
       client_name: aliyun
       base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
-      api_key_env: PAI_API_KEY
-      # Preserve the original request: max_completion_tokens; no temperature/top_p.
+      api_key_env: ALIYUN_API_KEY
+      # This profile sends max_completion_tokens and omits temperature/top_p.
       request_profile: openai
       style: two-step
       stream: true
       timeout: 7200
+      # Output budgets for derivation and formatting, not context-window sizes.
       formatting_max_tokens: 131072
-      require_complete_stages: false
-      seed_base: 42
+      seed_base: 42 # Stable per-problem, per-attempt seeds; static runner only.
       sampling:
         max_tokens: 393216
-        temperature: 1.0
-        top_p: 1.0
-        top_k: null
-        seed: null
         reasoning_effort: max
-        enable_thinking: null
 
 # Dataset layer: normalized Harbor tasks.
 datasets:
