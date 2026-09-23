@@ -1,8 +1,10 @@
-"""Reviewed scope and precision policies; never inferred from candidate output."""
+"""Reviewed scope and precision policies; never inferred from answer output."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+import sympy as sp
 
 SKIP = {6, 12, 19, 25, 30, 33, 47, 51, 68}
 SKIP_REASONS = {
@@ -95,3 +97,70 @@ NOTES = {
     65: "Canonical formal tr/psi syntax only; no general fermion algebra or numeric substitution.",
     **SKIP_REASONS,
 }
+
+
+ALIASES = {"np": "n_prime", "lambda_": "lambda"}
+POSITIVE = {
+    2: "k_plus k_minus alpha vbar_b",
+    3: "m r0",
+    7: "n d",
+    11: "K",
+    15: "N l",
+    18: "epsilon0 k z_R d0 m Omega_1 Omega_2",
+    23: "p_z epsilon_UV mu",
+    24: "mu",
+    29: "lambda E W alpha m hbar",
+    36: "k n X_tot",
+    38: "T",
+    39: "g gamma",
+    49: "z K",
+    51: "g lambda",
+    59: "M a",
+    60: "Delta_k_sq",
+    62: "k",
+    67: "d",
+}
+INTEGERS = {
+    7: "n d",
+    11: "m",
+    15: "N l",
+    36: "n X_tot",
+    39: "n n_prime",
+    51: "g",
+    59: "M",
+    62: "k",
+    67: "d",
+}
+
+
+def symbols(number: int, names: list[str]) -> dict:
+    result = {}
+    for argument in names:
+        name = ALIASES.get(argument, argument)
+        if name == "tr":
+            result[argument] = sp.Function("tr")
+            continue
+        if name == "k_value":
+            continue
+        assumptions = {}
+        if name in POSITIVE.get(number, "").split():
+            assumptions["positive"] = True
+        elif number == 39 and name in {"n", "n_prime"}:
+            assumptions["nonnegative"] = True
+        elif number in {23, 24} and name == "epsilon_IR":
+            assumptions["negative"] = True
+        elif not ((number == 39 and name == "alpha") or number in {65, 66}):
+            assumptions["real"] = True
+        if name in INTEGERS.get(number, "").split():
+            assumptions["integer"] = True
+        result[argument] = sp.Symbol(name, **assumptions)
+    return result
+
+
+def continuation(number: int) -> dict[str, tuple[tuple[sp.Expr, str], ...]]:
+    return {
+        5: {"alpha": ((sp.Integer(0), "+"), (sp.Integer(1), "-"))},
+        7: {"k": ((sp.Integer(0), "+"),)},
+        22: {"x": ((sp.Integer(0), "+"), (sp.Integer(1), "-"))},
+        24: {"y": ((sp.Rational(1, 2), "+-"),)},
+    }.get(number, {})

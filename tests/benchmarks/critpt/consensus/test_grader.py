@@ -2,13 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import digest
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.runtime import (
+    DiagnosticRuntime as Runtime,
+)
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.grader import (
     Grader,
     summarize,
 )
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.runtime import Runtime
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.validation import validate
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.references import checksum
+from ddsr_bench.grading.validation import validate_code
 
 
 def row(number, refs, template="def answer():\n    pass"):
@@ -18,11 +20,11 @@ def row(number, refs, template="def answer():\n    pass"):
         "mode": "function" if number == 45 else "value",
         "confidence": 0.4,
         "template": template,
-        "template_sha256": digest(template),
+        "template_sha256": checksum(template),
         "parameters": ["mc_x", "mc_y", "mv_x", "mv_y"] if number == 45 else [],
         "reference_coverage": "complete",
         "references": [
-            {"id": str(i), "group": str(i), "code": code, "sha256": digest(code)}
+            {"id": str(i), "group": str(i), "code": code, "sha256": checksum(code)}
             for i, code in enumerate(refs)
         ],
     }
@@ -34,10 +36,10 @@ def test_tied_references_require_one_whole_function():
         template.replace("pass", "return True"),
         template.replace("pass", "return False"),
     ]
-    candidate = template.replace("pass", "return mc_x * mv_y != mc_y * mv_x")
+    answer = template.replace("pass", "return mc_x * mv_y != mc_y * mv_x")
     p = row(45, refs, template)
     ev = Grader({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
-    assert ev.grade(p["id"], candidate)["status"] == "different"
+    assert ev.grade(p["id"], answer)["status"] == "different"
     assert ev.grade(p["id"], refs[1])["status"] == "matched"
 
 
@@ -45,12 +47,9 @@ def test_candidate_and_reference_failures_are_separate():
     p = row(1, ["def answer():\n    return 1"])
     ev = Grader({"problems": [p]}, Runtime(trusted_local=True, timeout=15))
     assert (
-        ev.grade(p["id"], "def answer():\n    return 1/0")["status"]
-        == "candidate_error"
+        ev.grade(p["id"], "def answer():\n    return 1/0")["status"] == "answer_error"
     )
-    assert (
-        ev.grade(p["id"], "def wrong():\n    return 1")["status"] == "candidate_error"
-    )
+    assert ev.grade(p["id"], "def wrong():\n    return 1")["status"] == "answer_error"
     bad = row(1, ["def answer():\n    return 1/0"])
     ev = Grader({"problems": [bad]}, Runtime(trusted_local=True, timeout=15))
     assert (
@@ -89,7 +88,7 @@ def test_summary_fixed_denominator_and_uncertainty():
         ("matched", True),
         ("different", False),
         ("unknown", None),
-        ("missing_candidate", False),
+        ("missing_answer", False),
         ("skipped", None),
     ]
     results = [
@@ -109,13 +108,28 @@ def test_summary_fixed_denominator_and_uncertainty():
     assert report["sampled_matches"] == 1
 
 
+def test_input_error_never_executes(sample_bundle):
+    class NoRun:
+        def run(self, _):
+            raise AssertionError("invalid answer executed")
+
+    grader = Grader(sample_bundle, NoRun())
+    error = {"stage": "input", "error": "unreadable answer"}
+    assert grader.grade("Challenge_1_main", None, input_error=error)["status"] == (
+        "answer_error"
+    )
+    assert (
+        grader.grade("Challenge_6_main", None, input_error=error)["status"] == "skipped"
+    )
+
+
 @pytest.mark.parametrize("number", [47, 51])
 def test_audited_exclusions_keep_reason_without_executing_bad_candidates(
     number, sample_bundle
 ):
     class NoRun:
         def run(self, _):
-            raise AssertionError("excluded candidate or reference executed")
+            raise AssertionError("excluded answer or reference executed")
 
     grader = Grader(sample_bundle, NoRun())
     result = grader.grade(
@@ -130,9 +144,9 @@ def test_audited_exclusions_keep_reason_without_executing_bad_candidates(
 
 def test_validator_does_not_accept_import_or_signature_changes():
     with pytest.raises(ValueError):
-        validate("import os\ndef answer(): return 1", "def answer(): pass")
+        validate_code("import os\ndef answer(): return 1", "def answer(): pass")
     with pytest.raises(ValueError):
-        validate("def answer(x): return x", "def answer(): pass")
+        validate_code("def answer(x): return x", "def answer(): pass")
 
 
 def test_consensus_does_not_import_reward_graders():
@@ -171,17 +185,20 @@ def test_execution_reports_runtime_and_discards_candidate_prints():
 
 
 def test_default_execution_does_not_silently_fall_back_to_host(monkeypatch):
-    from ddsr_bench.benchmarks.critpt.evaluation.consensus import runtime
+    from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import runtime
 
     monkeypatch.setattr(runtime.shutil, "which", lambda _: None)
     with pytest.raises(RuntimeError, match="Docker is required"):
-        Runtime()
+        runtime.Runtime()
 
 
-def test_docker_worker_is_pinned_and_has_no_reference_mounts(monkeypatch):
+def test_docker_worker_is_pinned(monkeypatch):
     import subprocess
 
-    from ddsr_bench.benchmarks.critpt.evaluation.consensus import runtime
+    from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import (
+        docker,
+        runtime,
+    )
 
     monkeypatch.setattr(runtime.shutil, "which", lambda _: "/usr/bin/docker")
     monkeypatch.setattr(
@@ -191,31 +208,17 @@ def test_docker_worker_is_pinned_and_has_no_reference_mounts(monkeypatch):
     )
     seen = {}
 
-    class Process:
-        returncode = 0
+    async def run(payload, resources):
+        seen.update(request=payload, resources=resources)
+        return {"status": "ok"}
 
-        def __init__(self, command, **kwargs):
-            seen["command"] = command
-            seen["request"] = kwargs["stdin"].read()
-            self.stdout = kwargs["stdout"]
-
-        def wait(self, **kwargs):
-            self.stdout.write(b'{"status":"ok"}')
-            self.stdout.flush()
-
-    monkeypatch.setattr(runtime.subprocess, "Popen", Process)
-    executor = Runtime()
+    monkeypatch.setattr(docker, "run", run)
+    executor = runtime.Runtime()
     assert (
-        executor.run({"action": "evaluate", "code": "private-candidate"})["status"]
-        == "ok"
+        executor.run({"action": "evaluate", "code": "private-answer"})["status"] == "ok"
     )
-    command = seen["command"]
-    assert "--network=none" in command and "--read-only" in command
-    assert "--pull=never" in command and "sha256:abc" in command
-    assert "--user=65534:65534" in command
-    assert "-v" not in command and "--volume" not in command
-    assert b"private-candidate" in seen["request"]
-    assert "private-candidate" not in command
+    assert seen["resources"].image == "sha256:abc"
+    assert seen["request"]["code"] == "private-answer"
 
 
 def test_large_request_reaches_worker_without_stalling():

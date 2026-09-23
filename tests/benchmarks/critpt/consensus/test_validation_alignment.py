@@ -1,16 +1,20 @@
 import pytest
 
-from ddsr_bench.benchmarks.critpt.evaluation.consensus import validation
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.worker import evaluate
+from ddsr_bench.benchmarks.critpt.evaluation.consensus import (
+    references,
+)
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import worker
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.worker import evaluate
 from ddsr_bench.grading import validation as code_validation
-from ddsr_bench.grading import validation as generation
 
 
 def test_generation_and_consensus_share_the_original_rules():
     assert (
-        generation.validate_code is validation.validate is code_validation.validate_code
+        worker.validate_code
+        is references.validate_code
+        is code_validation.validate_code
     )
-    assert generation.extract_code is validation.source is code_validation.extract_code
+    assert references.extract_code is code_validation.extract_code
 
 
 @pytest.mark.parametrize(
@@ -48,10 +52,10 @@ def test_worker_rejects_generation_prohibited_syntax(body):
     ],
 )
 def test_extraction_uses_generation_convention(response):
-    assert validation.source(response) == "def answer(): return 1\n"
+    assert references.extract_code(response) == "def answer(): return 1\n"
 
 
 def test_existing_reference_bundle_passes_the_original_rules(reviewed_bundle):
     for row in reviewed_bundle["problems"]:
         for reference in row["references"]:
-            validation.validate(reference["code"], row["template"])
+            worker.validate_code(reference["code"], row["template"])

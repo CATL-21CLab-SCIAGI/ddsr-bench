@@ -4,7 +4,7 @@ set -euo pipefail
 repo=${DDSR_REPO:?set DDSR_REPO to the mounted DDSR checkout}
 config=${DDSR_JOB_CONFIG:?set DDSR_JOB_CONFIG}
 wheels=${DDSR_RUNTIME_WHEELS:?set DDSR_RUNTIME_WHEELS}
-python=${DDSR_BASE_PYTHON:-/opt/vllm-runtime/venv/bin/python}
+python=${DDSR_BASE_PYTHON:-python3} # Use PATH, or explicitly select an interpreter.
 runtime=$(mktemp -d /tmp/ddsr-critpt-runtime.XXXXXX)
 "$python" -m venv "$runtime"
 "$runtime/bin/python" -m pip install --no-index --no-deps "$wheels"/*.whl
@@ -18,7 +18,7 @@ if [[ ${DDSR_RESUME:-0} == 1 ]]; then
     command+=(--resume)
 fi
 # DSW uses direct routing for Alibaba endpoints; DLC containers usually have no proxy.
-if [[ -x /root/bin/direct ]]; then
-    exec /root/bin/direct "${command[@]}"
+if command -v direct >/dev/null 2>&1; then
+    exec direct "${command[@]}"
 fi
 exec "${command[@]}"

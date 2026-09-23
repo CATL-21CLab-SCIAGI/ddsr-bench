@@ -1,6 +1,8 @@
 """Real OS boundary tests, deliberately independent of the AST validator."""
 
+import ast
 import errno
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -9,10 +11,14 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.critpt.evaluation.consensus import linux
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import DEFAULT_BUNDLE
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.cli import parser, provenance
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.runtime import Runtime
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.cli import (
+    parser,
+    provenance,
+)
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import linux
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.runtime import (
+    DiagnosticRuntime as Runtime,
+)
 
 
 @pytest.fixture(scope="module")
@@ -27,8 +33,8 @@ def inside(sandbox, code):
     command = sandbox.linux.command()
     command = command[: command.index("-m")] + [
         "-c",
-        "from ddsr_bench.benchmarks.critpt.evaluation.consensus.linux import harden; harden()\n"
-        + code,
+        "from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.linux "
+        "import harden; harden()\n" + code,
     ]
     result = subprocess.run(
         command,
@@ -61,6 +67,33 @@ def test_missing_bubblewrap_fails_closed(monkeypatch):
         Runtime(backend="linux")
 
 
+def test_worker_paths(monkeypatch):
+    # Inspect the mount allowlist and entry point without launching a sandbox.
+    stdlib = linux.sysconfig.get_path("stdlib")
+    monkeypatch.setattr(linux.sysconfig, "get_path", lambda _: stdlib)
+    monkeypatch.setattr(linux.sysconfig, "get_config_var", lambda _: None)
+    monkeypatch.setattr(linux.sys, "platform", "linux")
+    monkeypatch.setattr(linux.shutil, "which", lambda _: "/usr/bin/bwrap")
+    monkeypatch.setattr(linux.os, "sched_getaffinity", lambda _: {0}, raising=False)
+    monkeypatch.setattr(
+        linux.subprocess,
+        "run",
+        lambda command, **kwargs: subprocess.CompletedProcess(
+            command, 0, stdout="" if command[0] == "ldd" else "{}"
+        ),
+    )
+    monkeypatch.setattr(linux.subprocess, "check_output", lambda *a, **kw: "bwrap")
+    sandbox = linux.LinuxSandbox(timeout=10)
+    package = "ddsr_bench.benchmarks.critpt.evaluation.consensus"
+    root = Path("/app") / package.replace(".", "/")
+    for name in linux.MODULES:
+        name = f"{name}.py"
+        assert sandbox.mounts[str(root / name)].is_file()
+    for name in ("references.py", "grader.py", "execution/runtime.py"):
+        assert str(root / name) not in sandbox.mounts
+    assert sandbox.command()[-1] == f"{package}.execution.linux"
+
+
 def test_backend_selection_is_explicit():
     with pytest.raises(ValueError, match="mutually exclusive"):
         Runtime(backend="linux", trusted_local=True)
@@ -70,6 +103,30 @@ def test_backend_selection_is_explicit():
         parser().parse_args(
             ["replay", "--output", "unused", "--backend", "linux", "--trusted-local"]
         )
+
+
+def test_entry_imports():
+    # Resolve deferred imports too: Linux-only branches are skipped on macOS.
+    tree = ast.parse(Path(linux.__file__).read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.level:
+            names = [node.module] if node.module else [a.name for a in node.names]
+            for name in names:
+                assert (
+                    importlib.util.find_spec("." * node.level + name, linux.__package__)
+                    is not None
+                )
+
+
+def test_entry_dispatch(monkeypatch):
+    from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import worker
+
+    calls = []
+    monkeypatch.setattr(linux.sys, "argv", ["linux"])
+    monkeypatch.setattr(linux, "harden", lambda: calls.append("harden"))
+    monkeypatch.setattr(worker, "main", lambda: calls.append("worker"))
+    linux.main()
+    assert calls == ["harden", "worker"]
 
 
 def test_failed_preflight_fails_closed(sandbox, monkeypatch):
@@ -95,14 +152,14 @@ def test_worker_protocol_and_provenance(sandbox, sample_bundle_path):
 
 
 def test_host_files_credentials_and_reference_bundle_are_hidden(
-    sandbox, tmp_path, monkeypatch
+    sandbox, tmp_path, monkeypatch, sample_bundle_path
 ):
     secret = tmp_path / "host-secret"
     secret.write_text("test secret, not a real credential")
     monkeypatch.setenv("CONSENSUS_TEST_SECRET", "must not be inherited")
     paths = [
         str(secret),
-        str(DEFAULT_BUNDLE),
+        str(sample_bundle_path),
         str(Path(__file__).resolve().parents[4] / ".env"),
         "/proc/self/environ",
         "/proc/self/fd",
@@ -234,3 +291,46 @@ def test_interrupt_reaps_worker(sandbox, monkeypatch):
         evaluate(sandbox, "while True: pass")
     assert interrupted[0].returncode is not None
     assert not Path(f"/proc/{interrupted[0].pid}").exists()
+
+
+@pytest.mark.parametrize("failure", ["timeout", "output_limit", "interrupt"])
+@pytest.mark.parametrize("trusted_local", [False, True])
+def test_cleanup(monkeypatch, failure, trusted_local):
+    calls = []
+
+    class Worker:
+        pid = 123
+        returncode = None
+
+        def __init__(self, command, **kwargs):
+            if failure == "output_limit":
+                kwargs["stderr"].truncate(8_000_001)
+
+        def wait(self, timeout=None):
+            if timeout is None:
+                calls.append("reaped")
+                return
+            if failure == "interrupt":
+                raise KeyboardInterrupt
+            raise subprocess.TimeoutExpired("worker", timeout)
+
+    monkeypatch.setattr(linux.subprocess, "Popen", Worker)
+    monkeypatch.setattr(linux.os, "killpg", lambda *args: calls.append("killed"))
+    times = iter([0, 2 if failure == "timeout" else 0])
+    monkeypatch.setattr(linux.time, "monotonic", lambda: next(times))
+    sandbox = type("Sandbox", (), {"command": lambda self: ["bwrap"], "env": {}})()
+    monkeypatch.setattr(linux, "LinuxSandbox", lambda timeout: sandbox)
+    options = {"trusted_local": True} if trusted_local else {"backend": "linux"}
+    diagnostic = Runtime(timeout=1, **options)
+    if failure == "interrupt":
+        with pytest.raises(KeyboardInterrupt):
+            diagnostic.run({})
+    else:
+        result = diagnostic.run({})
+        assert result["stage"] == failure
+    assert calls == ["killed", "reaped"]
+
+
+def test_explicit_backend():
+    with pytest.raises(ValueError, match="explicit backend"):
+        linux.run({}, 1, trusted_local=False, linux=None)

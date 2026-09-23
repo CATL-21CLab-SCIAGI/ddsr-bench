@@ -90,7 +90,7 @@ def build_batch(job_dir: str | Path, attempts: list[int]) -> dict[str, Any]:
     }
 
 
-def submit_batch(
+def submit_official(
     payload: dict[str, Any],
     api_key: str,
     *,

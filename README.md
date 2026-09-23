@@ -77,8 +77,9 @@ Summarize a completed job without rerunning generation:
 ddsr-bench action=collect paths.input=JOB_DIR
 ```
 
-This writes `summary.json` and `summary.csv`, groups complete batches by attempt,
-and reports incomplete trials separately.
+This writes `summary.json` and `summary.csv`, retaining every collected trial in
+an attempt batch. Each batch records whether it covers all collected problems;
+benchmark-specific submission checks determine the required problem coverage.
 
 ## 🎓 Export teacher data
 
@@ -104,5 +105,5 @@ their benchmark-specific behavior.
 - [Upstream sources](UPSTREAM.md): pinned repositories, datasets, and provenance
 
 Benchmarks may support explicit submission of saved answers to an official or
-internal grader. See the [CritPt submission guide](ddsr_bench/benchmarks/critpt/README.md#internal-submission)
-for its external reference bundle, isolated execution, and internal match scores.
+internal grader. See the [CritPt submission guide](ddsr_bench/benchmarks/critpt/README.md#submission)
+for backend requirements, attempt selection, and internal reference caching.

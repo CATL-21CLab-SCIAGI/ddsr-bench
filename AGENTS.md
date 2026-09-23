@@ -32,8 +32,45 @@ credential precedence. Prefer existing utility modules; do not deduplicate
 benchmark-specific or vendored scoring behavior merely because it looks alike.
 Test failure semantics, remove obsolete helpers, and report deliberate duplicates
 or deferred work explicitly.
+Inline trivial one-use wrappers around shared helpers when they add no contract.
 
 ## Benchmark integration review
+
+Both CritPt submission backends reuse shared collection of completed generation.
+Collect missing summaries once at the common submission boundary; reuse existing
+summaries unchanged. Share equivalent logic across similar actions, retaining
+backend-specific validation and scoring contracts.
+Submission is verifier-only: read saved artifacts and coordinate isolated workers
+without a new agent trial or model call. Require an explicit shared reference path.
+Per-task reference loading is not currently wired into internal submission; do not
+document it as available or retain an unused Harbor verifier adapter for it.
+If added later, reuse the shared file's problem-entry keys and validation.
+Do not copy shared references into each task. Read-only references still require
+separation from candidate code; Harbor's tests directory alone is not isolation.
+Use shared `load_batch` and saved artifacts as the sole answer-loading route.
+Do not restore removed flat/native loaders or standalone score/batch commands.
+Build/replay are reference diagnostics, not an alternative grading path.
+Consensus is replaceable: keep its matching rules isolated from shared grading.
+Group its mathematical checks under matching, worker machinery under one execution
+package, and build/replay commands in consensus/cli.py. Submission resolves collected
+artifact paths and grades those artifacts through the shared
+consensus grading entry point, without a second discovery or extraction path.
+Keep the generation agent in `critpt/evaluation/harbor.py`. Internal submission
+calls the consensus grader directly, without a Harbor verifier adapter.
+CritPt submission is a sibling of evaluation, not part of trial execution.
+Consensus execution uses `docker.py` and `linux.py` as backend modules.
+Keep subprocess supervision in `linux.py`, including its explicit trusted-local
+diagnostic bypass; `runtime.py` selects execution and `worker.py` computes inside
+the selected environment. Do not recreate a separate process module.
+Use Harbor-managed worker environments for internal submission, preserving scoring
+parity. Do not add an agent environment merely to transfer an existing artifact.
+Cache only successful reference outputs, privately and atomically, keyed by code,
+template, inputs, policy, image ID, and resources. Never cache generated answers or
+comparisons; retry failed references and keep caches out of answer environments.
+Internal submission accepts multiple explicitly selected attempts. Preflight all
+batches, then reuse one grader/cache across sequential attempts with concurrent
+problems. Preserve per-attempt results and fixed-denominator aggregate means;
+per-attempt scoring parity alone does not establish batch-workflow parity.
 
 When adding or auditing a benchmark:
 

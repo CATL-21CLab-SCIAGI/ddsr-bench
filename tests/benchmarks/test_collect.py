@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.collect import collect_trials, group_results
+from ddsr_bench.benchmarks.collect import collect_trials, group_results, load_batch
 
 
 def test_group_results():
@@ -83,17 +83,33 @@ def write_trial(
     )
 
 
-def test_collects_complete_batches(tmp_path: Path) -> None:
+@pytest.mark.parametrize("explicit", [False, True])
+def test_collects_all_batches(tmp_path: Path, explicit: bool) -> None:
     write_trial(tmp_path, "a-late", "a", "2026-01-02", 0)
     write_trial(tmp_path, "a-early", "a", "2026-01-01", 1)
     write_trial(tmp_path, "a-extra", "a", "2026-01-03", 1)
     write_trial(tmp_path, "b-late", "b", "2026-01-02", 1)
     write_trial(tmp_path, "b-early", "b", "2026-01-01", 0)
+    if explicit:
+        for name, attempt in [
+            ("a-early", 0),
+            ("a-late", 1),
+            ("a-extra", 2),
+            ("b-early", 0),
+            ("b-late", 1),
+        ]:
+            path = tmp_path / name / "result.json"
+            path.write_text(
+                json.dumps(json.loads(path.read_text()) | {"attempt": attempt})
+            )
 
     summary = collect_trials(tmp_path)
 
     assert summary["complete_batches"] == 2
-    assert summary["unbatched_trials"] == 1
+    assert summary["incomplete_batches"] == 1
+    assert summary["unbatched_trials"] == 0
+    assert summary["batches"][2]["complete"] is False
+    assert [trial["trial_name"] for trial in load_batch(tmp_path, 2)] == ["a-extra"]
     assert [row["trial_name"] for row in summary["batches"][0]["trials"]] == [
         "a-early",
         "b-early",
@@ -104,7 +120,7 @@ def test_collects_complete_batches(tmp_path: Path) -> None:
     assert saved == summary
     with (tmp_path / "summary.csv").open(newline="") as file:
         rows = list(csv.DictReader(file))
-    assert len(rows) == 4
+    assert len(rows) == 5
     assert rows[0]["attempt"] == "0"
     assert rows[0]["artifact"] == "a-early/artifacts/answer.py"
 
@@ -201,3 +217,29 @@ def test_rejects_multiple_agents(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="multiple benchmarks, agents"):
         collect_trials(tmp_path)
+
+
+@pytest.mark.parametrize("source", ["static", "verifier", "exception"])
+def test_failure_details(tmp_path, source):
+    write_trial(tmp_path, "trial", "Challenge_1_main", "2026-01-01", 0)
+    path = tmp_path / "trial" / "result.json"
+    verifier = path.parent / "verifier" / "result.json"
+    data = json.loads(path.read_text())
+    failure = {"status": "error", "error": "ValueError", "message": "invalid answer"}
+    if source == "static":
+        data["static_result"] = failure
+    elif source == "verifier":
+        verifier.write_text(json.dumps(failure))
+    else:
+        failure = {"exception_type": "RuntimeError", "exception_message": "failed"}
+        data["exception_info"] = failure
+        verifier.unlink()
+    path.write_text(json.dumps(data))
+
+    summary = collect_trials(tmp_path)
+
+    trial = summary["batches"][0]["trials"][0]
+    assert trial["status"] == "error"
+    assert trial["error"] == failure
+    with (tmp_path / "summary.csv").open(newline="") as file:
+        assert json.loads(next(csv.DictReader(file))["error"]) == failure

@@ -1,13 +1,27 @@
 name: critpt
 submission:
+  # Submission destination, not the container provider:
+  # official -> Artificial Analysis API; uses endpoint/api_key_env/timeout_sec.
+  # internal -> local consensus reference grader; uses the internal settings below.
+  # Both grade saved, collected answers without generating new responses.
   backend: official
   attempts: null # Official: [0, 1, 2, 3, 4] combines 350 answers in one request.
+  # Internal: the same selection reuses one grader/cache and reports aggregate means.
+  # Integers become lists; lists are sorted and duplicate indices are rejected.
+  # A pending official submission blocks retries until its AA outcome is reconciled.
   endpoint: https://artificialanalysis.ai/api/v2/critpt/evaluate
   api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
   timeout_sec: 7200
   internal:
-    bundle: null # Use the grader's default external reference path.
-    execution: docker # docker or linux; separate from the submission backend.
-    image: ddsr-critpt-consensus:local
+    references: ??? # Required for internal submission; supply a private reference JSON path.
+    cache_dir: ${paths.output}/cache/critpt-consensus # Private reference outputs; null disables disk reuse.
+    # docker: fresh worker containers managed by Harbor's Docker environment.
+    execution: docker # Normal submission has no Linux/host execution fallback.
+    # Reuse the normal CritPt image and container limits; override here if needed.
+    image: ${harbor.image}
+    cpus: ${harbor.cpus}
+    memory_mb: ${harbor.memory_mb}
     timeout: 60 # Per worker, in seconds.
-    jobs: 4
+    jobs: 4 # Concurrent problems (1–16); e.g. override to 8 if resources permit.
+    # Each problem runs its workers sequentially; cpus/memory_mb apply per worker.
+    # This setting is independent of generation/Harbor trial concurrency.

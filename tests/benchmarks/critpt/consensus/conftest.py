@@ -1,14 +1,15 @@
 import json
+import os
+from pathlib import Path
 
 import pytest
 
 from ddsr_bench.benchmarks.critpt.evaluation.consensus import POLICY_VERSION
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.bundle import (
-    DEFAULT_BUNDLE,
-    digest,
-    load,
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.matching.rules import NOTES, mode
+from ddsr_bench.benchmarks.critpt.evaluation.consensus.references import (
+    checksum,
+    load_references,
 )
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.policy import NOTES, mode
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def sample_bundle():
         template = "def answer():\n    pass"
         code = "def answer():\n    return 1"
         refs = (
-            [{"id": "g/model", "group": "g", "code": code, "sha256": digest(code)}]
+            [{"id": "g/model", "group": "g", "code": code, "sha256": checksum(code)}]
             if active
             else []
         )
@@ -42,7 +43,7 @@ def sample_bundle():
                 "confidence": 0.4,
                 "reported_max_agreement": 2,
                 "template": template,
-                "template_sha256": digest(template),
+                "template_sha256": checksum(template),
                 "parameters": [],
                 "note": NOTES.get(n, ""),
                 "references": refs,
@@ -61,7 +62,16 @@ def sample_bundle_path(tmp_path, sample_bundle):
 
 
 @pytest.fixture
-def reviewed_bundle():
-    if not DEFAULT_BUNDLE.is_file():
-        pytest.skip(f"External reference asset unavailable: {DEFAULT_BUNDLE}")
-    return load(DEFAULT_BUNDLE)
+def reviewed_path():
+    location = os.environ.get("DDSR_CRITPT_REFERENCES")
+    if not location:
+        pytest.skip("set DDSR_CRITPT_REFERENCES to test the private reference file")
+    path = Path(location).expanduser().resolve()
+    if not path.is_file():
+        pytest.fail(f"configured reference file does not exist: {path}")
+    return path
+
+
+@pytest.fixture
+def reviewed_bundle(reviewed_path):
+    return load_references(reviewed_path)
