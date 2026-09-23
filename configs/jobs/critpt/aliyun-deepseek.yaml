@@ -17,7 +17,9 @@ agents:
       client_name: aliyun
       base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
       api_key_env: ALIYUN_API_KEY
-      # This profile sends max_completion_tokens and omits temperature/top_p.
+      # Maps sampling.max_tokens to API max_completion_tokens.
+      # Omits temperature/top_p; CritPt adds the derived seed per request.
+      # Provider-side seed behavior is unverified; this is not a determinism guarantee.
       request_profile: openai
       style: two-step
       stream: true

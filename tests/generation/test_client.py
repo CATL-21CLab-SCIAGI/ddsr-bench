@@ -1,5 +1,6 @@
 import asyncio
 import json
+from contextlib import nullcontext
 from pathlib import Path
 
 import httpx
@@ -99,6 +100,9 @@ async def test_preflight_and_chat() -> None:
     assert result.finish_reason == "stop"
     assert result.stop_reason == "eos"
     assert result.raw["model"] == "solver"
+    assert result.request_parameters == {
+        key: value for key, value in payload.items() if key != "messages"
+    }
 
 
 @pytest.mark.asyncio
@@ -250,7 +254,11 @@ async def test_openai_request() -> None:
         sampling,
         transport=httpx.MockTransport(handler),
     ) as client:
-        await client.chat(MESSAGES)
+        with pytest.warns(UserWarning, match="top_k, seed"):
+            result = await client.chat(MESSAGES)
+
+    assert result.seed is None
+    assert "seed" not in result.request_parameters
 
     assert body == {
         "model": "openai.gpt-5.6-luna",
@@ -370,6 +378,7 @@ async def test_dynamic_budget_and_per_request_cap_are_concurrency_safe() -> None
     assert sorted(b["max_tokens"] for b in bodies) == [65536, 258112]
     assert first.request_budget["prompt_tokens"] == 4000
     assert second.request_budget["max_tokens"] == 65536
+    assert second.request_parameters["max_tokens"] == 65536
     assert {(b["seed"], b["max_tokens"]) for b in bodies} == {
         (101, 258112),
         (202, 65536),
@@ -474,14 +483,25 @@ async def test_aliyun_reasoning_profiles_preserve_requests_and_trial_seeds(
         stream=True,
         transport=httpx.MockTransport(handler),
     ) as client:
-        results = await asyncio.gather(
-            client.chat(MESSAGES, seed=42),
-            client.chat(MESSAGES, seed=43, max_tokens=131072),
+        warning = (
+            pytest.warns(
+                UserWarning, match="omits configured sampling fields: temperature"
+            )
+            if profile == "openai"
+            else nullcontext()
         )
+        with warning:
+            results = await asyncio.gather(
+                client.chat(MESSAGES, seed=42),
+                client.chat(MESSAGES, seed=43, max_tokens=131072),
+            )
     assert {b[token_key] for b in bodies} == {393216, 131072}
     assert {b["seed"] for b in bodies} == {42, 43}
     assert all(b["reasoning_effort"] == "max" for b in bodies)
     assert [r.seed for r in results] == [42, 43]
+    assert [r.request_parameters["seed"] for r in results] == [42, 43]
+    assert results[1].request_parameters[token_key] == 131072
+    assert "messages" not in results[0].request_parameters
     if profile == "openai":
         expected = OpenAIClient("https://example.com/v1", sampling)
         try:
