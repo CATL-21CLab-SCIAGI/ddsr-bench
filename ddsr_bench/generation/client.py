@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from contextlib import nullcontext
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, replace
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal, Protocol, Self
@@ -74,6 +75,9 @@ class ChatResponse:
     finish_reason: str | None = None
     stop_reason: str | int | None = None
     request_budget: dict[str, int] | None = None
+    # Sent generation fields, after overrides/budgeting; no messages or headers.
+    # None means unavailable (e.g. an older checkpoint), not an empty request.
+    request_parameters: dict[str, Any] | None = None
 
 
 class ChatClient(Protocol):
@@ -183,10 +187,33 @@ class BaseClient(ABC):
         payload, budget = await self._prepare_payload(messages, max_tokens)
         if seed is not None:
             payload["seed"] = seed
-        request_seed = payload.get("seed", self.sampling.seed)
+        # Check the final payload: CritPt supplies its per-trial seed here,
+        # after profile formatting. Preserve historical requests; warn, don't repair.
+        ignored = [
+            field.name
+            for field in fields(self.sampling)
+            if field.name not in ("model", "max_tokens")
+            and getattr(self.sampling, field.name) != field.default
+            and field.name not in payload
+            and field.name not in payload.get("chat_template_kwargs", {})
+        ]
+        if ignored:
+            warnings.warn(
+                f"{type(self).__name__} omits configured sampling fields: "
+                + ", ".join(ignored),
+                UserWarning,
+                stacklevel=2,
+            )
+        parameters = {key: value for key, value in payload.items() if key != "messages"}
+        request_seed = payload.get("seed")
         if self.stream:
             response = await self._stream(payload, stream_path, budget)
-            return replace(response, request_budget=budget, seed=request_seed)
+            return replace(
+                response,
+                request_budget=budget,
+                request_parameters=parameters,
+                seed=request_seed,
+            )
         started = perf_counter()
         data = self._json(await self._request("POST", "chat/completions", json=payload))
         latency = perf_counter() - started
@@ -224,6 +251,7 @@ class BaseClient(ABC):
             finish_reason=finish_reason,
             stop_reason=choice.get("stop_reason"),
             request_budget=budget,
+            request_parameters=parameters,
         )
 
     async def _stream(

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 
 from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, Problem, ProblemSpec
@@ -20,6 +21,70 @@ PROBLEM = ProblemSpec(
     source="critpt",
     source_path=Path("problem.json"),
 )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True])
+async def test_request_parameters(tmp_path, stream):
+    from ddsr_bench.benchmarks.critpt.generation.runner import generate
+    from ddsr_bench.generation.client import AliyunClient, Sampling
+
+    bodies = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        bodies.append(body)
+        choice = {"finish_reason": "stop"}
+        choice["delta" if stream else "message"] = {"content": "answer"}
+        data = {"choices": [choice]}
+        if stream:
+            return httpx.Response(
+                200, text=f"data: {json.dumps(data)}\n\ndata: [DONE]\n\n"
+            )
+        return httpx.Response(200, json=data)
+
+    sampling = Sampling("solver", seed=42, max_tokens=123)
+    async with AliyunClient(
+        "https://example.com/v1",
+        sampling,
+        request_profile="openai",
+        stream=stream,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        _, record = await generate(
+            client,
+            PROBLEM,
+            "two-step",
+            sampling,
+            formatting_max_tokens=45,
+            checkpoint_dir=tmp_path,
+        )
+        assert [b["seed"] for b in bodies] == [42, 42]
+        assert [b["max_completion_tokens"] for b in bodies] == [123, 45]
+        assert record["sampling"]["max_tokens"] == 123
+        for response, body in zip(record["responses"], bodies, strict=True):
+            assert response["request_parameters"] == {
+                k: v
+                for k, v in body.items()
+                if k not in ("messages", "stream", "stream_options")
+            }
+        # Older checkpoints lack this metadata; resume must not infer sent fields.
+        for path in tmp_path.glob("stage-*.json"):
+            saved = json.loads(path.read_text())
+            for response in saved["responses"]:
+                response.pop("request_parameters")
+            path.write_text(json.dumps(saved))
+        _, resumed = await generate(
+            client,
+            PROBLEM,
+            "two-step",
+            sampling,
+            formatting_max_tokens=45,
+            checkpoint_dir=tmp_path,
+            resume=True,
+        )
+    assert len(bodies) == 2
+    assert all(r["request_parameters"] is None for r in resumed["responses"])
 
 
 class FakeModel:

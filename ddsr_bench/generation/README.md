@@ -115,13 +115,29 @@ file. The API key is read at runtime and is never stored in the configuration.
 values depend on the served model. It remains mutually exclusive with
 `enable_thinking`. There is no automatic reasoning downgrade.
 
-For CritPt jobs migrated from an OpenAI-compatible PAI client, set
-`client_name: aliyun` and `request_profile: openai` in `agents[].kwargs`.
-That profile sends `max_completion_tokens` and `reasoning_effort`, omitting
-`temperature` and `top_p` just as the previous OpenAI client did. The default
-`native` profile retains DDSR's `max_tokens`, `temperature`, and `top_p` body.
-Both use the same Chat Completions endpoint and the configured `api_key_env`;
-neither switches to Responses API.
+`agents[].kwargs.request_profile` selects the request fields used by
+`AliyunClient`, not the provider or model:
+
+- `native` (default): maps `sampling.max_tokens` to API field `max_tokens`,
+  sends `temperature` and `top_p`, and supports
+  `enable_thinking` or `reasoning_effort` when configured.
+- `openai`: maps `sampling.max_tokens` to API field `max_completion_tokens`
+  and sends optional `reasoning_effort`;
+  omits `temperature` and `top_p`, and rejects `enable_thinking`.
+
+Always use `sampling.max_tokens` in job YAML; do not add a
+`max_completion_tokens` config key. For example, `max_tokens: 393216` becomes
+`"max_completion_tokens": 393216` in an `openai`-profile request.
+
+Both use the configured Chat Completions endpoint and API key. Keep `native`
+unless the endpoint requires the other format or you are preserving an older
+job's request behavior, as in the DeepSeek example.
+CritPt sends its seed with either profile; whether PAI DeepSeek honors it remains
+unverified. Direct `openai`-profile client calls must pass `chat(seed=...)`.
+
+`sampling` records configured settings; each response's `request_parameters`
+records sent generation fields. Omitted non-default settings trigger a warning.
+This metadata is unavailable for older records.
 
 ## Resuming static jobs
 
@@ -139,50 +155,27 @@ CritPt additionally reuses completed generation stages, as described below.
 
 ## CritPt long-context generation
 
-Examples: `configs/jobs/critpt/vllm-long-context.yaml` and
+Use `ddsr-solve --config` with `configs/jobs/critpt/vllm-long-context.yaml` or
 `configs/jobs/critpt/aliyun-deepseek.yaml`. Both default to one attempt and
-concurrency four. Check the configured budgets against your endpoint's limits.
-Run them with `ddsr-solve --config`: both set `seed_base: 42` for stable
-per-problem, per-attempt seeds. For Harbor, remove `seed_base` and use a fixed
-`sampling.seed` instead; this does not reproduce the per-trial seed schedule.
+concurrency four; check token budgets against your endpoint's limits.
 
-CritPt static jobs can connect directly to an already running vLLM server.
-Set `context_window` and optional `context_safety_tokens` (default 32) to count
-each stage's input through `/tokenize` and cap output at the remaining context.
-No context extension is applied by the client. `sampling.max_tokens` caps stage
-one; `formatting_max_tokens` independently caps stage two. Prompt text and the
-two-step conversation remain unchanged, including formatting after an empty or
-length-limited first-stage content response. `require_complete_stages: true`
-is an explicit stricter alternative, disabled by default.
+- **Budgets:** `sampling.max_tokens` caps derivation; `formatting_max_tokens`
+  caps the second, formatting call. With vLLM, `context_window` uses `/tokenize`
+  to subtract input length and `context_safety_tokens` (default 32). It does not
+  extend the server's context. Set `require_complete_stages: true` to reject
+  empty or non-stop completions instead of continuing to formatting.
+- **Seeds:** `seed_base: 42` derives a stable seed per problem-attempt, shared
+  by both calls; provider determinism is not guaranteed. This is static-only.
+  For Harbor, remove it and use `sampling.seed` for a fixed seed across trials.
+- **Recovery:** `--resume` reuses completed trials and `agent/stage-N.json`
+  checkpoints. Streaming also saves partial output in `stage-N.stream.jsonl`.
+  Keep generation settings unchanged; only concurrency may change. Retrying
+  with a different budget requires a separate run, not overwriting old results.
 
-The static runner refills each free concurrency slot immediately. `seed_base`
-derives a stable seed from `(base, problem_id, attempt)` and sends the same seed
-to both stages. Seeds do not imply deterministic GPU kernels or provider
-behavior. This option requires the static runner; Harbor can use a fixed
-`sampling.seed` with a supporting client.
+<details>
+<summary>Troubleshooting: resuming an older or relocated CritPt job</summary>
 
-Each completed stage is saved atomically under `agent/stage-N.json`. Streaming
-requests also retain `stage-N.stream.jsonl`, including partial output after a
-disconnect. Interrupted answers are not silently retried after receiving a
-stream chunk. `ddsr-solve --config JOB.yaml --resume` reuses completed trials
-and validated stage checkpoints; only concurrency may change in a normal
-resume. Increasing a formatting budget requires a separate retry directory
-with only the saved first stage copied, then `run_trial(..., resume=True)`.
-Never overwrite a completed trial to retry it without first preserving its
-original artifacts and provenance.
-
-Injected clients with the original `chat(messages)` interface remain supported;
-their sampling settings remain client-managed. Per-trial `seed_base` and an
-explicit formatting budget require `seed` and `max_tokens` keyword support,
-respectively, and fail explicitly when unsupported. Stream journals require
-`stream_path` support; stage checkpoints do not.
-
-### Legacy resume compatibility
-
-CritPt's optional `resume_migration` setting supports historical jobs with moved
-storage or former agent/client names. Omit it for new jobs; it is not required
-for normal `--resume` or generation-stage checkpoint recovery.
-Declare mappings in the job YAML alongside the normal job settings:
+Use `resume_migration` only when an older run's output or dataset paths moved:
 
 ```yaml
 resume_migration:
@@ -191,17 +184,12 @@ resume_migration:
     /old/tasks: /shared/critpt/tasks
 ```
 
-Mappings apply only to job output and dataset paths. The compatibility check
-also recognizes the former CritPt agent namespace and the equivalent transition
-from `client_name: openai` to `client_name: aliyun` with `request_profile: openai`.
-It still rejects changes to the model, endpoint, prompts/strategy, seed, sampling,
-stage budgets, or other generation settings. Stage reuse separately validates
-the saved public problem, messages, and sampling.
+Compatibility also covers former CritPt agent names and the transition from
+`client_name: openai` to `aliyun` with `request_profile: openai`. It does not allow
+changes to model, endpoint, prompts, seeds, or budgets. Original `job-config.yaml`
+is preserved; mappings are recorded separately. Omit this setting for normal runs.
 
-Mapped configuration is saved as a new resume audit, never over the original
-`job-config.yaml`. Preserve original trials and configs when relocating runs.
-This compatibility option remains necessary only for jobs using those old paths
-or names; it does not relax the retry restrictions described above.
+</details>
 
 ## Amazon Bedrock
 
