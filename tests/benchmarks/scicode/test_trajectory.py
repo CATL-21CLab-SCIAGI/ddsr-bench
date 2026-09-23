@@ -58,6 +58,7 @@ def test_scicode_trajectory(tmp_path: Path) -> None:
     job = tmp_path / "job"
     trajectory = load_trajectory(write_trial(job))
 
+    assert trajectory.schema_version == 1
     assert trajectory.benchmark == "scicode"
     assert trajectory.problem_id == "19"
     assert [(item.id, item.source) for item in trajectory.generations] == [

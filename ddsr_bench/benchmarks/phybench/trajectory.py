@@ -63,7 +63,7 @@ def normalize(
     encoded = json.dumps(generation.prompt + (generation.completion,), sort_keys=True)
     mode, reward = validation.get("mode"), validation.get("reward")
     return Trajectory(
-        schema_version=2,
+        schema_version=1,
         id=result.get("trial_name") or trial.name,
         benchmark="phybench",
         problem_id=problem_id,

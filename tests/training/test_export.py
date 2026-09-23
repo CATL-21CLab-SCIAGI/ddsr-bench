@@ -68,7 +68,7 @@ def test_normalization(tmp_path: Path) -> None:
     job = tmp_path / "job"
     trajectory = load_trajectory(write_trial(job).parent.parent)
 
-    assert trajectory.schema_version == 2
+    assert trajectory.schema_version == 1
     assert trajectory.benchmark == "critpt"
     assert [generation.id for generation in trajectory.generations] == [
         "derivation",
@@ -97,6 +97,61 @@ def test_export(tmp_path: Path) -> None:
         "Challenge_2_sub_1__attempt-0",
         "Challenge_2_sub_1__attempt-1",
     ]
+
+
+@pytest.mark.parametrize("version", [0, 2, "1", True, 1.0, None])
+def test_schema_version(tmp_path: Path, version) -> None:
+    write_trial(tmp_path / "job")
+    source = export_trajectories(tmp_path / "job", tmp_path / "dataset")
+    record = json.loads(source.read_text())
+    record["schema_version"] = version
+    source.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unsupported trajectory schema_version"):
+        export_sft(source, tmp_path / "sft")
+
+
+@pytest.mark.parametrize("kind", ["trajectories", "sft"])
+def test_failed_export(tmp_path: Path, kind: str) -> None:
+    job = tmp_path / "job"
+    write_trial(job, "first")
+    second = write_trial(job, "second")
+    source = export_trajectories(job, tmp_path / "source")
+    destination = tmp_path / "output"
+    destination.mkdir()
+    # Fail after one valid record has already been written to the temporary file.
+    if kind == "trajectories":
+        second.write_text("{", encoding="utf-8")
+    else:
+        first = source.read_text(encoding="utf-8").splitlines()[0]
+        source.write_text(first + "\n{\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        if kind == "trajectories":
+            export_trajectories(job, destination)
+        else:
+            export_sft(source, destination)
+
+    assert list(destination.iterdir()) == []
+
+
+@pytest.mark.parametrize("kind", ["trajectories", "sft"])
+def test_existing_export(tmp_path: Path, kind: str) -> None:
+    job = tmp_path / "job"
+    write_trial(job)
+    source = export_trajectories(job, tmp_path / "source")
+    destination = tmp_path / "output"
+    destination.mkdir()
+    target = destination / f"{kind}.jsonl"
+    target.write_text("previous export\n", encoding="utf-8")
+
+    with pytest.raises(FileExistsError, match="output already exists"):
+        if kind == "trajectories":
+            export_trajectories(job, destination)
+        else:
+            export_sft(source, destination)
+
+    assert target.read_text(encoding="utf-8") == "previous export\n"
+    assert list(destination.iterdir()) == [target]
 
 
 def test_rejects_mixed_benchmarks(tmp_path: Path) -> None:
@@ -157,7 +212,7 @@ def test_sft_views(tmp_path: Path) -> None:
 
 def test_one_step_views() -> None:
     trajectory = Trajectory(
-        schema_version=2,
+        schema_version=1,
         id="trial",
         benchmark="critpt",
         problem_id="problem",

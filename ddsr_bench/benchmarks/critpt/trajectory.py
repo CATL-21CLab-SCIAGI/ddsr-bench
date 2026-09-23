@@ -131,7 +131,7 @@ def normalize(
     response_path = trial / "agent" / "response.json"
     encoded = json.dumps(messages, ensure_ascii=False, sort_keys=True).encode()
     return Trajectory(
-        schema_version=2,
+        schema_version=1,
         id=result.get("trial_name") or trial.name,
         benchmark="critpt",
         problem_id=problem_id,

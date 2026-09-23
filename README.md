@@ -94,6 +94,7 @@ ddsr-bench \
   training.view=full
 ```
 
+Use a fresh `DATASET_DIR`; existing export files are not overwritten.
 Export makes no model calls. See the
 [training-data guide](ddsr_bench/training/README.md) for the available views and
 their benchmark-specific behavior.

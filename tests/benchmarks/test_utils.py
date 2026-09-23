@@ -26,6 +26,21 @@ def test_read_text():
         read_text({}, "text", "problem")
 
 
+def test_failed_replace(tmp_path, monkeypatch):
+    path = tmp_path / "record.json"
+    write_json(path, {"value": "original"})
+    original = path.read_bytes()
+
+    def fail(*args):
+        raise OSError("replacement failed")
+
+    monkeypatch.setattr(Path, "replace", fail)
+    with pytest.raises(OSError, match="replacement failed"):
+        write_json(path, {"value": "new"})
+    assert path.read_bytes() == original
+    assert list(tmp_path.iterdir()) == [path]
+
+
 def test_create_json(tmp_path):
     path = tmp_path / "record.json"
 
