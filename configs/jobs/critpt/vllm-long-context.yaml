@@ -1,13 +1,14 @@
 benchmark: critpt
 
-# Evaluation layer: five attempts; run with ddsr-solve --config THIS_FILE.
-# seed_base is static-only; for Harbor remove it and set sampling.seed instead.
-job_name: qwen-long-context
+# Evaluation layer: static scheduling; run with ddsr-solve --config THIS_FILE.
+# For Harbor, remove seed_base and set sampling.seed instead.
+job_name: critpt-official-vllm-long-context
 jobs_dir: outputs/harbor
-n_attempts: 5
-n_concurrent_trials: 32
+n_attempts: 1
+n_concurrent_trials: 4
 
-# Generation layer: local Qwen served through vLLM's OpenAI-compatible API.
+# Generation layer: agent, client, prompt strategy, and request parameters.
+# Qwen sampling example; the already running server must support these settings.
 agents:
   - name: ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent
     model_name: ddsr-local
@@ -19,12 +20,12 @@ agents:
       style: two-step
       stream: true
       timeout: 7200
-      # The client subtracts input tokens and this margin from the context window.
+      # Requires /tokenize; caps each request to remaining server context.
+      # This does not extend the model's configured context window.
       context_window: 262144
       context_safety_tokens: 32
       formatting_max_tokens: 131072
-      require_complete_stages: false
-      seed_base: 42
+      seed_base: 42 # Stable per-problem, per-attempt seeds; static runner only.
       sampling:
         max_tokens: 262144
         temperature: 1.0
