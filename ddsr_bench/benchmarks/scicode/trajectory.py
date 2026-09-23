@@ -100,7 +100,7 @@ def normalize(
         sort_keys=True,
     ).encode()
     return Trajectory(
-        schema_version=2,
+        schema_version=1,
         id=result.get("trial_name") or trial.name,
         benchmark="scicode",
         problem_id=problem_id,

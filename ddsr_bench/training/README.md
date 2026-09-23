@@ -1,9 +1,14 @@
 # Training data
 
 Trajectory export first converts each benchmark's logs into the same canonical
-schema. One `Generation` represents one request that was sent to a model and its
-response. Provider reasoning is retained separately from visible response
-content.
+schema. Only `schema_version: 1` is supported. One `Generation` represents one
+model request and its response. Provider reasoning is retained separately from
+visible response content.
+
+Exports refuse existing output files and publish new files only on success;
+choose another output directory for a rerun.
+Protection is per file: if SFT export fails, a completed `trajectories.jsonl`
+remains available.
 
 Two views apply to every benchmark:
 

@@ -48,6 +48,7 @@ def test_trajectory(tmp_path: Path) -> None:
 
     trajectory = load_trajectory(trial)
 
+    assert trajectory.schema_version == 1
     assert trajectory.benchmark == "phybench"
     assert trajectory.generations[0].completion["reasoning"] == "teacher reasoning"
     assert trajectory.metadata == {

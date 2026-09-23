@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.registry import sft_adapter, trajectory_adapter
-from ddsr_bench.benchmarks.utils import read_json
+from ddsr_bench.benchmarks.utils import atomic_write, read_json
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 
 
@@ -50,7 +50,7 @@ def export_trajectories(job_dir: str | Path, output: str | Path) -> Path:
     destination = Path(output)
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / "trajectories.jsonl"
-    with target.open("w", encoding="utf-8") as file:
+    with atomic_write(target, overwrite=False) as file:
         for trial in trials:
             json.dump(asdict(load_trajectory(trial)), file, ensure_ascii=False)
             file.write("\n")
@@ -78,7 +78,7 @@ def export_sft(
     target = destination / "sft.jsonl"
     with (
         source.open(encoding="utf-8") as input_file,
-        target.open("w", encoding="utf-8") as output_file,
+        atomic_write(target, overwrite=False) as output_file,
     ):
         for number, line in enumerate(input_file, start=1):
             if not line.strip():
