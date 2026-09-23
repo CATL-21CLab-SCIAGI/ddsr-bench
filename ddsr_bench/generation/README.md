@@ -7,6 +7,9 @@ Harbor job examples live in `configs/jobs/BENCHMARK`. Their `agents[].kwargs`
 sections make the endpoint, strategy, streaming behavior, and request-time
 sampling parameters explicit. Run one with
 `harbor run --config configs/jobs/BENCHMARK/CLIENT.yaml`.
+The CritPt `qwen-long-context.yaml` and `deepseek-pai-max.yaml` examples use
+static-only `seed_base`: run them with `ddsr-solve --config`, or remove that field
+and choose a fixed `sampling.seed` before running them with Harbor.
 
 Shared API clients live in `ddsr_bench/generation`. Benchmark prompt and
 conversation behavior lives in each `benchmarks/BENCHMARK/generation` package;
@@ -117,15 +120,37 @@ with only the saved first stage copied, then `run_trial(..., resume=True)`.
 Never overwrite a completed trial to retry it without first preserving its
 original artifacts and provenance.
 
-CritPt's optional `resume_migration` setting is **legacy compatibility**, not a
-normal resume requirement. Omit it for new jobs. It supports historical path and
-agent/client-name mappings; see [legacy resume compatibility](../benchmarks/critpt/MIGRATION.md#legacy-resume-compatibility).
-
 Injected clients with the original `chat(messages)` interface remain supported;
 their sampling settings remain client-managed. Per-trial `seed_base` and an
 explicit formatting budget require `seed` and `max_tokens` keyword support,
 respectively, and fail explicitly when unsupported. Stream journals require
 `stream_path` support; stage checkpoints do not.
+
+### Legacy resume compatibility
+
+CritPt's optional `resume_migration` setting supports historical jobs with moved
+storage or former agent/client names. Omit it for new jobs; it is not required
+for normal `--resume` or generation-stage checkpoint recovery.
+Declare mappings in the job YAML alongside the normal job settings:
+
+```yaml
+resume_migration:
+  path_prefixes:
+    /old/critpt-eval/outputs: /shared/critpt/runs/outputs
+    /old/tasks: /shared/critpt/tasks
+```
+
+Mappings apply only to job output and dataset paths. The compatibility check
+also recognizes the former CritPt agent namespace and the equivalent transition
+from `client_name: openai` to `client_name: aliyun` with `request_profile: openai`.
+It still rejects changes to the model, endpoint, prompts/strategy, seed, sampling,
+stage budgets, or other generation settings. Stage reuse separately validates
+the saved public problem, messages, and sampling.
+
+Mapped configuration is saved as a new resume audit, never over the original
+`job-config.yaml`. Preserve original trials and configs when relocating runs.
+This compatibility option remains necessary only for jobs using those old paths
+or names; it does not relax the retry restrictions described above.
 
 ## Amazon Bedrock
 

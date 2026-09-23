@@ -17,12 +17,9 @@ by the [generation guide](../../generation/README.md).
 
 Download the pinned
 [official challenge JSON files](https://github.com/CritPt-Benchmark/CritPt/tree/17c2545c302762d2f2d644d923ea4c301605cb08/data/public_test_challenges/json).
-Build the verifier image, then provide the downloaded directory as
-`paths.input`:
+Provide the downloaded directory as `paths.input`:
 
 ```bash
-docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
-
 ddsr-bench \
   action=prepare \
   paths.input=path/to/CritPt/data/public_test_challenges/json \
@@ -32,6 +29,13 @@ ddsr-bench \
 Preparation emits one task per main or indexed subproblem. The official public
 set produces 70 main tasks. Public fields go into the model instruction;
 reference code and optional testcases remain verifier-only.
+
+Preparation and static evaluation do not require Docker. For Harbor evaluation
+or internal submission, build the verifier image once (and rebuild after code changes):
+
+```bash
+docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
+```
 
 ## Evaluation
 
@@ -63,50 +67,6 @@ and resume are described in the [generation guide](../../generation/README.md#cr
 Portable five-attempt examples are in `configs/jobs/critpt/qwen-long-context.yaml`
 and `configs/jobs/critpt/deepseek-pai-max.yaml`. Machine paths and credentials
 belong in ignored `configs/local/` and `.env` files.
-
-### Internal submission
-
-Submit one collected attempt to the internal consensus grader without calling the
-official API. Grader settings belong to `benchmark.submission.internal`:
-
-```bash
-ddsr-bench action=collect paths.input=outputs/static/my-job
-ddsr-bench action=submit benchmark=critpt \
-  paths.input=outputs/static/my-job 'benchmark.submission.attempts=[0]' \
-  benchmark.submission.backend=internal \
-  benchmark.submission.internal.bundle=/absolute/path/to/consensus-61-v2.json
-```
-
-This writes `submission-internal-0.json` and includes missing answers as zero.
-Both backends require `summary.json` and explicit attempt selection.
-Internal grading follows the selected batch's artifact paths; raw legacy inputs
-remain supported by the compatibility CLI, not by the submit action.
-Docker is the default execution backend; Linux sandboxing is also supported.
-These are internal consensus scores, not official accuracy. The compatibility
-CLI below additionally supports reference replay and multi-attempt reports.
-
-The evaluator reads an external reference asset, defaulting to
-`/mnt/workspace/zhizhou/assets/critpt/references/consensus-61-v2.json`.
-Use `--bundle /absolute/path/to/consensus-61-v2.json` on other installations;
-reference answers are not distributed with the source or wheel.
-
-The [61-challenge consensus evaluator](evaluation/consensus/README.md) scores
-existing answers without model calls. It has a separate CLI and report schema;
-its match results do not populate the mainline `reward` or training filters.
-For a native multi-attempt job:
-
-```bash
-ddsr-critpt-consensus replay --all-references --backend linux --output replay.json
-ddsr-critpt-consensus batch --backend linux \
-  --candidates /path/to/static/job --output /path/to/new-grading-directory
-```
-
-The Linux backend requires bubblewrap and libseccomp and fails closed if
-isolation cannot be established. Docker remains the default backend. Reference
-data lives only on the evaluator side and is excluded from every solver image.
-The model receives public problems; a candidate worker receives only its code,
-template and test inputs. See the [migration notes](MIGRATION.md) for historical
-jobs, path mapping, configuration and validation provenance.
 
 ### Solve one challenge
 
@@ -140,32 +100,67 @@ derived one-step answer sample.
 
 ## Submission
 
-Submission is explicit and requires exactly one answer for each of the 70
-official main problems **within each selected attempt**:
+`benchmark.submission.backend` selects where saved answers are graded:
+
+- `official` (default): submit saved answers to Artificial Analysis's grading API.
+- `internal`: grade saved answers against private consensus references using
+  Harbor-managed Docker workers; this produces internal match scores, not official accuracy.
+
+Finish generation first. Both backends collect results if `summary.json` is absent
+and reuse it otherwise. To refresh it, run `ddsr-bench action=collect paths.input=JOB_DIR`.
+Submission makes no model calls and never overwrites an existing submission report.
+
+Set `benchmark.submission.attempts=0` for attempt 0, or
+`'benchmark.submission.attempts=[0,1,2,3,4]'` for five attempts.
+
+### Official submission (Artificial Analysis)
+
+Each selected attempt must contain exactly one answer for each of the 70 official
+main problems. Set the API key and choose the official backend explicitly:
 
 ```bash
 export ARTIFICIAL_ANALYSIS_API_KEY='...'
-ddsr-bench \
-  action=submit \
-  paths.input=outputs/harbor/critpt-official \
-  'benchmark.submission.attempts=[0]'
+ddsr-bench action=submit benchmark=critpt \
+  paths.input=JOB_DIR 'benchmark.submission.attempts=[0]' \
+  benchmark.submission.backend=official
 ```
 
-The command rejects missing, duplicate, and mixed-attempt batches before making
-one request. It writes `submission-0.json` without overwriting an existing
-response. The payload retains CritPt's official `problem_id`, `generated_code`,
-`model`, `generation_config`, and `messages` fields.
+Writes `submission-0.json`. Selecting five attempts sends all 350 answers in
+**one AA request** and saves `submission-0-1-2-3-4.json` with aggregate scores.
+If a request fails, reconcile its outcome with AA before retrying or removing
+`submission-ATTEMPTS.pending.json`: AA may already have accepted it.
 
-`benchmark.submission.attempts=0` is also accepted and normalized to `[0]`;
-the integer selects an attempt index, not a number of runs.
+### Internal submission
 
-For a five-run score, replace `'benchmark.submission.attempts=[0]'` with
-`'benchmark.submission.attempts=[0,1,2,3,4]'`. This sends all 350 response strings in **one
-AA request**, following upstream `evaluate_all_results.py`, and saves the returned
-aggregate metrics to `submission-0-1-2-3-4.json`. Repeated problem IDs across
-attempts are expected; duplicates within an attempt are rejected. AA's accuracy
-over these 350 answers equals the five-run mean. The client does not retry failed
-requests automatically. Internal submission still accepts one attempt at a time.
+Requires Docker, the prepared CritPt image, and a private reference file
+(not distributed with this project):
+
+```bash
+ddsr-bench action=submit benchmark=critpt \
+  paths.input=JOB_DIR 'benchmark.submission.attempts=[0]' \
+  benchmark.submission.backend=internal \
+  benchmark.submission.internal.references=/absolute/path/to/consensus-61-v2.json
+```
+
+Writes `submission-internal-0.json`, or `submission-internal-0-1-2-3-4.json` for
+five selected attempts, after all grading finishes. Reports include per-attempt
+and aggregate scores; missing or failed answers count as zero. These scores do
+not change trial rewards or training filters. See the [scoring rules](evaluation/consensus/SCORING.md).
+
+Grading defaults to four concurrent problems; adjust `benchmark.submission.internal.jobs`
+for your resources. Worker limits and other settings are documented in the
+[benchmark config](../../../configs/benchmark/critpt.yaml).
+
+#### Reference caching
+
+Successful reference outputs are cached by default in `outputs/cache/critpt-consensus`.
+A new directory starts **cold**; reusing it provides a **warm** cache when settings
+match. Answers always execute afresh. Override `benchmark.submission.internal.cache_dir`
+to choose a private directory outside the job, or set it to `null` to disable disk caching.
+In-memory reuse within a submission remains enabled.
+
+See the consensus guide for [cache details](evaluation/consensus/README.md#reference-caching)
+and maintainer-only [reference tools](evaluation/consensus/README.md#reference-maintenance).
 
 ## Compatibility and limitations
 

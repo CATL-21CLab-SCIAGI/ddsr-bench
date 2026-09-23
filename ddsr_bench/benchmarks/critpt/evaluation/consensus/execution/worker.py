@@ -12,8 +12,9 @@ import sys
 
 import numpy as np
 
-from .validation import validate
-from .wire import decode, encode
+from ddsr_bench.grading.validation import validate_code
+
+from .serialization import decode, encode
 
 
 def nonfinite_value(value: dict) -> bool:
@@ -26,7 +27,7 @@ def nonfinite_value(value: dict) -> bool:
 
 def evaluate(payload: dict) -> dict:
     try:
-        validate(payload["code"], payload["template"])
+        validate_code(payload["code"], payload["template"])
     except (ValueError, TypeError, SyntaxError, StopIteration) as error:
         return {"status": "error", "stage": "validation", "error": str(error)[:300]}
     try:
@@ -65,18 +66,18 @@ def evaluate(payload: dict) -> dict:
 
 
 def compare(payload: dict) -> dict:
-    from .compare import Comparator, combine
+    from ..matching.compare import Comparator, combine
 
-    candidate = [decode(x) for x in payload["candidate"]]
+    answer = [decode(x) for x in payload["answer"]]
     results = []
     for reference in payload["references"]:
         try:
             expected = [decode(x) for x in reference["outputs"]]
-            if len(candidate) != len(expected):
+            if len(answer) != len(expected):
                 raise ValueError("case counts differ")
             checks = [
                 Comparator(payload["number"], payload["parameters"], i).compare(a, b)
-                for i, (a, b) in enumerate(zip(candidate, expected))
+                for i, (a, b) in enumerate(zip(answer, expected))
             ]
             result = combine(checks).json()
         except Exception as error:  # noqa: BLE001 - comparison boundary

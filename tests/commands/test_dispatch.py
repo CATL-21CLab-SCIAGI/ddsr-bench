@@ -10,13 +10,13 @@ from ddsr_bench.commands.dispatch import LOGGER_NAME, configure_logging, dispatc
 def test_collect_action(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "ddsr_bench.commands.dispatch.collect_trials",
-        lambda _: {"complete_batches": 2},
+        lambda _: {"complete_batches": 2, "incomplete_batches": 1},
     )
     config = SimpleNamespace(
         action="collect", paths=SimpleNamespace(input="harbor-job")
     )
 
-    assert dispatch(config) == "collected 2 complete batches"
+    assert dispatch(config) == "collected 2 complete and 1 incomplete batches"
 
 
 def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -69,13 +69,13 @@ def test_export_action(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "dataset/sft-answer.jsonl" in result
 
 
-@pytest.mark.parametrize("selection", [0, 2, [2], [0, 1, 2, 3, 4]])
+@pytest.mark.parametrize("selection", [0, 2, [2], [4, 2, 0, 3, 1]])
 def test_submit_action(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, selection
 ) -> None:
     monkeypatch.setenv("TEST_API_KEY", "secret")
-    selected = [selection] if isinstance(selection, int) else selection
-    from ddsr_bench.benchmarks.critpt.evaluation import submission
+    selected = [selection] if isinstance(selection, int) else sorted(selection)
+    from ddsr_bench.benchmarks.critpt import submission
 
     def build(job, attempts):
         assert job == tmp_path
@@ -84,9 +84,10 @@ def test_submit_action(
         return {"attempts": attempts}
 
     monkeypatch.setattr(submission, "build_batch", build)
+    monkeypatch.setattr(submission, "collect_trials", lambda _: {})
     monkeypatch.setattr(
         submission,
-        "submit_batch",
+        "submit_official",
         lambda payload, *args, **kwargs: payload,
     )
     config = SimpleNamespace(

@@ -6,18 +6,26 @@
 - Commit: `17c2545c302762d2f2d644d923ea4c301605cb08`
 - Reused: the prompt text and one-step/two-step conversation behavior.
 
-### CritPt consensus and long-context migration
+### CritPt consensus and long-context generation
 
 - Source: https://github.com/CATL-21CLab-SCIAGI/critpt-eval
 - Source commit: `93425280f1829bfced2a51ff52f0d0deba540863`.
 - Shared ancestor with DDSR: `aec06ded389df0e60b25b4272c4337269aa4ccda`.
+- Integration started from DDSR `2f5b952`. The subsequent consensus refactor
+  uses Zhizhou's `a52ca182742555cc3e0c79d5fbe4f50ddc058ca7` on
+  `feature/critpt-consensus-migration` as its behavior baseline.
+  `codex/critpt-local-submit` descends from that commit, preserving the original
+  contributor's commits and authorship rather than squashing or rewriting them.
+  Recorded parity checks and their limitations are in
+  [consensus testing](ddsr_bench/benchmarks/critpt/evaluation/consensus/TESTING.md).
 - Current internal policy: `consensus-61-v2`, 70 slots, 61 active, 9 skipped,
   204 reviewed references. On 2026-09-17, the user approved excluding 47 and 51
-  after the [reference audit](ddsr_bench/benchmarks/critpt/evaluation/consensus/EXCLUSIONS.md). The versioned bundle carries reference provenance
+  after the [reference audit](ddsr_bench/benchmarks/critpt/evaluation/consensus/SCORING.md). The versioned bundle carries reference provenance
   and template/code digests. This policy is not official CritPt grading.
 - External reference bundle (not distributed in Git or wheels):
   `/mnt/workspace/zhizhou/assets/critpt/references/consensus-61-v2.json`.
-  Use `--bundle` for other mounts or installations. SHA-256:
+  Internal submission requires `benchmark.submission.internal.references`;
+  reference diagnostics require `--references` with the local file path. SHA-256:
   `6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`.
   Historical `consensus-63-v1` had 63 active problems and 212 references; its
   hash was `fa0facc0082261b6f42d976e07b8bc1c9302eff517e7802c9bf49f87fd4a3f2f`.

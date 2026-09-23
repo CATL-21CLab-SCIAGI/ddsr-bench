@@ -1,6 +1,7 @@
 benchmark: critpt
 
-# Evaluation layer: five attempts; use ddsr-solve for execution-free runs.
+# Evaluation layer: five attempts; run with ddsr-solve --config THIS_FILE.
+# seed_base is static-only; for Harbor remove it and set sampling.seed instead.
 job_name: deepseek-pai-max
 jobs_dir: outputs/harbor
 n_attempts: 5

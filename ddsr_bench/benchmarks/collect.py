@@ -38,6 +38,8 @@ class Trial:
     status: str
     artifact: str | None
     attempt: int = -1
+    # Preserve the failing static/verifier result, or Harbor exception details.
+    error: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +96,7 @@ def _trial(record: TrialRecord, job: Path) -> Trial:
     attempt = data.get("attempt", -1)
     if isinstance(attempt, bool) or not isinstance(attempt, int):
         raise TypeError(f"{result_path} has an invalid attempt")
+    failure = static if isinstance(static, dict) else verifier
     return Trial(
         benchmark=benchmark,
         problem_id=problem_id,
@@ -109,6 +112,7 @@ def _trial(record: TrialRecord, job: Path) -> Trial:
             str(artifact_path.relative_to(job)) if artifact_path.is_file() else None
         ),
         attempt=attempt,
+        error=(failure or data.get("exception_info")) if status == "error" else None,
     )
 
 
@@ -138,7 +142,7 @@ def load_trials[T](
 def load_batch(job_dir: str | Path, attempt: int) -> list[dict[str, Any]]:
     """Load one attempt batch from the saved collection summary.
 
-    A batch contains one trial per collected problem, all with the same attempt
+    A batch contains at most one trial per collected problem, with the same attempt
     index. For example, 70 problems run five times produce five 70-trial batches;
     attempt 2 selects the third. This is not an API batch or a concurrency group.
     Benchmark-specific submission checks determine whether all required problems
@@ -168,7 +172,7 @@ def load_batch(job_dir: str | Path, attempt: int) -> list[dict[str, Any]]:
 
 
 def collect_trials(job_dir: str | Path) -> dict[str, Any]:
-    """Group Harbor or static trials into deterministic attempt batches."""
+    """Retain all trials in attempt batches, including incomplete selections."""
     job = Path(job_dir)
     trials = load_trials(job)
     if not trials:
@@ -204,9 +208,9 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
             for items, attempts in zip(groups.values(), attempt_sets)
         ):
             raise ValueError("problem attempts must be unique")
-        attempts = sorted(set.intersection(*attempt_sets))
+        attempts = sorted(set.union(*attempt_sets))
     else:
-        attempts = list(range(min(map(len, groups.values()))))
+        attempts = list(range(max(map(len, groups.values()))))
     batches = []
     rows = []
     for attempt in attempts:
@@ -214,15 +218,21 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
         for problem_id in sorted(groups):
             if all(explicit):
                 trial = next(
-                    item for item in groups[problem_id] if item.attempt == attempt
+                    (item for item in groups[problem_id] if item.attempt == attempt),
+                    None,
                 )
             else:
+                if attempt >= len(groups[problem_id]):
+                    continue
                 trial = replace(groups[problem_id][attempt], attempt=attempt)
+            if trial is None:
+                continue
             batch.append(trial)
         rows.extend(batch)
         batches.append(
             {
                 "attempt": attempt,
+                "complete": len(batch) == len(groups),
                 "validated": sum(trial.status == "validated" for trial in batch),
                 "passed": sum(trial.reward == 1 for trial in batch),
                 "total": len(batch),
@@ -233,7 +243,9 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
     summary = {
         "problems": len(groups),
         "trials": len(trials),
-        "complete_batches": len(batches),
+        # Completeness is relative to collected problems, not official coverage.
+        "complete_batches": sum(batch["complete"] for batch in batches),
+        "incomplete_batches": sum(not batch["complete"] for batch in batches),
         "unbatched_trials": len(trials) - len(rows),
         "batches": batches,
     }
@@ -248,5 +260,6 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
         for trial in rows:
             row = asdict(trial)
             row["benchmark_config"] = json.dumps(trial.benchmark_config, sort_keys=True)
+            row["error"] = json.dumps(trial.error, sort_keys=True)
             writer.writerow(row)
     return summary

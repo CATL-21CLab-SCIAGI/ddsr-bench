@@ -24,6 +24,7 @@ def test_reference_outcomes(sample_bundle, references, comparison, status, match
 
     class Runtime:
         def run(self, payload):
+            assert "answer" in payload and "candidate" not in payload
             return {
                 "status": "ok",
                 "comparisons": [
@@ -37,8 +38,8 @@ def test_reference_outcomes(sample_bundle, references, comparison, status, match
             }
 
     class FixedGrader(Grader):
-        def execution(self, code, row):
-            if code == "candidate" or references[int(code)]:
+        def execution(self, code, row, *, reference=False):
+            if code == "answer" or references[int(code)]:
                 return {"status": "ok", "outputs": []}
             return {"status": "error", "stage": "execution"}
 
@@ -47,7 +48,7 @@ def test_reference_outcomes(sample_bundle, references, comparison, status, match
         {"id": str(i), "group": f"group-{i}", "code": str(i)}
         for i in range(len(references))
     ]
-    result = FixedGrader(sample_bundle, Runtime()).grade(row["id"], "candidate")
+    result = FixedGrader(sample_bundle, Runtime()).grade(row["id"], "answer")
 
     assert (result["status"], result["matched"]) == (status, matched)
     assert len(result["reference_errors"]) == references.count(False)
@@ -66,8 +67,8 @@ def test_weighted_summary():
         ("matched", True, 0.4),
         ("different", False, 0.6),
         ("unknown", None, 0.8),
-        ("missing_candidate", False, 0.4),
-        ("candidate_error", False, 0.6),
+        ("missing_answer", False, 0.4),
+        ("answer_error", False, 0.6),
         ("reference_error", None, 0.8),
         ("skipped", None, 0.8),
     ]
@@ -84,6 +85,23 @@ def test_weighted_summary():
     ]
 
     report = summarize(results)
+
+    # Historical report labels map one-to-one; all numerical aggregates stay equal.
+    old_names = {
+        "missing_answer": "missing_candidate",
+        "answer_error": "candidate_error",
+    }
+    original = summarize(
+        [
+            {**row, "status": old_names.get(row["status"], row["status"])}
+            for row in results
+        ]
+    )
+    original["statuses"] = {
+        {value: key for key, value in old_names.items()}.get(status, status): count
+        for status, count in original["statuses"].items()
+    }
+    assert report == original
 
     assert report["policy_version"] == "consensus-61-v2"
     assert report["total_slots"] == 8

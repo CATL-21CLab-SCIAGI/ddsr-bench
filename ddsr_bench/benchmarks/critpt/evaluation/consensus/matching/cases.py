@@ -1,70 +1,14 @@
-"""Deterministic input cases and domain samples for the reviewed 63 problems."""
+"""Execution arguments and deterministic comparison samples, not dataset augmentation."""
 
 from __future__ import annotations
 
 import sympy as sp
 
-from .validation import parameters
-
-ALIASES = {"np": "n_prime", "lambda_": "lambda"}
-POSITIVE = {
-    2: "k_plus k_minus alpha vbar_b",
-    3: "m r0",
-    7: "n d",
-    11: "K",
-    15: "N l",
-    18: "epsilon0 k z_R d0 m Omega_1 Omega_2",
-    23: "p_z epsilon_UV mu",
-    24: "mu",
-    29: "lambda E W alpha m hbar",
-    36: "k n X_tot",
-    38: "T",
-    39: "g gamma",
-    49: "z K",
-    51: "g lambda",
-    59: "M a",
-    60: "Delta_k_sq",
-    62: "k",
-    67: "d",
-}
-INTEGERS = {
-    7: "n d",
-    11: "m",
-    15: "N l",
-    36: "n X_tot",
-    39: "n n_prime",
-    51: "g",
-    59: "M",
-    62: "k",
-    67: "d",
-}
+from .rules import symbols
 
 
-def symbols(number: int, names: list[str]) -> dict:
-    result = {}
-    for argument in names:
-        name = ALIASES.get(argument, argument)
-        if name == "tr":
-            result[argument] = sp.Function("tr")
-            continue
-        if name == "k_value":
-            continue
-        assumptions = {}
-        if name in POSITIVE.get(number, "").split():
-            assumptions["positive"] = True
-        elif number == 39 and name in {"n", "n_prime"}:
-            assumptions["nonnegative"] = True
-        elif number in {23, 24} and name == "epsilon_IR":
-            assumptions["negative"] = True
-        elif not ((number == 39 and name == "alpha") or number in {65, 66}):
-            assumptions["real"] = True
-        if name in INTEGERS.get(number, "").split():
-            assumptions["integer"] = True
-        result[argument] = sp.Symbol(name, **assumptions)
-    return result
-
-
-def inputs(number: int, template: str) -> list[dict]:
+def inputs(number: int, parameters: list[str]) -> list[dict]:
+    """Use parameter names checked against the template by load_references."""
     if number == 20:
         result = []
         for i, (a, b, wavelength, distance) in enumerate(
@@ -107,14 +51,14 @@ def inputs(number: int, template: str) -> list[dict]:
                 (1, 1, 1, 1.000001),
             ]
         ]
-    base = symbols(number, parameters(template))
+    base = symbols(number, parameters)
     if number == 62:
         return [dict(base, k_value=k) for k in (1, 2, 3)]
     return [base]
 
 
 def sample_values(number: int, case: int = 0, path: tuple[int, ...] = ()) -> list[dict]:
-    """Values keyed by canonical symbol names; deterministic and candidate-independent."""
+    """Values keyed by canonical symbol names; deterministic and answer-independent."""
     result = []
     for i in range(12):
         r = sp.Rational(i + 2, 7)
@@ -239,12 +183,3 @@ def sample_values(number: int, case: int = 0, path: tuple[int, ...] = ()) -> lis
             v.update(d=2 + i)
         result.append(v)
     return result
-
-
-def continuation(number: int) -> dict[str, tuple[tuple[sp.Expr, str], ...]]:
-    return {
-        5: {"alpha": ((sp.Integer(0), "+"), (sp.Integer(1), "-"))},
-        7: {"k": ((sp.Integer(0), "+"),)},
-        22: {"x": ((sp.Integer(0), "+"), (sp.Integer(1), "-"))},
-        24: {"y": ((sp.Rational(1, 2), "+-"),)},
-    }.get(number, {})

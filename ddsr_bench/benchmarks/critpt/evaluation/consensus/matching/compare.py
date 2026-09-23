@@ -9,8 +9,8 @@ from dataclasses import dataclass
 import mpmath as mp
 import sympy as sp
 
-from .fixtures import continuation, sample_values, symbols
-from .policy import SIGNIFICANT_DIGITS, Precision, precision
+from .cases import sample_values
+from .rules import SIGNIFICANT_DIGITS, Precision, continuation, precision, symbols
 
 
 class Undecided(Exception):
@@ -72,7 +72,7 @@ def numeric(a, b, rule: Precision, significant: int | None = None) -> Check:
         if not finite(b):
             return Check("unknown", reason="nonfinite reference")
         if not finite(a):
-            return Check("different", reason="nonfinite candidate")
+            return Check("different", reason="nonfinite answer")
         if rule.exact:
             with deadline():
                 difference = a - b
@@ -243,7 +243,7 @@ class Comparator:
             if not finite(b):
                 return Check("unknown", reason="nonfinite reference expression")
             if not finite(a):
-                return Check("different", reason="nonfinite candidate expression")
+                return Check("different", reason="nonfinite answer expression")
             a, b = self._normalize(a, path), self._normalize(b, path)
             # Check explicitly supplied endpoint values before interior simplification.
             boundary = (

@@ -7,7 +7,7 @@ ROOT = Path(__file__).parents[2]
 def test_submission_packaged():
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
     assert (
-        "ddsr_bench.benchmarks.critpt.evaluation.submission"
+        "ddsr_bench.benchmarks.critpt.submission"
         in config["tool"]["setuptools"]["packages"]
     )
 
@@ -45,6 +45,9 @@ def test_all_solver_contexts_exclude_local_artifacts():
         )
         visible = set(exclude_paths(ROOT, patterns))
         assert "ddsr_bench/grading/validation.py" in visible
-        assert "ddsr_bench/benchmarks/critpt/evaluation/consensus/worker.py" in visible
+        assert (
+            "ddsr_bench/benchmarks/critpt/evaluation/consensus/execution/worker.py"
+            in visible
+        )
         assert ".env" not in visible
         assert not any(path.startswith("configs/local/") for path in visible)

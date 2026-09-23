@@ -51,7 +51,10 @@ def collect(config: DictConfig) -> str:
     if config.paths.input is None:
         raise ValueError("paths.input is required for collect")
     summary = collect_trials(config.paths.input)
-    return f"collected {summary['complete_batches']} complete batches"
+    return (
+        f"collected {summary['complete_batches']} complete and "
+        f"{summary['incomplete_batches']} incomplete batches"
+    )
 
 
 def export(config: DictConfig) -> str:

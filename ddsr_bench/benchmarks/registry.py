@@ -56,7 +56,7 @@ BENCHMARKS = {
         trajectory_adapter="ddsr_bench.benchmarks.critpt.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.critpt.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.critpt.evaluation.prepare:prepare_tasks",
-        submitter="ddsr_bench.benchmarks.critpt.evaluation.submission:submit",
+        submitter="ddsr_bench.benchmarks.critpt.submission:submit",
     ),
     "scicode": Benchmark(
         result_adapter="ddsr_bench.benchmarks.scicode.result:trial_fields",

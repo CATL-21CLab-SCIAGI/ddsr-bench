@@ -1,9 +1,14 @@
-"""Bubblewrap adapter for the consensus worker; no grading policy lives here.
+"""Linux diagnostic backend: Bubblewrap isolation and subprocess supervision.
+
+Selected explicitly through the historical CLI with --backend linux, never as an
+automatic fallback. Requires a compatible Linux host; see consensus/README.md.
+The explicit trusted-local diagnostic option reuses supervision without
+Bubblewrap; it is not a separate backend module or a safe execution sandbox.
 
 Only the interpreter, its standard library, four scientific packages and the
 worker's source modules are exposed. Never bind the repository or a site-packages
 directory wholesale. The trusted bootstrap applies hard limits and seccomp
-before importing the worker or reading a candidate request.
+before importing the worker or reading a answer request.
 """
 
 from __future__ import annotations
@@ -17,21 +22,25 @@ import json
 import os
 import resource
 import shutil
+import signal
 import subprocess
 import sys
 import sysconfig
+import tempfile
+import time
 from pathlib import Path
 
 PACKAGES = ("numpy", "scipy", "sympy", "mpmath")
 MODULES = (
     "__init__",
-    "linux",
-    "worker",
-    "wire",
-    "validation",
-    "compare",
-    "fixtures",
-    "policy",
+    "execution/__init__",
+    "execution/worker",
+    "execution/serialization",
+    "execution/linux",
+    "matching/__init__",
+    "matching/compare",
+    "matching/cases",
+    "matching/rules",
 )
 LIMITS = {"address_space": 1 << 30, "file_bytes": 8_000_000, "tmp_bytes": 64 << 20}
 
@@ -91,7 +100,7 @@ class LinuxSandbox:
             if metadata is None:
                 raise RuntimeError(f"Missing linux worker package metadata: {name}")
             self.bind(Path(dist.locate_file(metadata)), f"/runtime/site/{metadata}")
-        package = Path(__file__).resolve().parent
+        package = Path(__file__).resolve().parent.parent
         root = package.parents[3]
         # Bind namespace initializers individually, never the package trees.
         for parent in (root, *reversed(package.parents[:3])):
@@ -194,11 +203,120 @@ class LinuxSandbox:
             "-S",
             "-P",
             "-m",
-            "ddsr_bench.benchmarks.critpt.evaluation.consensus.linux",
+            "ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.linux",
         ]
         if probe:
             args.append("--probe")
         return args
+
+
+def run(payload: dict, timeout: float, *, trusted_local: bool, linux) -> dict:
+    """Run one diagnostic worker; trusted_local explicitly bypasses Bubblewrap."""
+    if not trusted_local and linux is None:
+        raise ValueError("legacy execution requires an explicit backend")
+    env = {
+        **os.environ,
+        "PYTHONPATH": str(Path(__file__).resolve().parents[6]),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "CONSENSUS_CPU_SECONDS": str(int(timeout) + 2),
+    }
+    if trusted_local:
+        command = [
+            sys.executable,
+            "-m",
+            "ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.worker",
+        ]
+    elif linux is not None:
+        command = linux.command()
+        env = linux.env
+    with (
+        tempfile.TemporaryDirectory(prefix="critpt-consensus-") as cwd,
+        tempfile.TemporaryFile() as request,
+        tempfile.TemporaryFile() as stdout,
+        tempfile.TemporaryFile() as stderr,
+    ):
+        # A regular stdin file avoids partial pipe writes when polling a slow
+        # worker in the legacy Linux/local paths.
+        encoded = json.dumps(payload, allow_nan=False).encode()
+        if len(encoded) > 8_000_000:
+            return {
+                "status": "error",
+                "stage": "input_limit",
+                "error": "worker request too large",
+            }
+        request.write(encoded)
+        request.seek(0)
+        process = subprocess.Popen(
+            command,
+            stdin=request,
+            stdout=stdout,
+            stderr=stderr,
+            cwd=cwd,
+            env=env,
+            start_new_session=True,
+        )
+        started = time.monotonic()
+        failure = None
+        try:
+            while True:
+                try:
+                    process.wait(timeout=min(0.1, timeout))
+                    break
+                except subprocess.TimeoutExpired:
+                    if time.monotonic() - started >= timeout:
+                        failure = "timeout"
+                    if (
+                        max(
+                            os.fstat(stdout.fileno()).st_size,
+                            os.fstat(stderr.fileno()).st_size,
+                        )
+                        > 8_000_000
+                    ):
+                        failure = "output_limit"
+                    if failure:
+                        break
+        except BaseException:
+            _stop(process)
+            raise
+        if failure:
+            _stop(process)
+            return {
+                "status": "error",
+                "stage": failure,
+                "error": "worker resource limit exceeded",
+            }
+        stdout.seek(0)
+        raw = stdout.read(8_000_001)
+        if process.returncode or len(raw) > 8_000_000:
+            return {
+                "status": "error",
+                "stage": "process",
+                "error": f"worker exited {process.returncode} or output limit exceeded",
+            }
+        try:
+            data = json.loads(raw)
+            if not isinstance(data, dict) or data.get("status") not in {
+                "ok",
+                "error",
+            }:
+                raise ValueError("invalid result")
+            return data
+        except (ValueError, UnicodeDecodeError):
+            return {
+                "status": "error",
+                "stage": "protocol",
+                "error": "invalid worker response",
+            }
+
+
+def _stop(process):
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.wait()
 
 
 def harden():

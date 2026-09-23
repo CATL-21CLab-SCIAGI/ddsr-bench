@@ -7,43 +7,99 @@ from collections import Counter
 from pathlib import Path
 from threading import Lock
 
+from ddsr_bench.benchmarks.utils import read_bytes, read_json, write_json
+
 from . import POLICY_VERSION
-from .bundle import digest
-from .candidates import Candidate, CandidateBatch
-from .fixtures import inputs
-from .runtime import Runtime
-from .wire import encode
+from .execution.runtime import Runtime
+from .execution.serialization import encode
+from .matching.cases import inputs
+from .references import checksum
 
 
 class Grader:
-    """Match candidates against approved references, caching bounded executions."""
+    """Match answers against approved references, caching bounded executions."""
 
-    def __init__(self, bundle: dict, runtime: Runtime):
-        self.rows = {p["id"]: p for p in bundle["problems"]}
+    def __init__(
+        self, references: dict, runtime: Runtime, *, cache_dir: Path | None = None
+    ):
+        self.rows = {p["id"]: p for p in references["problems"]}
         self.runtime = runtime
         self.cache = {}
         self.lock = Lock()
+        self.cache_dir = None
+        self.cache_stats = {"hits": 0, "executions": 0}
+        if cache_dir is not None:
+            if runtime.backend != "docker" or not runtime.image_id:
+                raise ValueError("reference caching requires a pinned Docker image")
+            # The image ID pins worker code, validation, and scientific libraries.
+            settings = [
+                POLICY_VERSION,
+                runtime.image_id,
+                runtime.timeout,
+                runtime.cpus,
+                runtime.memory_mb,
+            ]
+            self.cache_dir = Path(cache_dir) / checksum(json.dumps(settings))
 
-    def execution(self, code, row):
+    def execution(self, code, row, *, reference=False):
         cases = [
             {k: encode(v) for k, v in c.items()}
-            for c in inputs(row["number"], row["template"])
+            for c in inputs(row["number"], row["parameters"])
         ]
-        key = digest(json.dumps([code, row["template_sha256"], cases], sort_keys=True))
+        payload = {
+            "action": "evaluate",
+            "code": code,
+            "template": row["template"],
+            "inputs": cases,
+        }
+        # Never let an answer hit a reference entry, even when its code is identical.
+        if not reference:
+            return self.runtime.run(payload)
+        key = checksum(json.dumps(payload, sort_keys=True))
+        path = self.cache_dir / f"{key}.json" if self.cache_dir else None
         with self.lock:
             cached = self.cache.get(key)
+        if cached is None and path is not None:
+            try:
+                record = read_json(path, max_bytes=8_000_000, allow_nan=False)
+                value = record.get("result")
+                if (
+                    record.get("key") == key
+                    and isinstance(value, dict)
+                    and record.get("sha256")
+                    == checksum(json.dumps(value, sort_keys=True))
+                    and value.get("status") == "ok"
+                    and isinstance(value.get("outputs"), list)
+                    and len(value["outputs"]) == len(cases)
+                    and isinstance(value.get("runtime"), dict)
+                ):
+                    cached = value
+            except (OSError, ValueError, TypeError, RecursionError):
+                pass  # Missing/corrupt cache entries are recomputed, never scored.
         if cached is not None:
+            with self.lock:
+                self.cache[key] = cached
+                self.cache_stats["hits"] += 1
             return cached
-        result = self.runtime.run(
-            {
-                "action": "evaluate",
-                "code": code,
-                "template": row["template"],
-                "inputs": cases,
-            }
-        )
         with self.lock:
-            self.cache[key] = result
+            self.cache_stats["executions"] += 1
+        result = self.runtime.run(payload)
+        if result["status"] == "ok":
+            if path is not None:
+                path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+                # Atomic private files: concurrent cold misses may safely publish
+                # the same deterministic entry without exposing partial JSON.
+                write_json(
+                    path,
+                    {
+                        "key": key,
+                        "result": result,
+                        "sha256": checksum(json.dumps(result, sort_keys=True)),
+                    },
+                    allow_nan=False,
+                )
+            with self.lock:
+                self.cache[key] = result
         return result
 
     def grade(
@@ -67,16 +123,16 @@ class Grader:
         if input_error is not None:
             return {
                 **base,
-                "status": "candidate_error",
+                "status": "answer_error",
                 "matched": False,
                 "error": input_error,
             }
         if code is None:
-            return {**base, "status": "missing_candidate", "matched": False}
+            return {**base, "status": "missing_answer", "matched": False}
         ready, errors = [], []
-        # Each reference is executed alone. Candidate receives no reference code.
+        # Each reference executes alone; generated answers receive no reference code.
         for ref in row["references"]:
-            result = self.execution(ref["code"], row)
+            result = self.execution(ref["code"], row, reference=True)
             if result["status"] == "ok":
                 ready.append(
                     {
@@ -89,14 +145,14 @@ class Grader:
                 errors.append({"reference": ref["id"], **result})
         if not ready:
             return {**base, "status": "reference_error", "reference_errors": errors}
-        candidate = self.execution(code, row)
-        base["runtime"] = candidate.get("runtime")
-        if candidate["status"] != "ok":
+        answer = self.execution(code, row)
+        base["runtime"] = answer.get("runtime")
+        if answer["status"] != "ok":
             return {
                 **base,
-                "status": "candidate_error",
+                "status": "answer_error",
                 "matched": False,
-                "error": candidate,
+                "error": answer,
                 "reference_errors": errors,
             }
         result = self.runtime.run(
@@ -104,7 +160,7 @@ class Grader:
                 "action": "compare",
                 "number": row["number"],
                 "parameters": row["parameters"],
-                "candidate": candidate["outputs"],
+                "answer": answer["outputs"],
                 "references": ready,
             }
         )
@@ -139,41 +195,48 @@ class Grader:
         }
 
 
-def grade_candidate(
-    grader: Grader, problem_id: str, candidate: Candidate | None
+def grade(
+    grader: Grader,
+    problem_id: str,
+    path: Path | None,
+    status: str | None,
+    *,
+    upstream: dict | None = None,
 ) -> dict:
-    """Grade one policy slot and attach available candidate provenance."""
-    result = grader.grade(
-        problem_id,
-        candidate.code if candidate else None,
-        input_error=candidate.error if candidate else None,
-    )
-    if candidate:
-        result.update(
-            candidate_source=str(candidate.path),
-            generation=candidate.generation,
-            metadata_errors=candidate.metadata_errors,
-        )
+    """Read an already extracted answer; execution stays in the grader's sandbox.
+
+    Failure details come from shared collection, not historical response loading.
+    """
+    code, error = None, None
+    if path is not None:
+        try:
+            code = read_bytes(path, max_bytes=8_000_000).decode("utf-8")
+            if not code.strip():
+                raise ValueError("empty answer")
+        except (OSError, ValueError) as failure:
+            error = {
+                "status": "error",
+                "stage": "input",
+                "error": f"{type(failure).__name__}: {failure}"[:300],
+            }
+    elif status == "error":
+        error = {
+            "status": "error",
+            "stage": "generation",
+            "error": "rollout did not produce an answer artifact",
+        }
+        if upstream is not None:
+            error["upstream"] = upstream
+    result = grader.grade(problem_id, code, input_error=error)
+    if path is not None:
+        # Preserve report fields without reconstructing historical answer records.
+        result.update(answer_source=str(path), generation=None, metadata_errors=[])
     return result
 
 
-def report(directory: Path, batch: CandidateBatch, results: list[dict]) -> dict:
-    """Assemble one attempt without changing result order or batch-only fields."""
-    return {
-        "candidate_input": {
-            "directory": str(directory),
-            "layout": batch.layout,
-            "attempt": batch.attempt,
-            "available_attempts": batch.available_attempts,
-            "recognized_candidates": len(batch.answers),
-        },
-        "summary": summarize(results),
-        "results": results,
-    }
-
-
 def summarize(results: list[dict]) -> dict:
-    if len({r["problem_id"] for r in results}) != len(results):
+    """Count each problem-attempt once; missing/error/unknown stay in the denominator."""
+    if len({(r.get("attempt"), r["problem_id"]) for r in results}) != len(results):
         raise ValueError("duplicate problem results")
     active = [r for r in results if r["status"] != "skipped"]
     weight = sum(r["confidence"] for r in active)
@@ -205,8 +268,12 @@ def summarize(results: list[dict]) -> dict:
         "sampled_matches": sum(
             r["matched"] is True and "sampled" in r["methods"] for r in active
         ),
-        "incomplete_reference_coverage": [
-            r["problem_id"] for r in active if r["reference_coverage"] == "incomplete"
-        ],
+        "incomplete_reference_coverage": list(
+            dict.fromkeys(
+                r["problem_id"]
+                for r in active
+                if r["reference_coverage"] == "incomplete"
+            )
+        ),
         "by_confidence": by_confidence,
     }
