@@ -6,6 +6,7 @@ from pathlib import Path
 from ddsr_bench.benchmarks.critpt.data.schemas import (
     AnswerSpec,
     Challenge,
+    CritPtSource,
     Problem,
     ProblemSpec,
 )
@@ -30,7 +31,7 @@ def _spec(record: dict, path: Path) -> ProblemSpec:
         index=index,
         statement=require_text(record, "problem_description", path),
         code_template=require_text(record, "code_template", path),
-        source="critpt",
+        source=CritPtSource.OFFICIAL,
         source_path=path,
     )
 

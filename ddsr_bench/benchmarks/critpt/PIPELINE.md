@@ -1,5 +1,18 @@
 # CritPt pipeline
 
+For `critpt-ai`, problems whose answers are graded by rules or an LLM become
+public `instruction.md` and private `tests/reference.json` files. For answers graded
+by rules, preparation separates the template from answer instructions and writes
+`tests/reference.py`.
+Answers graded by an LLM currently need no code; matching instructions use the
+prompt default, while differing source instructions are retained.
+Prepared AI tasks support one-stage static teacher generation through `ddsr-solve`,
+saving full responses and code/text artifacts without correctness grading.
+AI static results use shared collection and trajectory/SFT export, without
+correctness verification. AI Harbor execution and customized grading remain
+deferred. The execution flow below
+applies to `critpt-official` (the official CritPt repository).
+
 One CritPt challenge contains a main problem and may contain ordered,
 independently indexed subproblems. Preparation compiles each problem into its
 own task so Harbor can schedule problems and attempts independently.

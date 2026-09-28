@@ -1,4 +1,5 @@
 name: critpt
+source: critpt-official # Official CritPt repository, or critpt-ai for an AI corpus.
 submission:
   # Submission destination, not the container provider:
   # official -> Artificial Analysis API; uses endpoint/api_key_env/timeout_sec.

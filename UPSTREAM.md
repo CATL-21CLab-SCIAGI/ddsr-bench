@@ -51,6 +51,16 @@
 - Repository: https://github.com/CATL-21CLab-SCIAGI/Auto_CritPt_Grader
 - Commit: `1787dbb2258af9c606ff97ad6094af5a25e8f246`
 - Reused: the deterministic grading contract, with no LLM judge.
+- AI answer-generation prompts: `src/auto_critpt_grader/prompt.py` at
+  `565d1b0bfab353e17a40a38fe656c3ab0caee660` (Apache-2.0), adapted into
+  `configs/prompts/critpt/ai.yaml`.
+  Preserve both system texts and user-message labels. For answers graded by rules,
+  instructions reattach the extracted Python template at the end; whitespace
+  and template placement can therefore differ from raw source records.
+  The loader records `grader: rule` for `grading_plan` records and `grader: llm`
+  for `answer_items` records. Prompt routing uses that public field, independently
+  of template presence, without accessing private references during generation.
+  Empty instructions use the corpus default. Official CritPt prompts are unchanged.
 
 ## Harbor
 

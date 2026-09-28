@@ -75,7 +75,7 @@ async def test_seeded_trial_still_formats_empty_first_stage(tmp_path):
         None,
         "Return 42.",
         "def answer():\n    return ...\n",
-        "critpt",
+        "critpt-official",
         Path("source.json"),
     )
     agent = AgentConfig(
@@ -113,7 +113,7 @@ async def test_valid_trial(tmp_path: Path) -> None:
         index=None,
         statement="Return 42.",
         code_template="def answer():\n    return ...\n",
-        source="critpt",
+        source="critpt-official",
         source_path=Path("private.json"),
     )
     output = tmp_path / "p1__attempt-0"
@@ -140,7 +140,7 @@ async def test_invalid_trial_has_no_reward(tmp_path: Path) -> None:
         index=None,
         statement="Return 42.",
         code_template="def answer():\n    return ...\n",
-        source="critpt",
+        source="critpt-official",
         source_path=Path("private.json"),
     )
 
@@ -169,7 +169,7 @@ async def test_job(
         None,
         "Return 42.",
         "def answer():\n    return ...\n",
-        "critpt",
+        "critpt-official",
         Path("source.json"),
     )
     task = tmp_path / "tasks" / "p1"
@@ -232,6 +232,16 @@ datasets:
     with pytest.raises(ValueError, match="changed or unrecorded problem"):
         await run_job(config, InvalidClient(), resume=True)
     instruction.write_text(original)
+    # Official tasks must detect changed prompts, just like AI tasks.
+    from ddsr_bench.benchmarks.critpt.generation import prompts
+
+    original_prompt = prompts._official_sys_prompt
+    monkeypatch.setattr(
+        prompts, "_official_sys_prompt", lambda style: "Changed system."
+    )
+    with pytest.raises(ValueError, match="changed or unrecorded prompt"):
+        await run_job(config, InvalidClient(), resume=True)
+    monkeypatch.setattr(prompts, "_official_sys_prompt", original_prompt)
     config.write_text(config.read_text().replace("n_attempts: 2", "n_attempts: 3"))
     with pytest.raises(ValueError, match="only permits changing n_concurrent_trials"):
         await run_job(config, FakeClient(), resume=True)
@@ -250,7 +260,7 @@ async def test_job_refills_free_slot_while_another_trial_is_still_running(
             None,
             "Return 42.",
             "def answer():\n    return ...\n",
-            "critpt",
+            "critpt-official",
             Path("source.json"),
         )
         (task / "instruction.md").write_text(encode_instruction(problem))

@@ -6,11 +6,13 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.critpt.data.schemas import CritPtSource
 from ddsr_bench.benchmarks.critpt.generation.prompts import system_prompt
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
 PROMPT_COMMIT = "17c2545c302762d2f2d644d923ea4c301605cb08"
+AI_PROMPT_COMMIT = "565d1b0bfab353e17a40a38fe656c3ab0caee660"
 
 
 def _messages(record: dict[str, Any]) -> tuple[dict[str, str], ...]:
@@ -124,6 +126,12 @@ def normalize(
     if not isinstance(problem_id, str) or not problem_id:
         raise TypeError("response record requires a problem ID")
     challenge_id, problem_type, problem_index = _identity(problem_id)
+    source = CritPtSource(response.get("source", CritPtSource.OFFICIAL))
+    ai = source == CritPtSource.AI
+    if ai:
+        if response.get("strategy") != "one-step":
+            raise ValueError("AI trajectories currently require one-step")
+        problem_type = "main"
     statement, code_template = _problem(response)
     messages = _messages(response)
     kwargs = ((result.get("config") or {}).get("agent") or {}).get("kwargs") or {}
@@ -149,9 +157,12 @@ def normalize(
             "validation": mode,
             "status": validation.get("status"),
             "reward": reward,
-            "verified": mode not in ("format", "static") and reward == 1,
+            # AI custom grading is deferred; format checks never verify correctness.
+            "verified": not ai and mode not in ("format", "static") and reward == 1,
         },
         metadata={
+            "source": source,
+            "grader": response.get("grader"),
             "challenge_id": challenge_id,
             "problem_type": problem_type,
             "problem_index": problem_index,
@@ -160,7 +171,7 @@ def normalize(
         },
         provenance={
             "source_response": str(response_path.relative_to(trial.parent)),
-            "prompt_commit": PROMPT_COMMIT,
+            "prompt_commit": AI_PROMPT_COMMIT if ai else PROMPT_COMMIT,
             "content_sha256": sha256(encoded).hexdigest(),
             "response_sha256": sha256(response_path.read_bytes()).hexdigest(),
         },
@@ -200,6 +211,8 @@ def sft_samples(trajectory: Trajectory, view: str) -> tuple[SftSample, ...]:
         raise ValueError(f"{view!r} view is unavailable for CritPt")
 
     strategy = trajectory.teacher.get("strategy")
+    if trajectory.metadata.get("source") == CritPtSource.AI and strategy != "one-step":
+        raise ValueError("AI trajectories currently require one-step")
     expected = {"one-step": 1, "two-step": 2}.get(strategy)
     if expected is None:
         raise ValueError(f"unknown CritPt strategy: {strategy!r}")

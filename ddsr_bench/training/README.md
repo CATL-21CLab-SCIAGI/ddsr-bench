@@ -26,7 +26,11 @@ provide additional views. CritPt provides three:
 | `formatting` | Second call of a two-step run |
 | `answer` | One-step answer representation |
 
-For a two-step CritPt trajectory, inference records these calls:
+AI-generated CritPt tasks currently use one step: `native`, `full`, and `answer`
+each preserve that single call, for code or prose. These exports are unverified;
+custom answer grading is not yet supported.
+
+For an official two-step CritPt trajectory, inference records these calls:
 
 ```text
 problem -> derivation

@@ -10,11 +10,17 @@ from inspect import Parameter, signature
 from pathlib import Path
 from typing import Any, Literal
 
-from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, ProblemSpec
+from ddsr_bench.benchmarks.critpt.data.schemas import (
+    AIProblemSpec,
+    Challenge,
+    CritPtSource,
+    ProblemSpec,
+)
 from ddsr_bench.benchmarks.critpt.generation.prompts import (
     PromptStyle,
     parse_prompt,
     system_prompt,
+    user_prompt,
 )
 from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.generation.client import ChatClient, ChatResponse, Sampling
@@ -35,15 +41,21 @@ class Conversation:
 Completion = Callable[[tuple[Message, ...]], Awaitable[str]]
 
 
-def _user_message(problem: ProblemSpec, style: PromptStyle) -> Message:
-    content = problem.statement
-    if style == "one-step":
-        content = f"{content}\n\n```python\n{problem.code_template}\n```"
-    return Message("user", content)
-
-
-def _initial_messages(problem: ProblemSpec, style: PromptStyle) -> list[Message]:
-    return [Message("system", system_prompt(style)), _user_message(problem, style)]
+def initial_messages(problem: ProblemSpec, style: PromptStyle) -> list[Message]:
+    """Build the same public request used for generation and resume checks."""
+    if problem.source == CritPtSource.AI and not isinstance(problem, AIProblemSpec):
+        raise TypeError("AI source requires AIProblemSpec")
+    return [
+        Message(
+            "system",
+            system_prompt(
+                style,
+                source=problem.source,
+                grader=problem.grader,
+            ),
+        ),
+        Message("user", user_prompt(problem, style)),
+    ]
 
 
 async def _converse(
@@ -52,9 +64,9 @@ async def _converse(
     complete: Completion,
     history: tuple[Message, ...] = (),
 ) -> tuple[Conversation, tuple[Message, ...]]:
-    messages = list(history) if history else _initial_messages(problem, style)
+    messages = list(history) if history else initial_messages(problem, style)
     if history:
-        messages.append(_user_message(problem, style))
+        messages.append(Message("user", user_prompt(problem, style)))
     response = await complete(tuple(messages))
     messages.append(Message("assistant", response))
     next_history = tuple(messages)
@@ -139,6 +151,8 @@ async def generate(
     def record(messages, status):
         return {
             "problem_id": problem.id,
+            "source": problem.source,
+            "grader": problem.grader,
             "problem": {
                 "statement": problem.statement,
                 "code_template": problem.code_template,

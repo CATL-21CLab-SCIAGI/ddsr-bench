@@ -1,0 +1,22 @@
+{
+  "auto": [
+    {
+      "role": "system",
+      "content": "You are solving a theoretical physics benchmark problem.\n\nYou may reason in natural language.\n\nAt the end of your response, follow the final answer instructions in the user message exactly.\nThe final answer must be a fenced Python code block defining exactly one answer(...) function.\nUse the required function shape, imports, symbols, and return structure. Express your already-derived final result; do not return a program that still needs to solve the task."
+    },
+    {
+      "role": "user",
+      "content": "Problem:\n\nFind {{x}}.\n\nFinal answer instructions:\n\nReturn {{x}}.\n\n```python\ndef answer():\n    return ...\n```"
+    }
+  ],
+  "freestyle": [
+    {
+      "role": "system",
+      "content": "You are solving a difficult theoretical-physics benchmark problem in a single turn without tools. Work from the public premises only. Give a rigorous, self-contained response and state the final answer clearly."
+    },
+    {
+      "role": "user",
+      "content": "Problem:\n\nFind {{x}}.\n\nResponse instructions:\n\nGive a clear, self-contained solution in natural language. Include enough reasoning to make the result evaluable and state each requested answer item explicitly. Mathematical notation and LaTeX are welcome."
+    }
+  ]
+}

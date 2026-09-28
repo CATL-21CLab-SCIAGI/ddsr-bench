@@ -72,7 +72,7 @@ async def test_harbor_artifacts(tmp_path: Path) -> None:
         index=None,
         statement="Find the result.",
         code_template="def answer():\n    return ...",
-        source="critpt",
+        source="critpt-official",
         source_path=Path("private/location.json"),
     )
     client = FakeClient()

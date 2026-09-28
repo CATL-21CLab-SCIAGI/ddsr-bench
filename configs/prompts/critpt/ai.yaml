@@ -1,0 +1,31 @@
+# Auto_CritPt_Grader prompt.py at 565d1b0bfab353e17a40a38fe656c3ab0caee660.
+# Keys indicate how the generated answer will be graded, not how prompts are graded.
+SOLVER_SYSTEM_PROMPT:
+  rule: |-
+    You are solving a theoretical physics benchmark problem.
+
+    You may reason in natural language.
+
+    At the end of your response, follow the final answer instructions in the user message exactly.
+    The final answer must be a fenced Python code block defining exactly one answer(...) function.
+    Use the required function shape, imports, symbols, and return structure. Express your already-derived final result; do not return a program that still needs to solve the task.
+
+  llm: >-
+    You are solving a difficult theoretical-physics benchmark problem in a single turn
+    without tools. Work from the public premises only. Give a rigorous, self-contained
+    response and state the final answer clearly.
+
+USER_PROMPT: |-
+  Problem:
+
+  {{ statement }}
+
+  {{ label }}:
+
+  {{ instructions }}
+
+# Corpus default for empty/null answer_instructions; used in the user message.
+ANSWER_INSTRUCTIONS: >-
+  Give a clear, self-contained solution in natural language. Include enough reasoning
+  to make the result evaluable and state each requested answer item explicitly.
+  Mathematical notation and LaTeX are welcome.
