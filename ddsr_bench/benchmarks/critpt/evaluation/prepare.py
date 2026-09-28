@@ -8,9 +8,17 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench import __version__
+from ddsr_bench.benchmarks.critpt.data.ai import load_problems as load_ai_problems
 from ddsr_bench.benchmarks.critpt.data.loader import load_challenges
-from ddsr_bench.benchmarks.critpt.data.schemas import Challenge, Problem, ProblemSpec
-from ddsr_bench.benchmarks.utils import Resources
+from ddsr_bench.benchmarks.critpt.data.schemas import (
+    AIProblem,
+    AIProblemSpec,
+    Challenge,
+    CritPtSource,
+    Problem,
+    ProblemSpec,
+)
+from ddsr_bench.benchmarks.utils import Resources, write_json
 
 _TEST = """#!/bin/sh
 set -eu
@@ -18,7 +26,7 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.verifier
 """
 
 
-def encode_instruction(problem: ProblemSpec) -> str:
+def encode_instruction(problem: ProblemSpec | AIProblemSpec) -> str:
     """Serialize public fields as JSON for Harbor's required instruction.md."""
     data = asdict(problem)
     data.pop("source_path")
@@ -28,14 +36,21 @@ def encode_instruction(problem: ProblemSpec) -> str:
 def decode_instruction(instruction: str) -> ProblemSpec:
     """Restore the public problem fields from one prepared task."""
     data = json.loads(instruction)
-    return ProblemSpec(**data, source_path=Path("prepared-task"))
+    data["source"] = CritPtSource(data.get("source"))
+    spec = AIProblemSpec if data["source"] == CritPtSource.AI else ProblemSpec
+    return spec(**data, source_path=Path("prepared-task"))
 
 
-def _config(problem: Problem, resources: Resources) -> str:
+def _config(problem: Problem | AIProblem, resources: Resources) -> str:
     name = json.dumps(f"critpt/{problem.spec.id}")
     image = json.dumps(resources.image)
+    artifacts = (
+        "[]"
+        if isinstance(problem, AIProblem)
+        else '[{ source = "/app/answer.py", destination = "answer.py" }]'
+    )
     return f"""schema_version = "1.4"
-artifacts = [{{ source = "/app/answer.py", destination = "answer.py" }}]
+artifacts = {artifacts}
 
 [task]
 name = {name}
@@ -57,7 +72,13 @@ memory_mb = {resources.memory_mb}
 """
 
 
-def compile_problem(problem: Problem, output: str | Path, resources: Resources) -> Path:
+def compile_problem(
+    problem: Problem | AIProblem,
+    output: str | Path,
+    resources: Resources,
+    *,
+    source_root: Path | None = None,
+) -> Path:
     """Compile one CritPt problem into one Harbor task directory."""
     problem_id = problem.spec.id
     if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", problem_id) is None:
@@ -68,6 +89,16 @@ def compile_problem(problem: Problem, output: str | Path, resources: Resources) 
     ):
         raise ValueError("Harbor image and resource limits must be positive")
 
+    if isinstance(problem, AIProblem):
+        source = problem.spec.source_path.resolve()
+        # The corpus marker keeps single-file and directory preparation consistent.
+        root = next(
+            (p for p in source.parents if (p / "CORPUS_INDEX.json").is_file()),
+            source_root.resolve() if source_root is not None else source.parent,
+        )
+        reference = {k: v for k, v in asdict(problem.answer).items() if v is not None}
+        reference["source_path"] = source.relative_to(root).as_posix()
+
     task = Path(output) / problem_id
     task.mkdir(parents=True)
     (task / "environment").mkdir()
@@ -77,15 +108,22 @@ def compile_problem(problem: Problem, output: str | Path, resources: Resources) 
         encode_instruction(problem.spec), encoding="utf-8"
     )
     (task / "task.toml").write_text(_config(problem, resources), encoding="utf-8")
-    (tests / "template.py").write_text(problem.spec.code_template, encoding="utf-8")
-    if problem.answer is not None:
+    script = _TEST
+    if isinstance(problem, AIProblem):
+        write_json(tests / "reference.json", reference, overwrite=False)
+        if problem.answer.code:
+            (tests / "reference.py").write_text(problem.answer.code, encoding="utf-8")
+        script = '#!/bin/sh\necho "AI task verification requires a customized grader" >&2\nexit 2\n'
+    else:
+        (tests / "template.py").write_text(problem.spec.code_template, encoding="utf-8")
+    if isinstance(problem, Problem) and problem.answer is not None:
         (tests / "reference.py").write_text(problem.answer.code, encoding="utf-8")
         if problem.answer.testcases is not None:
             (tests / "testcases.json").write_text(
                 json.dumps(problem.answer.testcases), encoding="utf-8"
             )
     test_script = tests / "test.sh"
-    test_script.write_text(_TEST, encoding="utf-8")
+    test_script.write_text(script, encoding="utf-8")
     test_script.chmod(0o755)
     return task
 
@@ -122,4 +160,13 @@ def prepare_tasks(
         raise ValueError("CritPt preparation requires its benchmark configuration")
     if source is None:
         raise ValueError("paths.input is required for CritPt preparation")
+    origin = CritPtSource(config.get("source", CritPtSource.OFFICIAL))
+    if origin == CritPtSource.AI:
+        root = Path(source)
+        if root.is_file():
+            root = root.parent
+        return tuple(
+            compile_problem(p, output, resources, source_root=root)
+            for p in load_ai_problems(source)
+        )
     return compile_challenges(load_challenges(source), output, resources)

@@ -14,10 +14,14 @@ from typing import Any
 import yaml
 from harbor.models.job.config import AgentConfig, JobConfig
 
-from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
-from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
-from ddsr_bench.benchmarks.critpt.generation.runner import chat_options, generate
-from ddsr_bench.benchmarks.utils import write_json
+from ddsr_bench.benchmarks.critpt.data.schemas import CritPtSource, ProblemSpec
+from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle, parse_prompt
+from ddsr_bench.benchmarks.critpt.generation.runner import (
+    chat_options,
+    generate,
+    initial_messages,
+)
+from ddsr_bench.benchmarks.utils import read_json, write_json
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling, read_api_key
 from ddsr_bench.grading.validation import extract_answer
 
@@ -82,8 +86,13 @@ async def run_trial(
             require_complete_stages=agent.kwargs.get("require_complete_stages", False),
             resume=resume,
         )
-        code = extract_answer(response, problem.code_template)
-        (artifacts / "answer.py").write_text(code, encoding="utf-8")
+        if problem.source == CritPtSource.AI and not problem.code_template:
+            if not response.strip():
+                raise ValueError("teacher returned an empty answer")
+            (artifacts / "answer.txt").write_text(response, encoding="utf-8")
+        else:
+            code = extract_answer(response, problem.code_template)
+            (artifacts / "answer.py").write_text(code, encoding="utf-8")
         result: dict[str, Any] = {
             "reward": None,
             "mode": "static",
@@ -103,6 +112,8 @@ async def run_trial(
         "task_name": f"critpt/{problem.id}",
         "trial_name": directory.name,
         "attempt": attempt,
+        "source": problem.source,
+        "grader": problem.grader,
         "problem": {
             "statement": problem.statement,
             "code_template": problem.code_template,
@@ -169,6 +180,11 @@ async def run_job(
     ids = [problem.id for problem in problems]
     if not ids or len(ids) != len(set(ids)):
         raise ValueError("static tasks must contain unique problem IDs")
+    if (
+        any(p.source == CritPtSource.AI for p in problems)
+        and agent.kwargs.get("style", "one-step") != "one-step"
+    ):
+        raise ValueError("AI answer generation currently requires one-step")
     if task_name is not None:
         problems = [problem for problem in problems if problem.id == task_name]
         if not problems:
@@ -241,19 +257,33 @@ async def run_job(
                 ):
                     raise ValueError(f"invalid completed trial identity: {directory}")
                 inputs = result.get("problem")
+                record_path = directory / "agent" / "response.json"
+                record = read_json(record_path) if record_path.exists() else {}
                 if inputs is None:  # Legacy trials may retain inputs in the response.
-                    record = directory / "agent" / "response.json"
-                    inputs = (
-                        json.loads(record.read_text()).get("problem")
-                        if record.exists()
-                        else None
-                    )
+                    inputs = record.get("problem")
                 if inputs != {
                     "statement": problem.statement,
                     "code_template": problem.code_template,
                 }:
                     raise ValueError(
                         f"cannot resume changed or unrecorded problem: {problem.id}"
+                    )
+                messages = record.get("messages", [])
+                # Compare actual requests, not a second AI-only prompt representation.
+                style = agent.kwargs.get("style", "one-step")
+                expected = [asdict(m) for m in initial_messages(problem, style)]
+                saved = [
+                    {"role": m.get("role"), "content": m.get("content")}
+                    for m in messages
+                ]
+                if saved[:2] != expected or (
+                    style == "two-step"
+                    and len(saved) > 3
+                    and saved[3]
+                    != {"role": "user", "content": parse_prompt(problem.code_template)}
+                ):
+                    raise ValueError(
+                        f"cannot resume changed or unrecorded prompt: {problem.id}"
                     )
                 return result["static_result"]["status"]
             return await run_trial(

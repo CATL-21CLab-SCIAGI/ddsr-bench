@@ -11,6 +11,7 @@ from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 
 from ddsr_bench import __version__
+from ddsr_bench.benchmarks.critpt.data.schemas import CritPtSource
 from ddsr_bench.benchmarks.critpt.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
@@ -102,6 +103,10 @@ class CritPtAgent(BaseAgent):
         context: AgentContext,
     ) -> None:
         problem = decode_instruction(instruction)
+        if problem.source == CritPtSource.AI:
+            raise ValueError(
+                "AI teacher collection currently requires the static runner"
+            )
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         connection = (
             nullcontext(self.client)

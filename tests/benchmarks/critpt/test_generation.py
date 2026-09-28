@@ -18,9 +18,62 @@ PROBLEM = ProblemSpec(
     index=None,
     statement="Find the result.",
     code_template="def answer():\n    return ...",
-    source="critpt",
+    source="critpt-official",
     source_path=Path("problem.json"),
 )
+
+
+@pytest.mark.asyncio
+async def test_ai_two_step_deferred():
+    from dataclasses import asdict
+
+    from ddsr_bench.benchmarks.critpt.data.schemas import AIProblemSpec, CritPtSource
+
+    problem = AIProblemSpec(
+        **(asdict(PROBLEM) | {"source": CritPtSource.AI, "grader": "rule"}),
+        answer_instructions=None,
+    )
+
+    async def complete(messages):
+        pytest.fail("AI generation must not call a teacher before prompt support")
+
+    with pytest.raises(ValueError, match="requires one-step"):
+        await converse(problem, "two-step", complete)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ai", [False, True])
+async def test_resume_prompt(tmp_path, monkeypatch, ai):
+    from dataclasses import asdict
+
+    from ddsr_bench.benchmarks.critpt.data.schemas import AIProblemSpec, CritPtSource
+    from ddsr_bench.benchmarks.critpt.generation import runner
+    from ddsr_bench.generation.client import ChatResponse, Sampling
+
+    problem = (
+        AIProblemSpec(
+            **(asdict(PROBLEM) | {"source": CritPtSource.AI, "grader": "rule"}),
+            answer_instructions=None,
+        )
+        if ai
+        else PROBLEM
+    )
+
+    class Client:
+        calls = 0
+
+        async def chat(self, messages):
+            self.calls += 1
+            return ChatResponse("answer", None, "teacher", None, None, 0.1, {})
+
+    client = Client()
+    args = (client, problem, "one-step", Sampling("teacher"))
+    await runner.generate(*args, checkpoint_dir=tmp_path)
+    await runner.generate(*args, checkpoint_dir=tmp_path, resume=True)
+    monkeypatch.setattr(runner, "system_prompt", lambda *args, **kwargs: "Changed.")
+    with pytest.raises(ValueError, match="conversation changed"):
+        await runner.generate(*args, checkpoint_dir=tmp_path, resume=True)
+    assert client.calls == 1
 
 
 @pytest.mark.asyncio

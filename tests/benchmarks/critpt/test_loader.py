@@ -43,7 +43,7 @@ def test_loads_public_problem(tmp_path: Path) -> None:
     assert problem.spec.type == "main"
     assert problem.spec.index is None
     assert problem.spec.statement == "statement 1"
-    assert problem.spec.source == "critpt"
+    assert problem.spec.source == "critpt-official"
     assert problem.spec.source_path == path
     assert problem.answer is None
     assert "SECRET" not in repr(problem)
