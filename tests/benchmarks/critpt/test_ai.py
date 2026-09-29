@@ -4,7 +4,12 @@ from pathlib import Path
 import pytest
 from harbor.models.task.task import Task
 
-from ddsr_bench.benchmarks.critpt.data.ai import load_problem, load_problems
+from ddsr_bench.benchmarks.critpt.data.loader import (
+    load_ai_problem as load_problem,
+)
+from ddsr_bench.benchmarks.critpt.data.loader import (
+    load_ai_problems as load_problems,
+)
 from ddsr_bench.benchmarks.critpt.data.schemas import (
     AIProblemSpec,
     AnswerSpec,
