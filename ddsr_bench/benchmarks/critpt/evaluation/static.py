@@ -232,6 +232,7 @@ async def run_job(
             stream=bool(kwargs.get("stream", False)),
             api_key=read_api_key(kwargs.get("api_key_env")),
             timeout=kwargs.get("timeout", 1200),
+            read_timeout=kwargs.get("read_timeout"),
             **client_options,
         )
     )

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import math
 import os
+import re
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, fields, replace
 from pathlib import Path
@@ -40,7 +42,74 @@ def read_api_key(
 
 
 class ClientError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, cause: httpx.HTTPError | None = None):
+        # Persist useful diagnostics without copying URLs, headers, or error bodies.
+        if cause is not None:
+            detail = type(cause).__name__
+            if isinstance(cause, httpx.HTTPStatusError):
+                detail += f", HTTP {cause.response.status_code}"
+            elif isinstance(cause, httpx.RemoteProtocolError):
+                # Classify known transport failures; never persist arbitrary text.
+                for phrase in (
+                    "incomplete chunked read",
+                    "incomplete message body",
+                    "Server disconnected without sending a response",
+                ):
+                    if phrase in str(cause):
+                        detail += f", {phrase}"
+                        break
+            message += f" ({detail})"
+        super().__init__(message)
+
+
+def _check_error(data: dict[str, Any]) -> None:
+    """Recognize API errors even under HTTP 200, without leaking echoed inputs."""
+    if "error" in data:
+        error = data["error"]
+    elif "code" in data and "message" in data and "choices" not in data:
+        # PAI can send a flat error object midway through an HTTP-200 stream.
+        error = data
+    else:
+        return
+    if isinstance(error, dict) and error.get("code") == "OTHER_UNKNOWN_FAILURE":
+        raise ClientError("server returned an API error: OTHER_UNKNOWN_FAILURE")
+    message = error.get("message") if isinstance(error, dict) else None
+    # Preserve numeric token-limit diagnostics, not arbitrary provider text.
+    if isinstance(message, str) and re.fullmatch(
+        r"Range of max_(?:completion_)?tokens should be \[\d+, \d+\]", message
+    ):
+        raise ClientError(f"server returned an API error: {message}")
+    raise ClientError("server returned an API error")
+
+
+async def _events(response: httpx.Response) -> AsyncIterator[dict[str, Any]]:
+    """Decode SSE events, joining data lines at each blank-line boundary."""
+    data_lines = []
+    first_line = True
+    async for line in response.aiter_lines():
+        if first_line:
+            line = line.removeprefix("\ufeff")
+            first_line = False
+        if line:
+            field, _, value = line.partition(":")
+            if field == "data":
+                data_lines.append(value.removeprefix(" "))
+            continue
+        if not data_lines:
+            continue
+        data = "\n".join(data_lines)
+        data_lines.clear()
+        if data == "[DONE]":
+            return
+        try:
+            chunk = json.loads(data)
+        except json.JSONDecodeError as error:
+            raise ClientError("server returned invalid stream JSON") from error
+        if not isinstance(chunk, dict):
+            raise ClientError("server stream chunk must be a JSON object")
+        yield chunk
+    if data_lines:
+        raise ClientError("server stream ended with an incomplete event")
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,11 +173,24 @@ class BaseClient(ABC):
         sampling: Sampling,
         *,
         timeout: float = 1_200,
+        read_timeout: float | None = None,
         retries: int = 2,
         api_key: str | None = None,
         stream: bool = False,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        if type(retries) is not int or retries < 0:
+            raise ValueError("retries must be a nonnegative integer")
+        for name, value in (("timeout", timeout), ("read_timeout", read_timeout)):
+            if name == "read_timeout" and value is None:
+                continue
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValueError(f"{name} must be finite and positive")
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else None
         self.sampling = sampling
         self.retries = retries
@@ -116,7 +198,9 @@ class BaseClient(ABC):
         self.http = httpx.AsyncClient(
             base_url=base_url.rstrip("/") + "/",
             headers=headers,
-            timeout=timeout,
+            timeout=httpx.Timeout(
+                timeout, read=timeout if read_timeout is None else read_timeout
+            ),
             transport=transport,
         )
 
@@ -133,10 +217,19 @@ class BaseClient(ABC):
                 response.raise_for_status()
                 return response
             except httpx.TransportError as error:
-                if attempt == self.retries:
+                # A failed read/write can follow server-side generation. Without
+                # idempotency support, replaying POST can duplicate paid work.
+                if attempt == self.retries or (
+                    method != "GET"
+                    and not isinstance(
+                        error, (httpx.ConnectError, httpx.ConnectTimeout)
+                    )
+                ):
                     raise ClientError(
-                        f"{method} {path} failed after retries"
+                        f"{method} request failed", cause=error
                     ) from error
+            except httpx.HTTPError as error:
+                raise ClientError(f"{method} request failed", cause=error) from error
         raise AssertionError("unreachable")
 
     @staticmethod
@@ -147,14 +240,24 @@ class BaseClient(ABC):
             raise ClientError("server returned invalid JSON") from error
         if not isinstance(data, dict):
             raise ClientError("server response must be a JSON object")
+        _check_error(data)
         return data
 
     async def preflight(self) -> None:
-        data = self._json(await self._request("GET", "models"))
+        # Model discovery must not inherit an hours-long generation timeout.
+        timeout = httpx.Timeout(
+            **{
+                name: min(value, 60.0)
+                for name, value in self.http.timeout.as_dict().items()
+            }
+        )
+        data = self._json(await self._request("GET", "models", timeout=timeout))
         models = data.get("data")
+        if not isinstance(models, list):
+            raise ClientError("model discovery requires a list")
         ids = {
             model.get("id")
-            for model in models or []
+            for model in models
             if isinstance(model, dict) and isinstance(model.get("id"), str)
         }
         if self.sampling.model not in ids:
@@ -170,10 +273,10 @@ class BaseClient(ABC):
     ) -> tuple[dict[str, Any], dict[str, int]]:
         payload = self._payload(messages)
         key = "max_tokens" if "max_tokens" in payload else "max_completion_tokens"
-        if max_tokens is not None:
-            if max_tokens <= 0:
-                raise ValueError("max_tokens must be positive")
-            payload[key] = max_tokens
+        limit = payload[key] if max_tokens is None else max_tokens
+        if type(limit) is not int or limit <= 0:
+            raise ValueError("max_tokens must be a positive integer")
+        payload[key] = limit
         return payload, {"max_tokens": payload[key]}
 
     async def chat(
@@ -260,6 +363,7 @@ class BaseClient(ABC):
         stream_path: Path | None = None,
         budget: dict[str, int] | None = None,
     ) -> ChatResponse:
+        payload = {**payload, "stream": True, "stream_options": {"include_usage": True}}
         # A journal retains partial output on disconnect and avoids keeping every
         # SSE dictionary in RAM during many concurrent long-context generations.
         context = (
@@ -277,7 +381,6 @@ class BaseClient(ABC):
             return await self._stream_response(payload, journal, stream_path)
 
     async def _stream_response(self, payload, journal, stream_path) -> ChatResponse:
-        payload |= {"stream": True, "stream_options": {"include_usage": True}}
         chunks: list[dict[str, Any]] = []
         content: list[str] = []
         reasoning: list[str] = []
@@ -295,23 +398,15 @@ class BaseClient(ABC):
                     "POST", "chat/completions", json=payload
                 ) as response:
                     response.raise_for_status()
-                    async for line in response.aiter_lines():
-                        if not line.startswith("data:"):
-                            continue
-                        data = line.removeprefix("data:").strip()
-                        if data == "[DONE]":
-                            break
-                        try:
-                            chunk = json.loads(data)
-                        except json.JSONDecodeError as error:
-                            raise ClientError(
-                                "server returned invalid stream JSON"
-                            ) from error
-                        if not isinstance(chunk, dict):
-                            raise ClientError(
-                                "server stream chunk must be a JSON object"
-                            )
-                        received = True
+                    received = True  # Response headers arrived; never replay its body.
+                    if "application/json" in response.headers.get("content-type", ""):
+                        # Some gateways return a JSON error instead of SSE with 200.
+                        await response.aread()
+                        self._json(response)
+                        raise ClientError(
+                            "server returned JSON instead of an event stream"
+                        )
+                    async for chunk in _events(response):
                         if journal is None:
                             chunks.append(chunk)
                         else:
@@ -319,19 +414,18 @@ class BaseClient(ABC):
                             if perf_counter() - flushed_at >= 1:
                                 journal.flush()
                                 flushed_at = perf_counter()
+                        _check_error(chunk)
                         if isinstance(chunk.get("model"), str):
                             model = chunk["model"]
                         if isinstance(chunk.get("usage"), dict):
                             usage = chunk["usage"]
                         choices = chunk.get("choices")
-                        choice = (
-                            choices[0] if isinstance(choices, list) and choices else {}
-                        )
-                        terminal = (
-                            choice.get("finish_reason")
-                            if isinstance(choice, dict)
-                            else None
-                        )
+                        if not isinstance(choices, list):
+                            raise ClientError("server stream choices must be a list")
+                        choice = choices[0] if choices else {}
+                        if not isinstance(choice, dict):
+                            raise ClientError("server stream choice must be an object")
+                        terminal = choice.get("finish_reason")
                         if terminal is not None:
                             if not isinstance(terminal, str):
                                 raise ClientError(
@@ -339,9 +433,15 @@ class BaseClient(ABC):
                                 )
                             finish_reason = terminal
                             stop_reason = choice.get("stop_reason")
-                        delta = choice.get("delta") if isinstance(choice, dict) else {}
+                        delta = choice.get("delta")
+                        if delta is None:
+                            delta = {}
                         if not isinstance(delta, dict):
-                            continue
+                            raise ClientError("server stream delta must be an object")
+                        for key in ("content", "reasoning", "reasoning_content"):
+                            value = delta.get(key)
+                            if value is not None and not isinstance(value, str):
+                                raise ClientError(f"server stream {key} must be text")
                         if isinstance(delta.get("content"), str):
                             content.append(delta["content"])
                         reason = delta.get("reasoning")
@@ -352,10 +452,18 @@ class BaseClient(ABC):
                             reasoning.append(reason)
                 break
             except httpx.TransportError as error:
-                if received or attempt == self.retries:
-                    raise ClientError("POST chat/completions stream failed") from error
+                if (
+                    received
+                    or attempt == self.retries
+                    or not isinstance(error, (httpx.ConnectError, httpx.ConnectTimeout))
+                ):
+                    raise ClientError(
+                        "POST chat/completions stream failed", cause=error
+                    ) from error
             except httpx.HTTPError as error:
-                raise ClientError("POST chat/completions stream failed") from error
+                raise ClientError(
+                    "POST chat/completions stream failed", cause=error
+                ) from error
 
         if finish_reason is None:
             raise ClientError("server stream ended without a finish reason")

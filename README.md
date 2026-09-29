@@ -26,8 +26,8 @@ README and pipeline. The catalog records which benchmarks support static
 evaluation, Harbor isolation, result collection, and trajectory export.
 
 Shared model-client setup is documented in the
-[generation quick start](ddsr_bench/generation/README.md#generation-quick-start),
-from a one-task check through batch generation and resume. Job configurations follow
+[client guide](ddsr_bench/generation/README.md#client-setup).
+Follow your benchmark's guide for generation and recovery. Job configurations follow
 `configs/jobs/BENCHMARK/CLIENT.yaml` for local vLLM and hosted providers.
 
 ## 🧠 Check model access

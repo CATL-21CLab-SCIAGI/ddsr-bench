@@ -19,6 +19,261 @@ from ddsr_bench.generation.client import (
 MESSAGES = ({"role": "user", "content": "Solve."},)
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["json", "stream-json", "sse"])
+@pytest.mark.parametrize(
+    "message", ["Range of max_tokens should be [1, 131072]", "PRIVATE"]
+)
+async def test_api_error(mode, message):
+    calls = 0
+    error = {"error": {"message": message, "code": "invalid_parameter_error"}}
+
+    def handler(_):
+        nonlocal calls
+        calls += 1
+        if mode == "sse":
+            return httpx.Response(200, text=f"data: {json.dumps(error)}\n\n")
+        return httpx.Response(200, json=error)
+
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=mode != "json",
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(ClientError, match="API error") as caught:
+            await client.chat(MESSAGES)
+    assert calls == 1
+    assert "PRIVATE" not in str(caught.value)
+    if message != "PRIVATE":
+        assert message in str(caught.value)
+
+
+class Stream(httpx.AsyncByteStream):
+    def __init__(self, body, failure=None):
+        self.body, self.failure = body, failure
+
+    async def __aiter__(self):
+        # Split even UTF-8 characters and line endings across transport chunks.
+        for byte in self.body.encode():
+            yield bytes([byte])
+        if self.failure is not None:
+            raise self.failure
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True])
+async def test_flat_api_error(stream):
+    error = {"code": "OTHER_UNKNOWN_FAILURE", "message": "PRIVATE"}
+    calls = 0
+
+    def handler(_):
+        nonlocal calls
+        calls += 1
+        if stream:
+            partial = {"choices": [{"delta": {"reasoning_content": "partial"}}]}
+            body = "".join(f"data: {json.dumps(item)}\n\n" for item in (partial, error))
+            return httpx.Response(200, text=body)
+        return httpx.Response(200, json=error)
+
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=stream,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(
+            ClientError, match="API error: OTHER_UNKNOWN_FAILURE"
+        ) as caught:
+            await client.chat(MESSAGES)
+    assert "PRIVATE" not in str(caught.value)
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize(
+    "failure", [httpx.ReadTimeout, httpx.WriteError, httpx.RemoteProtocolError]
+)
+async def test_no_replay(stream, failure):
+    calls = 0
+
+    def handler(_):
+        nonlocal calls
+        calls += 1
+        raise failure("PRIVATE")
+
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=stream,
+        retries=2,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(ClientError):
+            await client.chat(MESSAGES)
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_partial_line():
+    calls = 0
+
+    def handler(_):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            200, stream=Stream("data: {", httpx.RemoteProtocolError("truncated"))
+        )
+
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=True,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(ClientError, match="RemoteProtocolError"):
+            await client.chat(MESSAGES)
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "chunk",
+    [
+        {"choices": "invalid"},
+        {"choices": [1]},
+        {"choices": [{"delta": {"content": ["not text"]}, "finish_reason": "stop"}]},
+    ],
+)
+async def test_malformed_stream(chunk):
+    body = f"data: {json.dumps(chunk)}\n\ndata: [DONE]\n\n"
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=True,
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, text=body)),
+    ) as client:
+        with pytest.raises(ClientError):
+            await client.chat(MESSAGES)
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"retries": -1},
+        {"retries": True},
+        {"timeout": 0},
+        {"read_timeout": float("nan")},
+        {"timeout": float("inf")},
+    ],
+)
+def test_transport_options(options):
+    with pytest.raises(ValueError):
+        AliyunClient("http://test/v1", Sampling("solver"), **options)
+
+
+@pytest.mark.asyncio
+async def test_sse_events():
+    body = "\ufeff: heartbeat\r\n\r\nevent: message\r\n"
+    body += 'data: {"choices":\r\ndata: [{"delta":{"content":"α"},'
+    body += '"finish_reason":"stop"}]}\r\n\r\n'
+    body += 'data: {"choices":[],"usage":{"completion_tokens":1}}\n\n'
+    body += "data: [DONE]\n\n"
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=True,
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(200, stream=Stream(body))
+        ),
+    ) as client:
+        result = await client.chat(MESSAGES)
+    assert result.content == "α"
+    assert result.finish_reason == "stop"
+    assert result.usage == {"completion_tokens": 1}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "body, failure, expected",
+    [
+        ('data: {"error":{"message":"PRIVATE"}}\n\n', None, "API error"),
+        ('data: {"choices":[]}', None, "incomplete event"),
+        (
+            ": heartbeat\n\n",
+            httpx.RemoteProtocolError("incomplete chunked read PRIVATE"),
+            "incomplete chunked read",
+        ),
+        (
+            'data: {"choices":[{"delta":{"reasoning_content":"partial"}}]}\n\n',
+            httpx.ReadTimeout("PRIVATE"),
+            "ReadTimeout",
+        ),
+    ],
+)
+async def test_stream_failures(tmp_path, body, failure, expected):
+    calls = 0
+
+    def handler(_):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, stream=Stream(body, failure))
+
+    journal = tmp_path / "stream.jsonl"
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        stream=True,
+        retries=2,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(ClientError, match=expected) as caught:
+            await client.chat(MESSAGES, stream_path=journal)
+    assert "PRIVATE" not in str(caught.value)
+    assert calls == 1
+    if "partial" in body:
+        assert "partial" in journal.read_text()
+
+
+@pytest.mark.asyncio
+async def test_read_timeout():
+    def handler(request):
+        assert request.extensions["timeout"] == {
+            "connect": 7200,
+            "read": 300,
+            "write": 7200,
+            "pool": 7200,
+        }
+        return httpx.Response(200, json={"data": [{"id": "solver"}]})
+
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        timeout=7200,
+        read_timeout=300,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        await client._request("GET", "models")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("timeout, expected", [(7200, 60), (9, 9)])
+async def test_preflight_timeout(timeout, expected):
+    def handler(request):
+        assert set(request.extensions["timeout"].values()) == {expected}
+        return httpx.Response(200, json={"data": [{"id": "solver"}]})
+
+    async with AliyunClient(
+        "http://test/v1",
+        Sampling("solver"),
+        timeout=timeout,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        await client.preflight()
+        assert client.http.timeout.read == timeout
+
+
 def test_api_key(monkeypatch):
     monkeypatch.setenv("TEST_API_KEY", "secret")
     assert read_api_key("TEST_API_KEY") == "secret"
@@ -145,6 +400,36 @@ async def test_bedrock_preflight_without_model_listing() -> None:
         await client.preflight()
 
     assert not called
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize("failure", ["status", "timeout"])
+async def test_http_diagnostics(stream, failure):
+    calls = 0
+
+    def handler(request):
+        nonlocal calls
+        calls += 1
+        if failure == "timeout":
+            raise httpx.ReadTimeout("PRIVATE_DETAIL", request=request)
+        return httpx.Response(503, text="PRIVATE_BODY")
+
+    async with VLLMClient(
+        "https://example.com/v1?key=PRIVATE_KEY",
+        Sampling("solver"),
+        stream=stream,
+        retries=1,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        with pytest.raises(ClientError) as caught:
+            await client.chat(MESSAGES)
+    message = str(caught.value)
+    assert "PRIVATE" not in message and "example.com" not in message
+    expected = "ReadTimeout" if failure == "timeout" else "HTTPStatusError, HTTP 503"
+    assert expected in message
+    assert isinstance(caught.value.__cause__, httpx.HTTPError)
+    assert calls == 1  # Read failure can follow a paid generation; never replay it.
 
 
 @pytest.mark.asyncio
@@ -443,7 +728,7 @@ async def test_stream_journal_retains_partial_output_on_failure(tmp_path: Path) 
         stream=True,
         transport=httpx.MockTransport(handler),
     ) as client:
-        with pytest.raises(ClientError, match="stream failed"):
+        with pytest.raises(ClientError, match=r"stream failed \(ReadError\)"):
             await client.chat(MESSAGES, stream_path=journal)
     assert calls == 1  # Never silently retry an already-started answer.
     lines = [json.loads(line) for line in journal.read_text().splitlines()]

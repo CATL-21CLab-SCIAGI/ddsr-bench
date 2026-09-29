@@ -10,10 +10,12 @@ then applies the official formatting prompt. See the
 [CritPt pipeline](PIPELINE.md) for the exact execution and verification paths.
 
 Use the root [workflow](../../../README.md) for shared model setup,
-collection, and export. Direct generation and client configuration are covered
-by the [generation guide](../../generation/README.md).
+collection, and export. Configure model access with the shared
+[client guide](../../generation/README.md); CritPt generation is described below.
 
 ## Data and preparation
+
+### Official problems
 
 Download the pinned
 [official challenge JSON files](https://github.com/CritPt-Benchmark/CritPt/tree/17c2545c302762d2f2d644d923ea4c301605cb08/data/public_test_challenges/json).
@@ -30,89 +32,43 @@ Preparation emits one task per main or indexed subproblem. The official public
 set produces 70 main tasks. Public fields go into the model instruction;
 reference code and optional testcases remain verifier-only.
 
-For a local AI corpus, use `benchmark.source=critpt-ai`:
+### AI-generated problems
 
-Prepared instructions use `source: critpt-official` or `source: critpt-ai`, matching
-the `CritPtSource` enum. Older `source: critpt` values are accepted as an alias for
-`critpt-official`; newly prepared tasks use the canonical value.
+Supply one `problem.json` or a directory containing those files:
 
 ```bash
 ddsr-bench action=prepare benchmark.source=critpt-ai \
-  paths.input=/path/to/auto/problem.json paths.output=tasks/critpt-ai-sample
+  paths.input=/path/to/corpus paths.output=tasks/critpt-ai
 ```
 
-Supply one file or a directory containing `problem.json` files. The corpus calls
-rule-based grading `auto` and LLM-based grading `freestyle`; these labels describe
-verification, not answer format. Record fields determine how data is normalized.
-Problems whose answers are graded by rules have public fields matching
-official tasks, with the Python
-`code_template` separated from the remaining `answer_instructions`: problem-specific
-one-stage guidance about reasoning, precision, and answer formatting. Empty or
-null means use the prompt-config default; two-stage
-generation will need explicit adaptation of this guidance. Each AI
-record is a main problem; private reasoning checkpoints are not subproblems.
-The final Python block of `reference_solution` becomes `tests/reference.py`.
-`tests/reference.json` stores extracted `code`, `final_answer["answer"]` as
-`snippet` (preserving its string, number, or list type), and private grading fields.
-Its private `reference_check` field records static agreement between reference code and
-`final_answer`: `matched`, `different`, or `unresolved`. All three allow preparation;
-the latter two flag records for later review. This checks simple literals or matching
-expression syntax, not mathematical correctness. Records for answers graded by an
-LLM omit the field.
-The template stays in
-`instruction.md`; AI tasks do not need a separate `template.py`.
-Shared generation instructions for AI-generated problems live in
-[ai.yaml](../../../configs/prompts/critpt/ai.yaml), adapted from Auto_CritPt_Grader.
-Problem-specific instructions take precedence. For answers graded by an LLM,
-preparation stores `answer_instructions: null` when the source instructions match
-the configured default; otherwise it retains the source text unchanged.
-Changing the default does not reject source records. `code_template` and reference `code` are empty
-strings, and no Python files are created. The unchanged `reference_answer` becomes
-`snippet`; answer items, reasoning, and evidence remain in `tests/reference.json`.
+The corpus's `auto` and `freestyle` labels mean answers graded by rules or an
+LLM, respectively. Both become one task per record. Public statements, answer
+instructions, and any code template go into `instruction.md`; references and
+grading data stay in `tests/` and never enter model messages.
 
-Hash-based task IDs avoid collisions. `tests/reference.json` preserves the original
-`problem_id` and `source_path`, relative to the ancestor containing
-`CORPUS_INDEX.json`. Without that marker, paths are relative to the supplied
-input directory (or the parent of a single input file). Join this path to your
-local corpus root to locate the original record; it never enters the model prompt.
-For one-stage teacher collection, copy a CritPt job config, set `datasets.path`
-to the prepared AI tasks, choose a new `job_name`, and set the agent's
-`kwargs.style: one-step`. Run `ddsr-solve --config path/to/job.yaml`.
-AI and official prompts share `system_prompt()` and YAML rendering.
-`ProblemSpec.grader` defaults to `null` (unspecified) for official tasks; AI
-generation requires an explicit `rule` or `llm` value.
-`SOLVER_SYSTEM_PROMPT` in `ai.yaml` is keyed by `grader` (`rule` or `llm`):
-how the generated answer will be graded, not how the prompt is evaluated. AI uses the
-upstream solver prompt selected by the prepared task's `grader` field, which the
-loader derives from `grading_plan` or `answer_items`, not template presence. Output instructions
-belong in the user message, labeled
-“Final answer instructions” or “Response instructions”; extracted templates are
-reattached after the instructions. Records preserve
-the actual messages and provider reasoning. Official and AI resume checks both
-compare saved request messages with the current prompts. Regenerate older experimental AI tasks to use
-the renamed `answer_instructions` field and explicit `grader`.
-Code artifacts use `answer.py`; prose uses `answer.txt` containing the full response,
-not an extracted final answer. `response.json` retains the full teacher conversation.
-Shared collection and trajectory export support both artifact formats. AI's
-one-step `native`, `full`, and `answer` SFT views preserve the same recorded prompt
-and answer. Provider reasoning remains separate in canonical trajectories.
-Static validation gives no correctness reward; exports are marked unverified.
-AI grading and Harbor execution remain deferred; `tests/test.sh` explicitly fails.
+Preparation preserves the original ID and source path in `tests/reference.json`.
+Paths are relative to the corpus's `CORPUS_INDEX.json` directory, or to the input
+directory when that marker is absent. For rule grading, `reference_check` is a
+light static check (`matched`, `different`, or `unresolved`), not a correctness
+grade; all three outcomes allow preparation.
 
-Preparation and static evaluation do not require Docker. For Harbor evaluation
-or internal submission, build the verifier image once (and rebuild after code changes):
-
-```bash
-docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
-```
+For teacher collection, copy a CritPt job, set `datasets[].path` to the prepared
+AI tasks, choose a new `job_name`, and set `agents[].kwargs.style: one-step`.
+Problem-specific answer instructions override defaults in
+[ai.yaml](../../../configs/prompts/critpt/ai.yaml).
+AI tasks currently support static generation and export only; customized grading,
+two-step generation, and Harbor execution are not supported. Regenerate older
+experimental tasks before use.
 
 ## Evaluation
 
 ### Harbor
 
-For isolated generation and verification:
+For official problems, build the verifier image once (rebuild after code changes),
+then run isolated generation and verification:
 
 ```bash
+docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
 harbor run --config configs/jobs/critpt/vllm.yaml
 ```
 
@@ -122,21 +78,68 @@ is `outputs/harbor/critpt-official`. To select one prepared problem, append
 
 ### Static
 
-For generation with non-executing AST validation:
+For answer generation without Docker or execution of generated code:
 
 ```bash
 ddsr-solve --config configs/jobs/critpt/vllm.yaml
 ```
 
 The default job directory is `outputs/static/critpt-official`. Static evaluation
-checks answer structure and safety but does not execute generated code.
+checks code structure where applicable, not answer correctness.
 
-Long-context stage budgets, streaming checkpoints, stable per-attempt seeds,
-and resume are described in the [generation guide](../../generation/README.md#critpt-long-context-generation).
-Long-generation examples are in `configs/jobs/critpt/vllm-long-context.yaml`
-and `configs/jobs/critpt/aliyun-deepseek.yaml`; their `seed_base` requires
-`ddsr-solve`. Machine paths and credentials
-belong in ignored `configs/local/` and `.env` files.
+For a one-task check before running a batch, copy a job into ignored
+`configs/local/`, choose a new `job_name`, and set one attempt and concurrency one:
+
+```bash
+mkdir -p configs/local
+cp configs/jobs/critpt/aliyun.yaml configs/local/critpt-check.yaml
+# Edit the copy's job_name, dataset path, and model settings first.
+ddsr-solve --config configs/local/critpt-check.yaml \
+  --include-task-name Challenge_1_main
+```
+
+With `job_name: critpt-check`, inspect `agent/response.json`,
+`artifacts/answer.py` (if valid), and `validation/result.json` under
+`outputs/static/critpt-check/Challenge_1_main__attempt-0/`.
+Use another job name for a full batch and omit the task filter. Export credentials
+in your shell; `.env` files are not loaded automatically.
+
+### Long-context generation and recovery
+
+Use `ddsr-solve --config` with `configs/jobs/critpt/vllm-long-context.yaml` or
+`configs/jobs/critpt/aliyun-deepseek.yaml`. Both default to one attempt and
+concurrency four; check token budgets against your endpoint's limits.
+
+- **Budgets:** `sampling.max_tokens` sets the first call's output budget;
+  `formatting_max_tokens` overrides the second call in two-step mode. Only vLLM
+  uses `/tokenize` to fit output within `context_window - input - context_safety_tokens`.
+  Set `require_complete_stages: true` to reject empty or non-stop completions.
+- **Seeds:** `seed_base: 42` derives a stable seed per problem-attempt, shared
+  by both calls (static only). CritPt sends it with either Aliyun request profile;
+  provider determinism is not guaranteed. For Harbor, use `sampling.seed` instead.
+- **Recovery:** `ddsr-solve --config JOB.yaml --resume` reuses completed trials
+  (including failures) and `agent/stage-N.json` checkpoints. Keep settings and task
+  selection unchanged except for concurrency. Partial `stage-N.stream.jsonl`
+  journals are diagnostic, not completed answers.
+
+<details>
+<summary>Troubleshooting: resuming an older or relocated CritPt job</summary>
+
+Use `resume_migration` only when an older run's output or dataset paths moved:
+
+```yaml
+resume_migration:
+  path_prefixes:
+    /old/critpt-eval/outputs: /shared/critpt/runs/outputs
+    /old/tasks: /shared/critpt/tasks
+```
+
+Compatibility also covers former CritPt agent names and the transition from
+`client_name: openai` to `aliyun` with `request_profile: openai`. It does not allow
+changes to model, endpoint, prompts, seeds, or budgets. Original `job-config.yaml`
+is preserved; mappings are recorded separately. Omit this setting for normal runs.
+
+</details>
 
 ### Solve one challenge
 
@@ -164,9 +167,13 @@ directory must not already exist.
 
 Use the shared [collection](../../../README.md#-collect-results) and
 [teacher-data export](../../../README.md#-export-teacher-data) commands with
-either default job directory. Static results have no execution reward. For a
-two-step trajectory, the `full` view preserves both recorded calls and adds a
-derived one-step answer sample.
+either job directory. `agent/response.json` retains the conversation and available
+provider reasoning; artifacts use `answer.py` for code or `answer.txt` for the full
+prose response. Static exports are unverified.
+
+For official two-step trajectories, the `full` SFT view preserves both calls and
+adds a derived one-step answer sample. AI one-step `native`, `full`, and `answer`
+views preserve the same recorded prompt and answer.
 
 ## Submission
 
@@ -202,7 +209,7 @@ If a request fails, reconcile its outcome with AA before retrying or removing
 
 ### Internal submission
 
-Requires Docker, the prepared CritPt image, and a private reference file
+Requires Docker, the [CritPt image](#harbor), and a private reference file
 (not distributed with this project):
 
 ```bash

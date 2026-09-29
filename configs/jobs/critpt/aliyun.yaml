@@ -25,6 +25,7 @@ agents:
       style: two-step
       stream: true
       sampling:
+        # Native max_tokens output budget; check the selected model's API limit.
         max_tokens: 32768
 
 # Dataset layer: normalized Harbor tasks.
