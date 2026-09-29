@@ -6,6 +6,11 @@ benchmark adapter and preserve its style. Keep handwritten increments near 200
 lines when practical, stop for review between increments, and never commit
 generated tasks, outputs, caches, secrets, or empty directories.
 
+Close out tested milestones before unrelated refactors, committing checkpoints
+when authorized. Carry approved workflows through without repeated confirmation.
+Squash related development commits by logical change, not the entire branch by
+default; preserve distinct features, fixes, refactors, and contributor attribution.
+
 ## Maintaining guidance
 
 When an agreed project rule changes, update its concise contributor-facing form
@@ -15,6 +20,13 @@ here. Repository guidance must stand alone without personal files. Remove
 superseded rules; report any skill update that cannot be completed.
 
 ## Documentation changes
+
+Review the full source and destination documents before moving or adding text.
+Shared generation docs own clients and transport; benchmark guides own their
+workflows, prompts, and recovery specifics. Consolidate overlapping sections
+instead of appending or relocating them unchanged. Keep incident histories out
+of user guides and explain implementation details near the code. After editing,
+reread each affected document for coherence; link checks alone are not a review.
 
 After moving, removing, or renaming sections, check incoming links and prose
 references across tracked Markdown. Validate section anchors as well as file

@@ -45,6 +45,7 @@ class CritPtAgent(BaseAgent):
         context_safety_tokens: int = 32,
         request_profile: str | None = None,
         timeout: float = 1200,
+        read_timeout: float | None = None,
         seed_base: int | None = None,
         **kwargs: Any,
     ) -> None:
@@ -57,7 +58,7 @@ class CritPtAgent(BaseAgent):
         if request_profile is not None and client_name != "aliyun":
             raise ValueError("request_profile requires aliyun")
         super().__init__(logs_dir, model_name, **kwargs)
-        self.client_options = {"timeout": timeout}
+        self.client_options = {"timeout": timeout, "read_timeout": read_timeout}
         if context_window is not None:
             self.client_options.update(
                 context_window=context_window,

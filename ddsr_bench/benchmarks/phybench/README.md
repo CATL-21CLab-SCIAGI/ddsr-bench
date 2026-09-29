@@ -50,6 +50,12 @@ Equivalent `openai.yaml`, `bedrock.yaml`, and `aliyun.yaml` jobs read
 results are written beneath `outputs/static/<job_name>/`. Summaries report mean
 EED and exact accuracy overall, by physics tag, and by attempt.
 
+Resume with `ddsr-solve --config JOB.yaml --resume`, keeping settings and task
+selection unchanged except for concurrency. Completed trials, including failures,
+are reused. Interrupted trials are preserved under `.interrupted/` and restarted;
+this can repeat an unfinished model request. Older jobs without `resume.json`
+cannot be resumed safely.
+
 ### Harbor (optional)
 
 Use Harbor when standardized task directories, container records, or a common

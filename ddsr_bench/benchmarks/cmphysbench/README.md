@@ -61,6 +61,12 @@ Equivalent `openai.yaml`, `bedrock.yaml`, and `aliyun.yaml` jobs read
 Without `--include-task-name`, each job evaluates all 100 gradeable records.
 Static results are written beneath `outputs/static/<job_name>/`.
 
+Resume with `ddsr-solve --config JOB.yaml --resume`, keeping settings and task
+selection unchanged except for concurrency. Completed trials, including failures,
+are reused. Interrupted trials are preserved under `.interrupted/` and restarted;
+this can repeat an unfinished model request. Older jobs without `resume.json`
+cannot be resumed safely.
+
 ### Harbor (optional)
 
 Harbor is unnecessary for isolation because CMPhysBench never executes model

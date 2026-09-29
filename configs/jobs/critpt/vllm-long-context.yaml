@@ -20,11 +20,11 @@ agents:
       style: two-step
       stream: true
       timeout: 7200
-      # Requires /tokenize; caps each request to remaining server context.
-      # This does not extend the model's configured context window.
+      # Requires /tokenize; budget = min(output cap, context - input - safety).
+      # Must fit the running server's configured context window.
       context_window: 262144
       context_safety_tokens: 32
-      formatting_max_tokens: 131072
+      formatting_max_tokens: 131072 # Second call only in two-step generation.
       seed_base: 42 # Stable per-problem, per-attempt seeds; static runner only.
       sampling:
         max_tokens: 262144

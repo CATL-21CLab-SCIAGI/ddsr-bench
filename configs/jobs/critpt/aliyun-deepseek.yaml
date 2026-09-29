@@ -19,7 +19,6 @@ agents:
       api_key_env: ALIYUN_API_KEY
       # Maps sampling.max_tokens to API max_completion_tokens.
       # Omits temperature/top_p; CritPt adds the derived seed per request.
-      # Provider-side seed behavior is unverified; this is not a determinism guarantee.
       request_profile: openai
       style: two-step
       stream: true
@@ -28,6 +27,8 @@ agents:
       formatting_max_tokens: 131072
       seed_base: 42 # Stable per-problem, per-attempt seeds; static runner only.
       sampling:
+        # Published output budget; confirm support on your PAI endpoint:
+        # https://help.aliyun.com/en/model-studio/deepseek-v4-flash
         max_tokens: 393216
         reasoning_effort: max
 
