@@ -8,8 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench import __version__
-from ddsr_bench.benchmarks.critpt.data.ai import load_problems as load_ai_problems
-from ddsr_bench.benchmarks.critpt.data.loader import load_challenges
+from ddsr_bench.benchmarks.critpt.data.loader import load_ai_problems, load_challenges
 from ddsr_bench.benchmarks.critpt.data.schemas import (
     AIProblem,
     AIProblemSpec,
