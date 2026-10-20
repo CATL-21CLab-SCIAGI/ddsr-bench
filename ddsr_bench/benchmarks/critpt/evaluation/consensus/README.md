@@ -1,6 +1,6 @@
 # CritPt 内部共识评分
 
-`ddsr_bench.benchmarks.critpt.evaluation.consensus` 对候选答案做内部共识参考匹配，作为 `action=submit benchmark.submission.backend=internal` 的评分实现。参考包和执行设置位于 `benchmark.submission.internal`，命令示例见 [CritPt 指南](../../README.md#internal-submission)。评分不调用官方 API，不修改 trial reward 或训练导出结果。当前版本为 `consensus-61-v2`。
+`ddsr_bench.benchmarks.critpt.evaluation.consensus` 对候选答案做内部共识参考匹配，作为 `action=submit benchmark.submission.backend=internal` 的评分实现。参考包和执行设置位于 `benchmark.submission.consensus`，命令示例见 [CritPt 指南](../../README.md#internal-submission)。评分不调用官方 API，不修改 trial reward 或训练导出结果。当前版本为 `consensus-61-v2`。
 
 运行时不使用 LLM judge。参考匹配不等于官方正确性标签；历史 confidence 也不是校准后的正确概率。
 
@@ -15,7 +15,7 @@
 | `__init__.py` | 固定评分政策版本 |
 | `__main__.py` | `python -m ...consensus` 命令入口 |
 | `references.py` | 构建和验证外部参考包、校验来源哈希及模板参数列表 |
-| `../../submission/internal.py` | 读取共享 collector 指定的 Python 答案并调度评分 |
+| `../../submission/consensus.py` | 读取共享 collector 指定的 Python 答案并调度评分 |
 | `grader.py` | 匹配完整参考、缓存成功的参考执行结果、汇总固定分母成绩 |
 | `matching/compare.py` | 数值、符号、集合、区间和级数比较 |
 | `matching/cases.py` | 执行参数和确定性比较采样；不是数据增强 |
@@ -45,7 +45,7 @@ python -m ddsr_bench.benchmarks.critpt.evaluation.consensus --help
 ```
 
 参考文件存放在仓库外，不随 Git 或 Python 安装包分发。正常提交必须配置
-`benchmark.submission.internal.references`；诊断命令必须提供
+`benchmark.submission.consensus.references`；诊断命令必须提供
 `--references /path/to/reference.json`。Python 代码不预设机器路径。
 文件缺失时直接报错，不生成成绩。加载时检查政策版本、模板和参考代码哈希，
 评分报告记录整个文件的实际哈希；真实数据测试另核对下面的固定 SHA-256。
@@ -72,7 +72,7 @@ docker build -f docker/critpt/Dockerfile -t ddsr-bench-critpt:latest .
 
 ### Reference caching
 
-`benchmark.submission.internal.cache_dir` 默认为
+`benchmark.submission.consensus.cache_dir` 默认为
 `${paths.output}/cache/critpt-consensus`，通常是 `outputs/cache/critpt-consensus`。
 缓存只保存成功的参考执行输出；答案和比较始终重新执行，不复用容器。
 设置为 `null` 只关闭磁盘缓存，同一次提交仍在内存中复用参考结果。

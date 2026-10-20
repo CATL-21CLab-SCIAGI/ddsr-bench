@@ -1,6 +1,7 @@
 """Internal assessment of saved AI responses using each task's grader."""
 
 import math
+from dataclasses import replace
 from functools import partial
 from pathlib import Path
 
@@ -51,13 +52,14 @@ def submit_ai(
     llm: dict,
     pending: Path,
     resources: dict | None = None,
-    judge_enabled: bool = False,
+    llm_fallback: bool = False,
+    grader: str | None = None,
 ) -> dict:
     """Preflight all selected responses before any paid assessment.
 
     Prepared IDs select tasks; original corpus IDs remain inside grade reports.
     Read complete saved responses, not extracted code or partial stream journals.
-    Each task selects its grader; llm only configures the assessment client.
+    Task graders are defaults; an explicit override requires compatible references.
     """
     selected = [trial for attempt in attempts for trial in load_batch(job, attempt)]
     if not selected:
@@ -104,6 +106,10 @@ def submit_ai(
         if not isinstance(content, str) or not content.strip():
             raise ValueError("trial requires nonempty response content")
         problem = load_ai_task(task)
+        if grader is not None:
+            if grader not in ("rule", "llm"):
+                raise ValueError(f"unsupported AI grader: {grader!r}")
+            problem = replace(problem, spec=replace(problem.spec, grader=grader))
         parse_problem(problem)  # Validate every reference before paid assessment.
         inputs.append((trial, problem, content))
     kinds = {problem.spec.grader for _, problem, _ in inputs}
@@ -118,16 +124,18 @@ def submit_ai(
         if not math.isfinite(limits.timeout_sec) or limits.timeout_sec <= 0:
             raise ValueError("worker timeout_sec must be finite and positive")
         executor = partial(execute, resources=limits)
-    if type(judge_enabled) is not bool:
-        raise TypeError("judge_enabled must be boolean")
+    if type(llm_fallback) is not bool:
+        raise TypeError("llm_fallback must be boolean")
     semantic = (
         LLMSemanticJudge(config=SemanticJudgeConfig(**llm)) if "llm" in kinds else None
     )
     # Keep this claim on failure: some judge requests may already have been billed.
     write_json(
-        pending, {"attempts": attempts, "source": str(CritPtSource.AI)}, overwrite=False
+        pending,
+        {"attempts": attempts, "source": str(CritPtSource.AI), "grader": grader},
+        overwrite=False,
     )
-    output = job / f"submission-internal-{'-'.join(map(str, attempts))}.json"
+    output = pending.with_name(pending.name.removesuffix(".pending.json") + ".json")
     if output.exists():
         pending.unlink()
         raise ValueError(f"submission result already exists: {output}")
@@ -137,7 +145,7 @@ def submit_ai(
             problem,
             content,
             semantic_judge=semantic,
-            judge_enabled=judge_enabled,
+            judge_enabled=llm_fallback,  # Preserve the shared DDPR/Auto Python API.
             execute=executor if problem.spec.grader == "rule" else None,
             attempt_id=trial["trial_name"],
         )

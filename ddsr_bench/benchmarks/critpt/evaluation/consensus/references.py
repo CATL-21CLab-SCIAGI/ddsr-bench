@@ -132,7 +132,7 @@ def load_references(path: Path) -> dict:
     except FileNotFoundError as error:
         raise FileNotFoundError(
             f"References not found: {path}. Supply the private JSON path via "
-            "benchmark.submission.internal.references or replay --references."
+            "benchmark.submission.consensus.references or replay --references."
         ) from error
     references = json.loads(raw)
     if (

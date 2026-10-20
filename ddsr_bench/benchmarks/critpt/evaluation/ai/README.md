@@ -55,7 +55,7 @@ submission:
       cpus: 2
       memory_mb: 4096
       timeout_sec: 120
-    judge_enabled: false
+    llm_fallback: false # Allow LLM equivalence checking when deterministic grading is inconclusive.
 ```
 
 Run the unchanged command: `ddsr-solve --config configs/local/critpt-ai.yaml`.
@@ -80,7 +80,9 @@ saved config is missing, supply
 `'benchmark.submission.datasets=[{path:/absolute/path/to/tasks}]'`.
 Dataset roots contain task directories, matching generation; no recursive scan.
 
-Each task's `grader` selects rule or LLM assessment. Configure only the LLM client
+Each task's `grader` defaults to rule or LLM assessment. Set
+`benchmark.submission.grader=rule` or `llm` to override it for this submission;
+the task must supply that grader's required reference fields. Configure the LLM client
 through `benchmark.submission.ai.llm` (`SemanticJudgeConfig` fields), for example
 `+benchmark.submission.ai.llm.model=MODEL`; this cannot override the task's grader.
 Both read the saved raw response, regardless of static format-check results.
@@ -90,10 +92,12 @@ Empty settings retain the imported client defaults below, not the generation
 model's settings. Rule workers use `benchmark.submission.ai.resources`, defaulting
 to the configured Harbor image, CPU, memory and timeout limits, with no host
 execution fallback. Each answer runs in a fresh container. Optional rule-equivalence
-LLM fallback is off by default (`ai.judge_enabled=false`); enabling it uses the
+LLM fallback when deterministic grading is inconclusive is off by default
+(`ai.llm_fallback=false`); enabling it uses the
 equivalence judge environment settings below, not `ai.llm`.
 All selected tasks, references and saved responses are checked before judge calls.
-The private `submission-internal-0.json` preserves task IDs, original corpus IDs,
+The private `submission-internal-ai-0.json` (or `-rule-0.json` / `-llm-0.json`
+for explicit overrides) preserves task IDs, original corpus IDs,
 attempts and detailed reports. Generation records and export filters are unchanged.
 An interrupted submission leaves a `.pending.json` claim; reconcile it before
 retrying because some assessments may already have been billed.

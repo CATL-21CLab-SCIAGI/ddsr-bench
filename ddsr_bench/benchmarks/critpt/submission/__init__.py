@@ -30,9 +30,31 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
     backend = config.get("backend", "official")
     if backend not in ("official", "internal"):
         raise ValueError(f"unknown submission backend: {backend!r}")
+    grader = config.get("grader")
+    supported = (
+        ("official",) if backend == "official" else ("consensus", "ai", "rule", "llm")
+    )
+    if grader is not None and grader not in supported:
+        raise ValueError(f"unsupported grader for {backend}: {grader!r}")
     job = Path(job_dir)
+    # Both destinations consume the same collection; never repair it implicitly.
+    if not (job / "summary.json").exists():
+        collect_trials(job)
+    if backend == "internal" and grader is None:
+        sources = {
+            CritPtSource(trial.get("benchmark_config", {}).get("source", "critpt"))
+            for attempt in attempts
+            for trial in load_batch(job, attempt)
+        }
+        if len(sources) != 1:
+            raise ValueError("internal submission requires one collected data source")
+        grader = "ai" if sources == {CritPtSource.AI} else "consensus"
+    ai = grader in ("ai", "rule", "llm")
     suffix = "" if backend == "official" else "-internal"
     label = "-".join(map(str, attempts))
+    # Resolved grader identity is identical for default and explicit selection.
+    if backend == "internal":
+        suffix += f"-{grader}"
     output = job / f"submission{suffix}-{label}.json"
     pending = job / f"submission{suffix}-{label}.pending.json"
     if output.exists():
@@ -43,19 +65,6 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
         raise ValueError(
             f"internal submission already pending; reconcile first: {pending}"
         )
-    # Both destinations consume the same collection; never repair it implicitly.
-    if not (job / "summary.json").exists():
-        collect_trials(job)
-    ai = False
-    if backend == "internal":
-        sources = {
-            CritPtSource(trial.get("benchmark_config", {}).get("source", "critpt"))
-            for attempt in attempts
-            for trial in load_batch(job, attempt)
-        }
-        if len(sources) != 1:
-            raise ValueError("internal submission requires one collected data source")
-        ai = sources == {CritPtSource.AI}
     logging.getLogger("ddsr_bench").info(
         "Submitting attempts %s to %s", attempts, backend
     )
@@ -84,13 +93,16 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
             job,
             attempts,
             pending=pending,
+            grader=grader if grader in ("rule", "llm") else None,
             datasets=config.get("datasets"),
             **dict(config["ai"]),
         )
     else:
-        from .internal import submit_internal
+        from .consensus import submit_consensus
 
-        result = submit_internal(job, attempts, **dict(config["internal"]))
+        result = submit_consensus(job, attempts, **dict(config["consensus"]))
+    if backend == "internal":
+        result["grader"] = grader
     write_json(output, result, overwrite=False)
     if backend == "official" or ai:
         pending.unlink()

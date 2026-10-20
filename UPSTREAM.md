@@ -24,7 +24,7 @@
   and template/code digests. This policy is not official CritPt grading.
 - External reference bundle (not distributed in Git or wheels):
   `/mnt/workspace/zhizhou/assets/critpt/references/consensus-61-v2.json`.
-  Internal submission requires `benchmark.submission.internal.references`;
+  Internal submission requires `benchmark.submission.consensus.references`;
   reference diagnostics require `--references` with the local file path. SHA-256:
   `6b9edc5057a92148701bed69afa3b4fb121da89223c6978dc01ddca7005a44bc`.
   Historical `consensus-63-v1` had 63 active problems and 212 references; its

@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from ddsr_bench.benchmarks.collect import load_batch
+from ddsr_bench.benchmarks.utils import Resources
 
 from ..evaluation.consensus.execution.runtime import Runtime, provenance
 from ..evaluation.consensus.grader import Grader, grade, summarize
@@ -29,17 +30,14 @@ def _artifact(job: Path, trial: dict) -> Path | None:
     return path
 
 
-def submit_internal(
+def submit_consensus(
     job: Path,
     attempts: list[int],
     *,
     references: str,
+    resources: dict,
     execution: str = "docker",
-    image: str = "ddsr-bench-critpt:latest",
-    timeout: float = 60,
     jobs: int = 4,
-    cpus: int = 2,
-    memory_mb: int = 4096,
     cache_dir: str | None = None,
 ) -> dict:
     """Grade collected artifacts using isolated workers, without an agent trial."""
@@ -56,8 +54,13 @@ def submit_internal(
         for trials in batches
         for trial in trials
     }
+    limits = Resources(**resources)
     runtime = Runtime(
-        backend=execution, image=image, timeout=timeout, cpus=cpus, memory_mb=memory_mb
+        backend=execution,
+        image=limits.image,
+        timeout=limits.timeout_sec,
+        cpus=limits.cpus,
+        memory_mb=limits.memory_mb,
     )
     cache = Path(cache_dir) if cache_dir is not None else None
     if cache is not None and cache.resolve().is_relative_to(job.resolve()):

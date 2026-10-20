@@ -59,8 +59,12 @@ Preserve generated records on grading failure; use grading-only submission to re
 AI internal submission reads per-task references and saved full responses.
 Rule answers execute in isolated Harbor workers; LLM assessment stays host-side.
 Only answer code enters workers, never references or judge credentials. Reports stay
-private and do not mutate generation rewards. Each task owns its grader selection;
-submission LLM settings configure the client, not the grading method.
+private and do not mutate generation rewards. Task graders are defaults;
+an explicit submission grader may override them only with compatible references.
+Submission LLM settings configure the client, not the grading method.
+Keep internal report/claim names grader-specific; AA's grader is fixed.
+Consensus and AI rule submission use the same `resources` mapping inherited from
+Harbor, with a 120-second default timeout; concurrency remains separate.
 Infer submission source from collected trials and reuse saved job datasets.
 Relocated task paths use a datasets override, not an AI-specific path alias.
 Consensus reads saved artifacts

@@ -217,7 +217,7 @@ def test_saved_collection(tmp_path, monkeypatch):
         },
     )
     label = "-".join(map(str, sorted(attempts)))
-    report = read_json(job / f"submission-internal-{label}.json")
+    report = read_json(job / f"submission-internal-ai-{label}.json")
     rows = {row["trial_name"]: row for row in report["results"]}
     assert set(rows) == {path.name for path in selected.values()}
     for kind, path in selected.items():
@@ -337,8 +337,12 @@ async def test_submission(prepared, tmp_path, monkeypatch, location, worker_resu
     assert not calls and not list(job.glob("*.pending.json"))
     record_path.write_bytes(saved)
     summary = (job / "summary.json").read_bytes()
+    incompatible = "llm" if spec.grader == "rule" else "rule"
+    with pytest.raises(ValueError):
+        submit(job, OmegaConf.merge(config, {"grader": incompatible}))
+    assert not calls and not list(job.glob("*.pending.json"))
     submit(job, config)
-    report = read_json(job / "submission-internal-0-1.json")
+    report = read_json(job / "submission-internal-ai-0-1.json")
     assert len(calls) == (2 if spec.grader == "llm" else 0)
     assert worker.call_count == (2 if spec.grader == "rule" else 0)
     if spec.grader == "llm":
@@ -414,7 +418,8 @@ def test_mixed_sources(tmp_path):
 
 @pytest.mark.parametrize("live", [False, True])
 @pytest.mark.parametrize("combined", [False, True])
-def test_mixed_graders(prepared, tmp_path, monkeypatch, live, combined):
+@pytest.mark.parametrize("override", [None, "rule", "llm"])
+def test_mixed_graders(prepared, tmp_path, monkeypatch, live, combined, override):
     from functools import partial
 
     from ddsr_bench.benchmarks.critpt.data.schemas import AIProblem
@@ -456,8 +461,9 @@ def test_mixed_graders(prepared, tmp_path, monkeypatch, live, combined):
     tasks = tmp_path / "mixed-tasks"
     submission = {
         "backend": "internal",
+        "grader": override,
         "attempts": [0],
-        "ai": {"llm": {"model": "mock"}, "resources": limits},
+        "ai": {"llm": {"model": "mock"}, "resources": limits, "llm_fallback": False},
     }
 
     class Teacher:
@@ -529,7 +535,15 @@ def test_mixed_graders(prepared, tmp_path, monkeypatch, live, combined):
             read_json(trial.parent / "agent/response.json")["responses"][-1]["content"]
             == "```python\ndef answer():\n    return 2\n```"
         )
-    result = read_json(job / "submission-internal-0.json")
+    result = read_json(job / f"submission-internal-{override or 'ai'}-0.json")
+    assert result["grader"] == (override or "ai")
     assert {row["problem_id"] for row in result["results"]} == {"ai-rule", "ai-llm"}
     assert all(row["report"]["grading_status"] == "pass" for row in result["results"])
-    completion.assert_called_once()
+    assert completion.call_count == {None: 1, "rule": 0, "llm": 2}[override]
+    # Different graders may assess the same answers without overwriting reports.
+    with pytest.raises(ValueError, match="result already exists"):
+        submit(job, submission | {"grader": override or "ai"})
+    other = "llm" if override == "rule" else "rule"
+    submit(job, submission | {"grader": other})
+    assert read_json(job / f"submission-internal-{other}-0.json")["grader"] == other
+    assert read_json(job / f"submission-internal-{override or 'ai'}-0.json") == result
