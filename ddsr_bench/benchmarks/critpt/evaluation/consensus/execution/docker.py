@@ -2,71 +2,11 @@
 
 import json
 import math
-from contextlib import asynccontextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from uuid import uuid4
 
-from harbor.environments.docker.docker import DockerEnvironment
-from harbor.models.task.config import EnvironmentConfig
-from harbor.models.trial.paths import TrialPaths
-
-from ddsr_bench.benchmarks.utils import Resources, write_json
-
-
-@asynccontextmanager
-async def environment(directory: Path, resources: Resources):
-    """Start a fresh worker environment and clean up even after startup failure.
-
-    No host directories are mounted: an answer must never see references or
-    another worker's files. The caller transfers only that worker's request.
-    """
-    directory.mkdir(parents=True, exist_ok=True)
-    definition = directory / "environment"
-    definition.mkdir()
-    restrictions = directory / "restrictions.json"
-    write_json(
-        restrictions,
-        {
-            "services": {
-                "main": {
-                    "pull_policy": "never",
-                    "network_mode": "none",
-                    "init": True,
-                    "read_only": True,
-                    "cap_drop": ["ALL"],
-                    "security_opt": ["no-new-privileges"],
-                    "user": "65534:65534",
-                    "pids_limit": 64,
-                    "tmpfs": ["/tmp:rw,noexec,nosuid,size=64m"],
-                    "logging": {"driver": "none"},
-                    "ulimits": {"fsize": {"soft": 8_000_000, "hard": 8_000_000}},
-                }
-            }
-        },
-    )
-    # Docker's fixed network_mode:none enforces isolation for this sole service.
-    # Do not request Harbor's dynamic firewall: it adds a redundant sidecar.
-    # init forwards shutdown signals and reaps children without changing timeouts.
-    container = DockerEnvironment(
-        environment_dir=definition,
-        environment_name="critpt-consensus",
-        session_id=f"critpt-consensus-{uuid4().hex}",
-        trial_paths=TrialPaths(directory / "trial"),
-        task_env_config=EnvironmentConfig(
-            docker_image=resources.image,
-            cpus=resources.cpus,
-            memory_mb=resources.memory_mb,
-            workdir="/tmp",
-        ),
-        mounts=[],
-        extra_docker_compose=[restrictions],
-    )
-    try:
-        await container.start(force_build=False)
-        yield container
-    finally:
-        await container.stop(delete=True)
+from ddsr_bench.benchmarks.critpt.evaluation.docker import environment
+from ddsr_bench.benchmarks.utils import Resources
 
 
 async def run(payload: dict, resources: Resources) -> dict:

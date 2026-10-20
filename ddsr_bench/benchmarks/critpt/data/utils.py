@@ -1,6 +1,24 @@
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
+
+from .schemas import AIProblemSpec, CritPtSource, ProblemSpec
+
+
+def encode_instruction(problem: ProblemSpec | AIProblemSpec) -> str:
+    """Serialize public fields as JSON for Harbor's required instruction.md."""
+    data = asdict(problem)
+    data.pop("source_path")
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+def decode_instruction(instruction: str) -> ProblemSpec:
+    """Restore the public problem fields from one prepared task."""
+    data = json.loads(instruction)
+    data["source"] = CritPtSource(data.get("source"))
+    spec = AIProblemSpec if data["source"] == CritPtSource.AI else ProblemSpec
+    return spec(**data, source_path=Path("prepared-task"))
 
 
 def read_json(path: Path) -> dict[str, Any]:

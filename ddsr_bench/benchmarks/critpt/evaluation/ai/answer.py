@@ -23,17 +23,27 @@ def execute_answer_function(
     response: str,
     *,
     grading_plan: GradingPlan | None = None,
+    execute: Callable[[str], Any] | None = None,
 ) -> dict[str, Any]:
-    """Run the final Python ``answer`` function block and return normalized answers."""
+    """Validate the final answer block, execute it, and normalize its return value.
+
+    An injected executor receives code only, never private grading fields.
+    Without one, execution remains local; this default is not a sandbox.
+    """
 
     code = _final_answer_code(response)
     _validate_answer_code(code, grading_plan=grading_plan)
+    raw_answer = (execute or _execute_answer)(code)
+    return raw_answer if isinstance(raw_answer, dict) else {"answer": raw_answer}
+
+
+def _execute_answer(code: str) -> Any:
+    """Local execution retained for existing Python callers and isolated workers."""
     namespace = _execute_answer_code(code)
     fn = namespace.get("answer")
     if not callable(fn):
         raise ValueError("Python answer block must define callable answer().")
-    raw_answer = _call_answer_function(fn, namespace)
-    return raw_answer if isinstance(raw_answer, dict) else {"answer": raw_answer}
+    return _call_answer_function(fn, namespace)
 
 
 def _final_answer_code(response: str) -> str:
@@ -52,10 +62,13 @@ def extract_gradeable_answer(
     response: str,
     *,
     grading_plan: GradingPlan,
+    execute: Callable[[str], Any] | None = None,
 ) -> dict[str, Any]:
     """Keep unsupported mathematical answers as inert text for equivalence review."""
     try:
-        return execute_answer_function(response, grading_plan=grading_plan)
+        return execute_answer_function(
+            response, grading_plan=grading_plan, execute=execute
+        )
     except UnsupportedAnswerOperation as exc:
         code = _final_answer_code(response)
         tree = _validate_answer_code(

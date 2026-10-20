@@ -5,9 +5,12 @@ from __future__ import annotations
 import math
 import os
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from functools import partial
 from typing import Any
 
+from ...data.schemas import AIProblem, CritPtSource
+from ...generation.prompts import load_prompts
 from .answer import extract_answer_locally, extract_gradeable_answer
 from .io.inputs import parse_grading_problem
 from .io.outputs import format_report
@@ -40,30 +43,73 @@ from .schemas import (
 DEFAULT_NUMERIC_CHECK_TIMEOUT = 30.0  # Seconds.
 
 
+def parse_problem(problem: AIProblem) -> GradingInput:
+    """Adapt normalized CritPt data to the grader's retained scoring contract."""
+    spec, answer = problem.spec, problem.answer
+    instructions = spec.answer_instructions
+    if not instructions or not instructions.strip():
+        instructions = load_prompts(CritPtSource.AI)["ANSWER_INSTRUCTIONS"]
+    if spec.code_template:
+        instructions += f"\n\n```python\n{spec.code_template.rstrip()}\n```"
+    fields = {
+        "problem_id": answer.problem_id,
+        "problem_statement": spec.statement,
+        "public_solver_output_instructions": instructions,
+    }
+    if spec.grader == "rule":
+        return _validate_problem(
+            ProblemGradingInput(
+                **fields,
+                answer_contract=answer.answer_contract,
+                grading_plan=answer.grading_plan,
+            )
+        )
+    if spec.grader == "llm":
+        return FreestyleProblemGradingInput(
+            **fields,
+            answer_type=answer.answer_type,
+            reference_answer=answer.snippet,
+            reference_solution=answer.reference_solution,
+            answer_items=answer.answer_items,
+        )
+    raise ValueError(f"unknown answer grader: {spec.grader}")
+
+
+def _validate_problem(problem: GradingInput) -> GradingInput:
+    if isinstance(problem, ProblemGradingInput):
+        calls = problem.grading_plan.calls
+        if problem.answer_type == "composite" or len(calls) != 1:
+            raise ValueError("Auto composite/multi-target grading is not supported")
+        if calls[0].primitive != problem.answer_type:
+            raise ValueError("Auto answer type must match its grading primitive")
+    return problem
+
+
 def grade_response(
-    problem: GradingInput | Mapping[str, Any],
+    problem: AIProblem | GradingInput | Mapping[str, Any],
     response: str,
     *,
     judge_enabled: bool = True,
     equivalence_judge: EquivalenceJudge | None = None,
     semantic_judge: LLMSemanticJudge | None = None,
     attempt_id: str = "saved-response",
+    execute: Callable[[str], Any] | None = None,
 ) -> GradeReport:
     """Return grading diagnostics without assigning a training reward.
 
     judge_enabled controls Auto's optional expression-equivalence fallback only.
     Freestyle always requires SemanticJudge. Inject configured Judge instances to
     override their environment settings or to test without network access.
+    execute replaces only rule-answer execution and receives validated code,
+    never references. The default remains local execution, not isolation.
     """
     if not isinstance(response, str):
         raise TypeError("response must be text")
-    selected_problem = parse_grading_problem(problem)
-    if isinstance(selected_problem, ProblemGradingInput):
-        calls = selected_problem.grading_plan.calls
-        if selected_problem.answer_type == "composite" or len(calls) != 1:
-            raise ValueError("Auto composite/multi-target grading is not supported")
-        if calls[0].primitive != selected_problem.answer_type:
-            raise ValueError("Auto answer type must match its grading primitive")
+    selected_problem = (
+        parse_problem(problem)
+        if isinstance(problem, AIProblem)
+        else _validate_problem(parse_grading_problem(problem))  # Native compatibility.
+    )
     if isinstance(selected_problem, FreestyleProblemGradingInput):
         return _grade_freestyle_response(
             selected_problem,
@@ -78,7 +124,11 @@ def grade_response(
             extract_answer_locally,
             response,
             selected_problem.grading_plan,
-            extract_gradeable_answer,
+            (
+                partial(extract_gradeable_answer, execute=execute)
+                if execute is not None
+                else extract_gradeable_answer
+            ),
             timeout=deadline - time.monotonic(),
         )
         deterministic = run_with_deadline(

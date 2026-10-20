@@ -7,36 +7,68 @@ or a replacement for consensus. See [UPSTREAM.md](UPSTREAM.md) for provenance.
 ## Python interface
 
 ```python
-from ddsr_bench.benchmarks.critpt.evaluation.ai import (
-    grade_response,
-    load_problem,
-    load_problems,
-    parse_grading_problem,
-)
+from ddsr_bench.benchmarks.critpt.data.loader import load_ai_task
+from ddsr_bench.benchmarks.critpt.evaluation.ai import grade_response
 
-problem = load_problem("/path/to/compiled-task")
+problem = load_ai_task("/path/to/compiled-task")
 report = grade_response(problem, student_response, attempt_id="trial-1")
 print(report.grading_status)
 ```
 
-`load_problem` reads `instruction.md` and `tests/reference.json` without executing
-code or reading the original corpus. `load_problems` takes explicitly selected
-task paths in caller order. `parse_grading_problem` accepts native Auto/Freestyle
-records or validated models. References and reports are private verifier data.
+Both DDSR-Bench and DDPR use the unified CritPt data loader for prepared tasks.
+`load_ai_task` restores public and private fields from `instruction.md` and
+`tests/reference.json`, without executing code or reading the original corpus.
+The compatibility parser `parse_grading_problem` accepts native Auto/Freestyle
+records only. References and reports are private verifier data.
 Keep them out of student prompts and public generation artifacts.
 
 Rule grading supports floating, exact, symbolic and categorical answers using
 an `answer()` function; composite/multi-target grading remains unsupported.
 Freestyle assesses natural-language responses against the reference answer and
 solution. Existing schemas, report fields and prompt semantics are preserved.
-The nested `io/` directory retains the external I/O adapter structure.
+The nested `io/` directory handles native record compatibility and report output,
+not prepared-task loading.
 
 The report distinguishes `pass`, `fail`, invalid answers, resource limits and
 grader failures. It does not assign a training reward. DDPR owns that mapping.
 The answer restrictions and deadlines are not container isolation; do not run
-untrusted corpus functions on the host. This incorporation exposes the Python
-grader only. Static generation and submission do not invoke it automatically;
-Harbor/submission integration remains separate work.
+untrusted corpus functions on the host. Static generation does not invoke the
+grader automatically. `ai.docker.execute(code, resources=...)` provides the
+Harbor-backed execution callback: pass it with bound resources as
+`grade_response(..., execute=...)`. Only code enters the container, and bounded
+JSON values return; references and judge credentials stay outside. Build the
+current CritPt image before using it.
+
+## Submission
+
+After generation, explicitly assess selected attempts of rule- or LLM-graded tasks:
+
+```bash
+ddsr-bench action=submit paths.input=JOB_DIR \
+  benchmark.submission.backend=internal benchmark.submission.attempts=0
+```
+
+Submission detects the source from collected trials and reuses `datasets[].path`
+from the job's saved `job-config.yaml` (or Harbor `config.json`). Relative paths
+use the current working directory, as during generation. If data moved or the
+saved config is missing, supply
+`'benchmark.submission.datasets=[{path:/absolute/path/to/tasks}]'`.
+Dataset roots contain task directories, matching generation; no recursive scan.
+
+Each task's `grader` selects rule or LLM assessment. Configure only the LLM client
+through `benchmark.submission.ai.llm` (`SemanticJudgeConfig` fields), for example
+`+benchmark.submission.ai.llm.model=MODEL`; this cannot override the task's grader.
+Empty settings retain the imported client defaults below, not the generation
+model's settings. Rule workers use `benchmark.submission.ai.resources`, defaulting
+to the configured Harbor image, CPU, memory and timeout limits, with no host
+execution fallback. Each answer runs in a fresh container. Optional rule-equivalence
+LLM fallback is off by default (`ai.judge_enabled=false`); enabling it uses the
+equivalence judge environment settings below, not `ai.llm`.
+All selected tasks, references and saved responses are checked before judge calls.
+The private `submission-internal-0.json` preserves task IDs, original corpus IDs,
+attempts and detailed reports. Generation records and export filters are unchanged.
+An interrupted submission leaves a `.pending.json` claim; reconcile it before
+retrying because some assessments may already have been billed.
 
 ## Judge configuration
 
@@ -69,6 +101,12 @@ content is parsed separately from reasoning. Pass `judge_enabled=False` to
 
 ```bash
 python -m pytest -q tests/benchmarks/critpt/ai
+# Optional synthetic execution check after building the current CritPt image:
+DDSR_TEST_AI_IMAGE=ddsr-bench-critpt:latest \
+  python -m pytest -q tests/benchmarks/critpt/ai/test_docker.py -k live
+# Mixed rule/LLM submission: real Docker worker, mocked semantic judge:
+DDSR_TEST_AI_IMAGE=ddsr-bench-critpt:latest \
+  python -m pytest -q tests/benchmarks/critpt/ai/test_collection.py -k mixed_graders
 ```
 
 Core tests cover rules, validation, deadlines, provider errors and mocked judgments.

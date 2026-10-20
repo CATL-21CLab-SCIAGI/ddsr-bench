@@ -35,7 +35,6 @@ MODULES = (
     "__init__",
     "execution/__init__",
     "execution/worker",
-    "execution/serialization",
     "execution/linux",
     "matching/__init__",
     "matching/compare",
@@ -109,6 +108,10 @@ class LinuxSandbox:
         self.bind(root / "grading/__init__.py", "/app/ddsr_bench/grading/__init__.py")
         self.bind(
             root / "grading/validation.py", "/app/ddsr_bench/grading/validation.py"
+        )
+        self.bind(
+            package.parent / "serialization.py",
+            "/app/ddsr_bench/benchmarks/critpt/evaluation/serialization.py",
         )
         for module in MODULES:
             self.bind(

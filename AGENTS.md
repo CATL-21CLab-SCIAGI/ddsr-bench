@@ -52,9 +52,17 @@ Both CritPt submission backends reuse shared collection of completed generation.
 Collect missing summaries once at the common submission boundary; reuse existing
 summaries unchanged. Share equivalent logic across similar actions, retaining
 backend-specific validation and scoring contracts.
-Submission is verifier-only: read saved artifacts and coordinate isolated workers
-without a new agent trial or model call. Require an explicit shared reference path.
-Per-task reference loading is not currently wired into internal submission; do not
+Submission is verifier-only: never generate new answers or agent trials.
+AI internal submission reads per-task references and saved full responses.
+Rule answers execute in isolated Harbor workers; LLM assessment stays host-side.
+Only answer code enters workers, never references or judge credentials. Reports stay
+private and do not mutate generation rewards. Each task owns its grader selection;
+submission LLM settings configure the client, not the grading method.
+Infer submission source from collected trials and reuse saved job datasets.
+Relocated task paths use a datasets override, not an AI-specific path alias.
+Consensus reads saved artifacts
+and coordinates isolated workers without model calls. Require an explicit shared
+consensus reference path. Per-task consensus loading is not wired; do not
 document it as available or retain an unused Harbor verifier adapter for it.
 If added later, reuse the shared file's problem-entry keys and validation.
 Do not copy shared references into each task. Read-only references still require
