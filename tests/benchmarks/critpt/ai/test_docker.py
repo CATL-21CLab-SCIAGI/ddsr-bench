@@ -6,17 +6,28 @@ from types import SimpleNamespace
 import pytest
 import sympy as sp
 
+from ddsr_bench.benchmarks.critpt.evaluation import serialization
 from ddsr_bench.benchmarks.critpt.evaluation.ai import docker, worker
 from ddsr_bench.benchmarks.critpt.evaluation.ai.runtime import GraderTimeout
+from ddsr_bench.benchmarks.critpt.evaluation.ai.serialization import decode, encode
 from ddsr_bench.benchmarks.critpt.evaluation.ai.validation import (
     UnsupportedAnswerOperation,
 )
-from ddsr_bench.benchmarks.critpt.evaluation.serialization import decode, encode
 from ddsr_bench.benchmarks.utils import Resources
 
 
 @pytest.mark.parametrize(
-    "value", ["2*x", sp.Symbol("x", positive=True), {"A", "B"}, 1.25]
+    "value",
+    [
+        "2*x",
+        sp.Symbol("x", positive=True),
+        {"A", "B"},
+        1.25,
+        sp.erf(1),
+        sp.zeta(3),
+        sp.digamma(sp.Rational(1, 3)),
+        sp.hyper([1, 2], [3], sp.Symbol("x")),
+    ],
 )
 def test_values(monkeypatch, value):
     # Exercise the worker protocol without executing answer code on the host.
@@ -24,6 +35,16 @@ def test_values(monkeypatch, value):
     result = worker.run("def answer():\n    return 2")
     assert result["status"] == "ok"
     assert decode(result["answer"]["answer"]) == value
+
+
+def test_codec_boundary():
+    # Expanding AI's codec must not expand consensus's accepted symbolic nodes.
+    with pytest.raises(ValueError, match="unsupported symbolic node"):
+        serialization.encode(sp.erf(1))
+    with pytest.raises(KeyError):
+        serialization.decode(encode(sp.erf(1)))
+    with pytest.raises(KeyError):
+        decode({"t": "expr", "f": "sympify", "v": []})
 
 
 @pytest.mark.parametrize(
@@ -89,7 +110,17 @@ def test_container(tmp_path, monkeypatch, mode, error):
 )
 @pytest.mark.parametrize(
     "expression,expected",
-    [("2", 2), ("1.25", 1.25), ("{'A', 'B'}", {"A", "B"}), ("sp.sqrt(2)", sp.sqrt(2))],
+    [
+        ("2", 2),
+        ("1.25", 1.25),
+        ("{'A', 'B'}", {"A", "B"}),
+        ("sp.sqrt(2)", sp.sqrt(2)),
+        ("sp.erf(1)", sp.erf(1)),
+        (
+            "sp.hyper([1, 2], [3], sp.Symbol('x'))",
+            sp.hyper([1, 2], [3], sp.Symbol("x")),
+        ),
+    ],
 )
 def test_live(expression, expected):
     # Only synthetic code executes, exclusively inside the Harbor container.

@@ -81,10 +81,18 @@ CONSTANTS = {
 NUMBER = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\Z")
 
 
-def encode(value: Any, depth: int = 0, *, preserve_literals: bool = False) -> dict:
+def encode(
+    value: Any,
+    depth: int = 0,
+    *,
+    preserve_literals: bool = False,
+    functions: dict = FUNCTIONS,
+) -> dict:
     if depth > 100:
         raise ValueError("value nesting too deep")
-    enc = lambda x: encode(x, depth + 1, preserve_literals=preserve_literals)
+    enc = lambda x: encode(
+        x, depth + 1, preserve_literals=preserve_literals, functions=functions
+    )
     # AI grading distinguishes Python literals from symbolic numeric objects.
     # Leave consensus's historical encoding unchanged by default.
     if preserve_literals and (value is None or type(value) in (bool, int, float, str)):
@@ -145,7 +153,7 @@ def encode(value: Any, depth: int = 0, *, preserve_literals: bool = False) -> di
                 raise ValueError("unsupported formal function")
             return {"t": "formal", "v": [enc(x) for x in value.args]}
         name = value.func.__name__
-        if name not in FUNCTIONS:
+        if name not in functions:
             raise ValueError(f"unsupported symbolic node: {name}")
         return {"t": "expr", "f": name, "v": [enc(x) for x in value.args]}
     if value == sp.Function("tr"):
@@ -153,12 +161,18 @@ def encode(value: Any, depth: int = 0, *, preserve_literals: bool = False) -> di
     raise ValueError(f"unsupported output type: {type(value).__name__}")
 
 
-def decode(data: dict, depth: int = 0, budget: list[int] | None = None) -> Any:
+def decode(
+    data: dict,
+    depth: int = 0,
+    budget: list[int] | None = None,
+    *,
+    functions: dict = FUNCTIONS,
+) -> Any:
     budget = budget if budget is not None else [30000]
     budget[0] -= 1
     if depth > 100 or budget[0] < 0 or not isinstance(data, dict):
         raise ValueError("invalid/oversized encoded value")
-    dec = lambda x: decode(x, depth + 1, budget)
+    dec = lambda x: decode(x, depth + 1, budget, functions=functions)
     kind, value = data.get("t"), data.get("v")
     if kind == "literal":
         if value is not None and type(value) not in (bool, int, float, str):
@@ -223,7 +237,7 @@ def decode(data: dict, depth: int = 0, budget: list[int] | None = None) -> Any:
             return sp.Interval(*args, left_open=flags[0], right_open=flags[1])
         if kind == "formal":
             return sp.Function("tr")(*args)
-        return FUNCTIONS[data["f"]](*args)
+        return functions[data["f"]](*args)
     if kind == "function" and value == "tr":
         return sp.Function("tr")
     raise ValueError("unsupported encoded value")
