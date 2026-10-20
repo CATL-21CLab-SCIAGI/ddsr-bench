@@ -41,6 +41,31 @@ current CritPt image before using it.
 
 ## Submission
 
+To generate and assess in one command, add this optional block to your existing
+one-step AI generation job YAML:
+
+```yaml
+submission:
+  backend: internal
+  attempts: [0] # Explicit attempt indices, not a count.
+  ai:
+    llm: {} # SemanticJudgeConfig overrides; separate from the teacher model.
+    resources: # Required for rule answers; Docker image must be built first.
+      image: ddsr-bench-critpt:latest
+      cpus: 2
+      memory_mb: 4096
+      timeout_sec: 120
+    judge_enabled: false
+```
+
+Run the unchanged command: `ddsr-solve --config configs/local/critpt-ai.yaml`.
+Without `submission`, behavior remains generation and static checks only.
+With it, the runner finishes generation, collects results, then grades the selected attempts.
+It does not grade trials as they finish or regenerate rejected answers. Configure
+the judge and worker resources below; rule assessment requires the current Docker
+image. If grading fails, preserve the output and use `action=submit` to retry
+assessment without generation (reconcile any pending claim first).
+
 After generation, explicitly assess selected attempts of rule- or LLM-graded tasks:
 
 ```bash

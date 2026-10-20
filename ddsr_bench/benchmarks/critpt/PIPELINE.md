@@ -12,6 +12,9 @@ AI static results use shared collection and trajectory/SFT export, without
 correctness verification. Explicit internal submission assesses saved responses
 using per-task references: rule answers execute in isolated Harbor workers,
 while prose answers use the semantic judge.
+With job `submission` settings, `ddsr-solve` runs generation → collection → internal
+submission; grading begins after the generation job finishes. `action=submit`
+remains the grading-only path and never regenerates answers.
 The execution flow below
 applies to `critpt-official` (the official CritPt repository).
 

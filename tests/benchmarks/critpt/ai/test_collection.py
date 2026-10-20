@@ -31,6 +31,11 @@ from . import test_task_inputs
 prepared = test_task_inputs.prepared
 
 
+def _worker_answer(code, *, resources):
+    """Picklable stub: threaded grading uses a spawned deadline process."""
+    return {"answer": 2}
+
+
 @pytest.fixture(autouse=True)
 def no_execution(monkeypatch):
     def forbidden(*args, **kwargs):
@@ -408,11 +413,16 @@ def test_mixed_sources(tmp_path):
 
 
 @pytest.mark.parametrize("live", [False, True])
-def test_mixed_graders(prepared, tmp_path, monkeypatch, live):
+@pytest.mark.parametrize("combined", [False, True])
+def test_mixed_graders(prepared, tmp_path, monkeypatch, live, combined):
+    from functools import partial
+
     from ddsr_bench.benchmarks.critpt.data.schemas import AIProblem
+    from ddsr_bench.benchmarks.critpt.evaluation import static
     from ddsr_bench.benchmarks.critpt.evaluation.prepare import compile_problem
     from ddsr_bench.benchmarks.critpt.submission import ai, submit
     from ddsr_bench.benchmarks.utils import Resources
+    from ddsr_bench.commands import solve
 
     if live and not os.getenv("DDSR_TEST_AI_IMAGE"):
         pytest.skip("Set DDSR_TEST_AI_IMAGE for live rule submission")
@@ -441,10 +451,19 @@ def test_mixed_graders(prepared, tmp_path, monkeypatch, live):
         lambda config: LLMSemanticJudge(config=config, completion=completion),
     )
     if not live:
-        monkeypatch.setattr(ai, "execute", Mock(return_value={"answer": 2}))
-    job = tmp_path / "mixed"
+        monkeypatch.setattr(ai, "execute", _worker_answer)
+    job = tmp_path / "static" / "mixed"
+    tasks = tmp_path / "mixed-tasks"
+    submission = {
+        "backend": "internal",
+        "attempts": [0],
+        "ai": {"llm": {"model": "mock"}, "resources": limits},
+    }
 
     class Teacher:
+        async def preflight(self):
+            pass
+
         async def chat(self, messages):
             return ChatResponse(
                 "```python\ndef answer():\n    return 2\n```",
@@ -476,19 +495,40 @@ def test_mixed_graders(prepared, tmp_path, monkeypatch, live):
                 "calls": [{"primitive": "exact", "target": "answer", "expected": "2"}]
             },
         )
-        compile_problem(AIProblem(spec, reference), task.parent, Resources(**limits))
-        asyncio.run(
-            run_trial(spec, 0, job / kind, Teacher(), AgentConfig(model_name="mock"))
-        )
-    write_json(job / "job-config.yaml", {"datasets": [{"path": str(task.parent)}]})
-    submit(
-        job,
-        {
-            "backend": "internal",
-            "attempts": [0],
-            "ai": {"llm": {"model": "mock"}, "resources": limits},
-        },
+        compile_problem(AIProblem(spec, reference), tasks, Resources(**limits))
+    config = {
+        "benchmark": "critpt",
+        "job_name": "mixed",
+        "jobs_dir": str(tmp_path / "harbor"),
+        "n_attempts": 1,
+        "datasets": [{"path": str(tasks)}],
+        "agents": [
+            {
+                "name": "ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent",
+                "model_name": "mock",
+            }
+        ],
+    }
+    if combined:
+        config["submission"] = submission
+    path = tmp_path / "job.yaml"
+    write_json(path, config)
+    monkeypatch.setattr(
+        solve, "static_runner", lambda _: partial(static.run_job, client=Teacher())
     )
+    generated = asyncio.run(solve.run_job(path))
+    if combined:
+        assert "submitted attempts [0]" in generated["submission"]
+    else:
+        assert "submission" not in generated
+        submit(job, submission)
+    assert generated["trials"] == 2
+    for trial in job.glob("*/result.json"):
+        assert read_json(trial)["static_result"]["reward"] is None
+        assert (
+            read_json(trial.parent / "agent/response.json")["responses"][-1]["content"]
+            == "```python\ndef answer():\n    return 2\n```"
+        )
     result = read_json(job / "submission-internal-0.json")
     assert {row["problem_id"] for row in result["results"]} == {"ai-rule", "ai-llm"}
     assert all(row["report"]["grading_status"] == "pass" for row in result["results"])

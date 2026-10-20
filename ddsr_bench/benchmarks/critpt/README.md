@@ -60,6 +60,8 @@ AI tasks support static generation and export. The
 [CritPt-AI Python grader](evaluation/ai/README.md) assesses saved responses
 through explicit internal submission for rule and LLM assessment. Two-step
 generation and Harbor generation trials remain unsupported for AI tasks.
+For generation followed by grading in one command, add
+[job submission settings](evaluation/ai/README.md#submission) to the same YAML.
 Regenerate older experimental tasks before use.
 
 ## Evaluation
