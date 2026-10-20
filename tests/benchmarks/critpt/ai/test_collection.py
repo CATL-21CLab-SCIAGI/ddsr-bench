@@ -130,7 +130,7 @@ async def test_collected(prepared, tmp_path, monkeypatch, outcome):
     assert (job / "summary.json").read_bytes() == summary
 
 
-def test_saved_collection(tmp_path):
+def test_saved_collection(tmp_path, monkeypatch):
     """Opt-in real saved data: validate joining and response fidelity, not scores."""
     source = os.getenv("DDSR_TEST_AI_JOB")
     tasks = os.getenv("DDSR_TEST_AI_TASKS")
@@ -167,6 +167,71 @@ def test_saved_collection(tmp_path):
             assert trial["benchmark_config"]["source"] == "critpt-ai"
             assert trial["reward"] is None
 
+    image = os.getenv("DDSR_TEST_AI_IMAGE")
+    if not image:
+        return
+    from ddsr_bench.benchmarks.critpt.submission import ai, submit
+
+    # Replay untouched saved responses: real isolated rule execution, no paid judge.
+    originals = {p: p.read_bytes() for p in job.rglob("*") if p.is_file()}
+    assessed = []
+
+    def complete(messages, config):
+        assessed.append(json.loads(messages[-1]["content"])["solver_attempt"])
+        return json.dumps(
+            {
+                "verdict": "correct",
+                "confidence": 1,
+                "solver_answer_summary": "Mocked assessment",
+                "assessment": "Transport test only, not a correctness claim",
+                "substantive_errors": [],
+            }
+        )
+
+    monkeypatch.setattr(
+        ai,
+        "LLMSemanticJudge",
+        lambda config: LLMSemanticJudge(config=config, completion=complete),
+    )
+    attempts = [batch["attempt"] for batch in summary["batches"]]
+    submit(
+        job,
+        {
+            "backend": "internal",
+            "attempts": attempts,
+            "datasets": [{"path": str(Path(tasks) / kind)} for kind in ("rule", "llm")],
+            "ai": {
+                "llm": {"model": "mock"},
+                "resources": {
+                    "image": image,
+                    "cpus": 1,
+                    "memory_mb": 1024,
+                    "timeout_sec": 120,
+                },
+            },
+        },
+    )
+    label = "-".join(map(str, sorted(attempts)))
+    report = read_json(job / f"submission-internal-{label}.json")
+    rows = {row["trial_name"]: row for row in report["results"]}
+    assert set(rows) == {path.name for path in selected.values()}
+    for kind, path in selected.items():
+        row = rows[path.name]
+        record = read_json(path / "agent/response.json")
+        response = record["responses"][-1]["content"]
+        assert row["problem_id"] == record["problem_id"]
+        assert row["attempt"] == read_json(path / "result.json")["attempt"]
+        assert (
+            row["report"]["response_sha256"]
+            == hashlib.sha256(response.encode()).hexdigest()
+        )
+        if kind == "rule":
+            assert row["report"]["grading_status"] in {"pass", "fail"}
+        else:
+            assert assessed == [{"attempt_id": path.name, "response": response}]
+    assert all(p.read_bytes() == content for p, content in originals.items())
+    assert not list(job.glob("*.pending.json"))
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("location", ["job-config.yaml", "config.json", "override"])
@@ -182,9 +247,13 @@ async def test_submission(prepared, tmp_path, monkeypatch, location, worker_resu
         data["grading_plan"]["calls"][0]["expected"] = "2"
         write_json(reference, data)
 
+    content = (
+        "Intermediate calculation.\n```python\nscratch = 1\n```\n"
+        "Final answer.\n```python\ndef answer():\n    return 2\n```"
+    )
+
     class Teacher:
         async def chat(self, messages):
-            content = "```python\ndef answer():\n    return 2\n```"
             return ChatResponse(content, "", "mock", {}, None, 0.1, {}, "stop")
 
     job = tmp_path / "job"
@@ -196,10 +265,21 @@ async def test_submission(prepared, tmp_path, monkeypatch, location, worker_resu
             Teacher(),
             AgentConfig(model_name="mock"),
         )
+        if spec.grader == "rule":
+            # Official extraction sees the first block; AI grading must still
+            # assess the saved response using its own last-answer-block rule.
+            assert (
+                read_json(job / f"trial-{attempt}/validation/result.json")["status"]
+                == "error"
+            )
+            assert not (job / f"trial-{attempt}/artifacts/answer.py").exists()
     calls = []
 
     def complete(messages, config):
         assert config.model == "assessment-model"
+        assert (
+            json.loads(messages[-1]["content"])["solver_attempt"]["response"] == content
+        )
         calls.append(messages)
         return json.dumps(
             {
@@ -261,6 +341,10 @@ async def test_submission(prepared, tmp_path, monkeypatch, location, worker_resu
     else:
         factory.assert_not_called()
         assert all(set(call.kwargs) == {"resources"} for call in worker.call_args_list)
+        assert all(
+            "def answer()" in call.args[0] and "scratch" not in call.args[0]
+            for call in worker.call_args_list
+        )
     assert [r["attempt"] for r in report["results"]] == [0, 1]
     assert all(r["problem_id"] == spec.id for r in report["results"])
     assert all(r["report"]["problem_id"] == "native-id" for r in report["results"])

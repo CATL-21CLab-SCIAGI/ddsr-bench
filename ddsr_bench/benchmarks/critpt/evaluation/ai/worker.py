@@ -3,8 +3,8 @@
 import json
 import sys
 
-from ..serialization import encode
 from .answer import _execute_answer
+from .serialization import encode
 from .validation import UnsupportedAnswerOperation, _validate_answer_code
 
 
@@ -23,7 +23,7 @@ def run(code: str) -> dict:
     # Encoding failures are worker failures, never evidence of a wrong answer.
     return {
         "status": "ok",
-        "answer": {k: encode(v, preserve_literals=True) for k, v in values.items()},
+        "answer": {k: encode(v) for k, v in values.items()},
     }
 
 

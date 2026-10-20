@@ -58,6 +58,9 @@ Dataset roots contain task directories, matching generation; no recursive scan.
 Each task's `grader` selects rule or LLM assessment. Configure only the LLM client
 through `benchmark.submission.ai.llm` (`SemanticJudgeConfig` fields), for example
 `+benchmark.submission.ai.llm.model=MODEL`; this cannot override the task's grader.
+Both read the saved raw response, regardless of static format-check results.
+Rule grading extracts the last Python/py block defining `answer()`; LLM grading
+assesses the full response. Neither relies on the static `answer.py` artifact.
 Empty settings retain the imported client defaults below, not the generation
 model's settings. Rule workers use `benchmark.submission.ai.resources`, defaulting
 to the configured Harbor image, CPU, memory and timeout limits, with no host

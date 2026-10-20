@@ -9,8 +9,8 @@ from tempfile import TemporaryDirectory
 from ddsr_bench.benchmarks.utils import Resources
 
 from ..docker import environment
-from ..serialization import decode
 from .runtime import GraderTimeout
+from .serialization import decode
 from .validation import UnsupportedAnswerOperation
 
 
