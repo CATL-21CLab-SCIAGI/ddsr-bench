@@ -9,8 +9,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from ddsr_bench.benchmarks.critpt.evaluation import validation as code_validation
 from ddsr_bench.benchmarks.utils import Resources
-from ddsr_bench.grading import validation as code_validation
 
 from .. import POLICY_VERSION
 from ..references import checksum

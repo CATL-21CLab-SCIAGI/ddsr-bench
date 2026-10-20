@@ -105,9 +105,9 @@ class LinuxSandbox:
         for parent in (root, *reversed(package.parents[:3])):
             relative = parent.relative_to(root.parent)
             self.bind(parent / "__init__.py", f"/app/{relative}/__init__.py")
-        self.bind(root / "grading/__init__.py", "/app/ddsr_bench/grading/__init__.py")
         self.bind(
-            root / "grading/validation.py", "/app/ddsr_bench/grading/validation.py"
+            package.parent / "validation.py",
+            "/app/ddsr_bench/benchmarks/critpt/evaluation/validation.py",
         )
         self.bind(
             package.parent / "serialization.py",

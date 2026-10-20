@@ -1,3 +1,5 @@
+"""CritPt code extraction and template validation; not an execution sandbox."""
+
 from __future__ import annotations
 
 import ast

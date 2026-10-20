@@ -70,7 +70,8 @@ separation from candidate code; Harbor's tests directory alone is not isolation.
 Use shared `load_batch` and saved artifacts as the sole answer-loading route.
 Do not restore removed flat/native loaders or standalone score/batch commands.
 Build/replay are reference diagnostics, not an alternative grading path.
-Consensus is replaceable: keep its matching rules isolated from shared grading.
+Consensus is replaceable: keep its matching rules isolated from AI grading and
+the ordinary CritPt reference comparisons.
 Group its mathematical checks under matching, worker machinery under one execution
 package, and build/replay commands in consensus/cli.py. Submission resolves collected
 artifact paths and grades those artifacts through the shared

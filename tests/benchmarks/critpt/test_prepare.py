@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 
@@ -64,6 +66,67 @@ def test_compiles_answer_testcases(tmp_path: Path) -> None:
 
     testcases = json.loads((task / "tests" / "testcases.json").read_text())
     assert testcases == [{"p": 0.1}]
+
+
+@pytest.mark.skipif(
+    not os.getenv("DDSR_TEST_CRITPT_IMAGE"),
+    reason="Set DDSR_TEST_CRITPT_IMAGE for prepared verifier Docker checks",
+)
+@pytest.mark.parametrize(
+    ("with_reference", "offset", "reward"),
+    [(False, 2, 1.0), (True, 1, 1.0), (True, 2, 0.0)],
+)
+def test_prepared_verifier(tmp_path, with_reference, offset, reward):
+    """Run the emitted test.sh, not a direct call to the verifier helper."""
+    problem = load_challenge(FIXTURE).main
+    spec = replace(problem.spec, code_template="def answer(p):\n    pass\n")
+    reference = replace(
+        problem.answer,
+        code="def real_answer(p):\n    return p + 1\n",
+        testcases=({"p": 0}, {"p": 2}),
+    )
+    problem = replace(problem, spec=spec, answer=reference if with_reference else None)
+    image = os.environ["DDSR_TEST_CRITPT_IMAGE"]
+    task = compile_problem(problem, tmp_path / "tasks", Resources(image, 1, 512, 30))
+    app, logs = tmp_path / "app", tmp_path / "logs"
+    app.mkdir()
+    logs.mkdir()
+    (app / "answer.py").write_text(
+        f"def answer(p):\n    return p + {offset}\n", encoding="utf-8"
+    )
+    subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "--read-only",
+            "--cpus",
+            "1",
+            "--memory",
+            "512m",
+            "-v",
+            f"{task / 'tests'}:/tests:ro",
+            "-v",
+            f"{app}:/app:ro",
+            "-v",
+            f"{logs}:/logs",
+            image,
+            "sh",
+            "/tests/test.sh",
+        ],
+        check=True,
+        capture_output=True,
+        timeout=45,
+    )
+    result = json.loads((logs / "verifier" / "result.json").read_text())
+    assert result["mode"] == ("reference" if with_reference else "format")
+    assert result["reward"] == reward
+    assert result["status"] == ("passed" if reward else "different")
+    if with_reference:
+        assert result["total"] == 2
+    assert float((logs / "verifier" / "reward.txt").read_text()) == reward
 
 
 @pytest.mark.parametrize("source", ["unknown", None])

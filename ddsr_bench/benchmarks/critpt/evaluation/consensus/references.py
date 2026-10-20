@@ -8,8 +8,11 @@ import json
 import re
 from pathlib import Path
 
+from ddsr_bench.benchmarks.critpt.evaluation.validation import (
+    extract_code,
+    validate_code,
+)
 from ddsr_bench.benchmarks.utils import write_json
-from ddsr_bench.grading.validation import extract_code, validate_code
 
 from . import POLICY_VERSION
 from .matching.rules import NOTES, mode

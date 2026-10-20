@@ -1,11 +1,11 @@
 import pytest
 
+from ddsr_bench.benchmarks.critpt.evaluation import validation as code_validation
 from ddsr_bench.benchmarks.critpt.evaluation.consensus import (
     references,
 )
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import worker
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.worker import evaluate
-from ddsr_bench.grading import validation as code_validation
 
 
 def test_generation_and_consensus_share_the_original_rules():

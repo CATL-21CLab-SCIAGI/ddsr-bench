@@ -13,6 +13,7 @@ from harbor.models.agent.context import AgentContext
 from ddsr_bench import __version__
 from ddsr_bench.benchmarks.critpt.data.schemas import CritPtSource
 from ddsr_bench.benchmarks.critpt.evaluation.prepare import decode_instruction
+from ddsr_bench.benchmarks.critpt.evaluation.validation import extract_answer
 from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
 from ddsr_bench.generation.client import (
@@ -23,7 +24,6 @@ from ddsr_bench.generation.client import (
     Sampling,
     read_api_key,
 )
-from ddsr_bench.grading.validation import extract_answer
 
 
 class CritPtAgent(BaseAgent):

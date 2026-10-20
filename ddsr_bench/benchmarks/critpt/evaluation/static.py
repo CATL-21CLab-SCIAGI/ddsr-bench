@@ -15,6 +15,7 @@ import yaml
 from harbor.models.job.config import AgentConfig, JobConfig
 
 from ddsr_bench.benchmarks.critpt.data.schemas import CritPtSource, ProblemSpec
+from ddsr_bench.benchmarks.critpt.evaluation.validation import extract_answer
 from ddsr_bench.benchmarks.critpt.generation.prompts import PromptStyle, parse_prompt
 from ddsr_bench.benchmarks.critpt.generation.runner import (
     chat_options,
@@ -23,7 +24,6 @@ from ddsr_bench.benchmarks.critpt.generation.runner import (
 )
 from ddsr_bench.benchmarks.utils import read_json, write_json
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling, read_api_key
-from ddsr_bench.grading.validation import extract_answer
 
 from .prepare import decode_instruction
 from .resume import check_resume

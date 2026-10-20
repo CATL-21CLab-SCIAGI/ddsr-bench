@@ -79,7 +79,6 @@ packages = [
     "ddsr_bench.benchmarks.scicode.generation",
     "ddsr_bench.commands",
     "ddsr_bench.generation",
-    "ddsr_bench.grading",
     "ddsr_bench.training",
     "configs",
 ]
