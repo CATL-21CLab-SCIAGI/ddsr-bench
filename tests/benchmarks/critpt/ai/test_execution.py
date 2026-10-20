@@ -46,7 +46,7 @@ def test_executor(kind, actual, expected, passed):
     response = f"Derivation.\n```python\n{code}\n```"
     execute = Mock(return_value=actual)
     report = grade_response(
-        problem(kind, expected), response, execute=execute, judge_enabled=False
+        problem(kind, expected), response, execute=execute, llm_fallback=False
     )
     execute.assert_called_once_with(code)
     assert report.passed is passed
@@ -60,7 +60,7 @@ def test_validation_before_execution():
         problem("exact", "2"),
         "```python\nimport os\ndef answer():\n    return os.getcwd()\n```",
         execute=execute,
-        judge_enabled=False,
+        llm_fallback=False,
     )
     execute.assert_not_called()
     assert report.grading_status == "not_graded"
@@ -73,8 +73,16 @@ def test_execution_failure(error):
         problem("exact", "2"),
         "```python\ndef answer():\n    return 2\n```",
         execute=execute,
-        judge_enabled=False,
+        llm_fallback=False,
     )
     execute.assert_called_once()
     assert report.grading_status == "grader_error"
     assert report.score is None
+
+
+def test_fallback_keyword_migration():
+    from inspect import signature
+
+    assert signature(grade_response).parameters["llm_fallback"].default is True
+    with pytest.raises(TypeError, match="judge_enabled"):
+        grade_response(problem("exact", "2"), "", judge_enabled=False)

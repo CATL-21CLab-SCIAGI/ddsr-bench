@@ -89,7 +89,7 @@ def grade_response(
     problem: AIProblem | GradingInput | Mapping[str, Any],
     response: str,
     *,
-    judge_enabled: bool = True,
+    llm_fallback: bool = True,
     equivalence_judge: EquivalenceJudge | None = None,
     semantic_judge: LLMSemanticJudge | None = None,
     attempt_id: str = "saved-response",
@@ -97,7 +97,8 @@ def grade_response(
 ) -> GradeReport:
     """Return grading diagnostics without assigning a training reward.
 
-    judge_enabled controls Auto's optional expression-equivalence fallback only.
+    External callers: replace the former judge_enabled keyword with llm_fallback.
+    llm_fallback controls Auto's optional expression-equivalence fallback only.
     Freestyle always requires SemanticJudge. Inject configured Judge instances to
     override their environment settings or to test without network access.
     execute replaces only rule-answer execution and receives validated code,
@@ -151,7 +152,7 @@ def grade_response(
         grading_plan = selected_problem.grading_plan
         if (
             extracted_answer is None
-            or not judge_enabled
+            or not llm_fallback
             or any(
                 call.primitive not in {"exact", "symbolic"}
                 for call in grading_plan.calls
@@ -269,7 +270,7 @@ def grade_response(
                     significant_digits=16,
                 )
                 exact_numeric_comparisons.append(numeric_comparison)
-            if not judge_enabled:
+            if not llm_fallback:
                 if grade.deterministic_skip_reason is not None:
                     uncertain_indexes.add(index)
                 continue
