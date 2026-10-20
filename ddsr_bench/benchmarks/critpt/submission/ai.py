@@ -145,7 +145,7 @@ def submit_ai(
             problem,
             content,
             semantic_judge=semantic,
-            judge_enabled=llm_fallback,  # Preserve the shared DDPR/Auto Python API.
+            llm_fallback=llm_fallback,
             execute=executor if problem.spec.grader == "rule" else None,
             attempt_id=trial["trial_name"],
         )

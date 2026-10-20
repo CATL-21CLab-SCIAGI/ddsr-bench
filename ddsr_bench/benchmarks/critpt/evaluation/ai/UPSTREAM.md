@@ -122,3 +122,7 @@ Incorporated into DDSR-Bench's CritPt-AI evaluation package from DDPR commit
 remains in DDPR. Core tests move with the grader; DDPR retains consumer/reward
 checks. The package has no dependency on DDPR, and no consensus policy is shared
 or changed by this move. Submission/Harbor invocation is not part of this move.
+
+Python API migration: `grade_response(..., judge_enabled=...)` is now
+`grade_response(..., llm_fallback=...)`, without an alias for the old keyword.
+External callers must update; defaults and Auto/Freestyle I/O are unchanged.

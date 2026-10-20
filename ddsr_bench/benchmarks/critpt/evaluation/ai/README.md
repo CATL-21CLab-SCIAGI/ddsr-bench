@@ -126,8 +126,13 @@ and credentials in the worker environment, never in problem metadata.
 Both judges accept a synchronous `completion(messages, config)` callable for
 injection. The normal `complete_judge` dispatcher selects the configured backend;
 DDSR-Bench async clients are bridged and closed on each call. Visible response
-content is parsed separately from reasoning. Pass `judge_enabled=False` to
+content is parsed separately from reasoning. Pass `llm_fallback=False` to
 `grade_response` to disable rule fallback; semantic grading still needs a judge.
+
+API migration: external Auto/Freestyle callers must replace `judge_enabled=`
+with `llm_fallback=`. The old keyword is no longer accepted. The Python default
+remains `True`; submission configuration still defaults to `False`. Input and
+report formats are unchanged.
 
 ## Verification
 

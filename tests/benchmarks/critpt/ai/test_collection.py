@@ -118,7 +118,7 @@ async def test_collected(prepared, tmp_path, monkeypatch, outcome):
             problem,
             saved_response,
             attempt_id=trial["trial_name"],
-            judge_enabled=False,
+            llm_fallback=False,
             semantic_judge=judge,
         )
         assert report.problem_id == problem.answer.problem_id
