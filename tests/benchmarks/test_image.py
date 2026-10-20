@@ -44,7 +44,7 @@ def test_all_solver_contexts_exclude_local_artifacts():
             .splitlines()
         )
         visible = set(exclude_paths(ROOT, patterns))
-        assert "ddsr_bench/grading/validation.py" in visible
+        assert "ddsr_bench/benchmarks/critpt/evaluation/validation.py" in visible
         assert (
             "ddsr_bench/benchmarks/critpt/evaluation/consensus/execution/worker.py"
             in visible

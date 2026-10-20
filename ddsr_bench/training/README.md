@@ -27,8 +27,8 @@ provide additional views. CritPt provides three:
 | `answer` | One-step answer representation |
 
 AI-generated CritPt tasks currently use one step: `native`, `full`, and `answer`
-each preserve that single call, for code or prose. These exports are unverified;
-custom answer grading is not yet supported.
+each preserve that single call, for code or prose. These exports remain unverified;
+separate internal submission reports do not change generation rewards or filters.
 
 For an official two-step CritPt trajectory, inference records these calls:
 

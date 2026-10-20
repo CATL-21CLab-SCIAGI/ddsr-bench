@@ -10,7 +10,7 @@ from ddsr_bench.benchmarks.critpt.evaluation.consensus.grader import (
     summarize,
 )
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.references import checksum
-from ddsr_bench.grading.validation import validate_code
+from ddsr_bench.benchmarks.critpt.evaluation.validation import validate_code
 
 
 def row(number, refs, template="def answer():\n    pass"):
@@ -157,7 +157,7 @@ def test_consensus_does_not_import_reward_graders():
     for path in root.glob("*.py"):
         text = path.read_text()
         for module in ("compare", "numeric", "symbolic", "verifier"):
-            assert f"ddsr_bench.grading.{module}" not in text
+            assert f"ddsr_bench.benchmarks.critpt.evaluation.{module}" not in text
 
 
 def test_nonfinite_reference_is_not_a_matching_target():

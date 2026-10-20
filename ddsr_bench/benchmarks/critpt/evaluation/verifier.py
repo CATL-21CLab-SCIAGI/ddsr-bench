@@ -7,9 +7,9 @@ import runpy
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.critpt.evaluation.compare import compare
+from ddsr_bench.benchmarks.critpt.evaluation.validation import validate_code
 from ddsr_bench.benchmarks.utils import write_json
-from ddsr_bench.grading.compare import compare
-from ddsr_bench.grading.validation import validate_code
 
 
 def _functions(

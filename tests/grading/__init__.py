@@ -1,1 +1,0 @@
-"""CritPt grading tests."""

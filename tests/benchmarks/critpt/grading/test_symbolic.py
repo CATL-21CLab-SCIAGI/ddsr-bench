@@ -3,9 +3,9 @@ from pathlib import Path
 import sympy as sp
 
 from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
-from ddsr_bench.grading.symbolic import symbolic
+from ddsr_bench.benchmarks.critpt.evaluation.compare import symbolic
 
-FIXTURE = Path(__file__).parent.parent / "fixtures" / "quantum_error_correction.json"
+FIXTURE = Path(__file__).parents[3] / "fixtures" / "quantum_error_correction.json"
 
 
 def test_critpt_reference_expression() -> None:

@@ -1,6 +1,6 @@
 import pytest
 
-from ddsr_bench.grading.validation import (
+from ddsr_bench.benchmarks.critpt.evaluation.validation import (
     extract_answer,
     extract_code,
     validate_code,

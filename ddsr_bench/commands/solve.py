@@ -13,11 +13,11 @@ import yaml
 
 from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
+from ddsr_bench.benchmarks.critpt.evaluation.validation import extract_answer
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
 from ddsr_bench.benchmarks.registry import static_runner
 from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.generation.client import CLIENTS, Sampling, read_api_key
-from ddsr_bench.grading.validation import extract_answer
 
 
 async def run_job(

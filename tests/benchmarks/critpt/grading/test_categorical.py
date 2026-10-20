@@ -1,4 +1,4 @@
-from ddsr_bench.grading.categorical import categorical
+from ddsr_bench.benchmarks.critpt.evaluation.compare import categorical
 
 
 def test_multiple_choice_labels() -> None:

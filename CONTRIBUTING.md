@@ -29,7 +29,10 @@ Here `ai` describes the problems' source, not the assessment method.
 Its `io/` adapter supports native Auto/Freestyle records and report output only.
 Prepared tasks use CritPt's `data` loaders and normalized schemas in both DDSR-Bench
 and DDPR; do not add prepared-task compatibility wrappers under grading.
-Keep it separate from consensus and shared grading utilities. DDPR imports this
+Keep it separate from consensus and the ordinary CritPt reference verifier.
+CritPt's `evaluation/validation.py` owns template validation; `compare.py` owns
+the reference verifier's value comparisons. These are benchmark-specific, not
+a root-level grading API. DDPR imports the AI
 package for grading and owns only training metadata and reward mapping; this
 package must never import DDPR. Preserve existing clients and external contracts
 while incorporating; redundancy review is separate work.

@@ -12,7 +12,7 @@ import sys
 
 import numpy as np
 
-from ddsr_bench.grading.validation import validate_code
+from ddsr_bench.benchmarks.critpt.evaluation.validation import validate_code
 
 from ...serialization import decode, encode
 
