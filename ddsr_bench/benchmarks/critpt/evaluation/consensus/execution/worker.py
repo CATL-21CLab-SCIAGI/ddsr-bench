@@ -14,7 +14,7 @@ import numpy as np
 
 from ddsr_bench.grading.validation import validate_code
 
-from .serialization import decode, encode
+from ...serialization import decode, encode
 
 
 def nonfinite_value(value: dict) -> bool:

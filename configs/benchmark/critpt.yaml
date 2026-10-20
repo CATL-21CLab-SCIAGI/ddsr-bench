@@ -3,9 +3,11 @@ source: critpt-official # Official CritPt repository, or critpt-ai for an AI cor
 submission:
   # Submission destination, not the container provider:
   # official -> Artificial Analysis API; uses endpoint/api_key_env/timeout_sec.
-  # internal -> local consensus reference grader; uses the internal settings below.
+  # internal -> consensus for official data; AI judge for critpt-ai data.
   # Both grade saved, collected answers without generating new responses.
   backend: official
+  # Internal grading selects the source from collected trials, not benchmark.source.
+  datasets: null # Reuse saved job datasets; override with [{path: /relocated/tasks}].
   attempts: null # Official: [0, 1, 2, 3, 4] combines 350 answers in one request.
   # Internal: the same selection reuses one grader/cache and reports aggregate means.
   # Integers become lists; lists are sorted and duplicate indices are rejected.
@@ -13,6 +15,13 @@ submission:
   endpoint: https://artificialanalysis.ai/api/v2/critpt/evaluate
   api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
   timeout_sec: 7200
+  ai:
+    # Each task's grader selects rule or LLM assessment; this only sets the client.
+    llm: {} # SemanticJudgeConfig overrides (model, endpoint, timeout, etc.).
+    resources: ${harbor} # Rule worker image, cpus, memory_mb, timeout_sec; no host fallback.
+    judge_enabled: false # Optional rule-equivalence LLM fallback (uses judge env settings).
+    # Rules run in fresh containers; LLM tasks always use the semantic judge.
+    # Reports stay private and never change generation rewards or trajectories.
   internal:
     references: ??? # Required for internal submission; supply a private reference JSON path.
     cache_dir: ${paths.output}/cache/critpt-consensus # Private reference outputs; null disables disk reuse.

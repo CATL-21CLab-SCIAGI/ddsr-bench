@@ -1,14 +1,14 @@
 import pytest
 import sympy as s
 
-from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.serialization import (
-    decode,
-    encode,
-)
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.matching.compare import (
     Comparator,
 )
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.matching.rules import MODES, SKIP
+from ddsr_bench.benchmarks.critpt.evaluation.serialization import (
+    decode,
+    encode,
+)
 
 
 def test_scope_is_disjoint_and_complete():

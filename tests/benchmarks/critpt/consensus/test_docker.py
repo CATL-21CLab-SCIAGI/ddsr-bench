@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from ddsr_bench.benchmarks.critpt.evaluation import docker as containers
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution import docker
 from ddsr_bench.benchmarks.utils import Resources
 
@@ -26,11 +27,11 @@ async def test_lifecycle(tmp_path, monkeypatch, failure):
         async def stop(self, *, delete):
             calls.append(("stop", delete))
 
-    monkeypatch.setattr(docker, "DockerEnvironment", FakeEnvironment)
+    monkeypatch.setattr(containers, "DockerEnvironment", FakeEnvironment)
     resources = Resources("ddsr-bench-critpt:latest", 2, 4096, 120)
 
     async def run():
-        async with docker.environment(tmp_path, resources):
+        async with containers.environment(tmp_path, resources):
             if failure == "worker":
                 raise RuntimeError("worker failure")
 
@@ -41,6 +42,8 @@ async def test_lifecycle(tmp_path, monkeypatch, failure):
         await run()
     assert calls == [("start", False), ("stop", True)]
     assert settings["mounts"] == []
+    assert "env" not in settings
+    assert settings["environment_name"] == "critpt-worker"
     config = settings["task_env_config"]
     assert (config.docker_image, config.cpus, config.memory_mb) == (
         resources.image,

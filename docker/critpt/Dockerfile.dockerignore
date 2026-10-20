@@ -1,4 +1,6 @@
 *
 !ddsr_bench/
 !ddsr_bench/**
+!configs/
+!configs/__init__.py
 **/__pycache__/

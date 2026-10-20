@@ -11,33 +11,28 @@ from ddsr_bench import __version__
 from ddsr_bench.benchmarks.critpt.data.loader import load_ai_problems, load_challenges
 from ddsr_bench.benchmarks.critpt.data.schemas import (
     AIProblem,
-    AIProblemSpec,
     Challenge,
     CritPtSource,
     Problem,
-    ProblemSpec,
 )
 from ddsr_bench.benchmarks.utils import Resources, write_json
+
+from ..data.utils import decode_instruction, encode_instruction
+
+# Preserve the preparation API; serialization itself belongs to the data layer.
+__all__ = [
+    "compile_challenge",
+    "compile_challenges",
+    "compile_problem",
+    "decode_instruction",
+    "encode_instruction",
+    "prepare_tasks",
+]
 
 _TEST = """#!/bin/sh
 set -eu
 python -m ddsr_bench.benchmarks.critpt.evaluation.verifier
 """
-
-
-def encode_instruction(problem: ProblemSpec | AIProblemSpec) -> str:
-    """Serialize public fields as JSON for Harbor's required instruction.md."""
-    data = asdict(problem)
-    data.pop("source_path")
-    return json.dumps(data, indent=2, ensure_ascii=False)
-
-
-def decode_instruction(instruction: str) -> ProblemSpec:
-    """Restore the public problem fields from one prepared task."""
-    data = json.loads(instruction)
-    data["source"] = CritPtSource(data.get("source"))
-    spec = AIProblemSpec if data["source"] == CritPtSource.AI else ProblemSpec
-    return spec(**data, source_path=Path("prepared-task"))
 
 
 def _config(problem: Problem | AIProblem, resources: Resources) -> str:

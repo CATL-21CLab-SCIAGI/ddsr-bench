@@ -46,6 +46,11 @@ def test_required_config(tmp_path, monkeypatch, backend):
         )
     monkeypatch.setenv("ARTIFICIAL_ANALYSIS_API_KEY", "fake")
     monkeypatch.setattr(submitter, "collect_trials", lambda _: {})
+    monkeypatch.setattr(
+        submitter,
+        "load_batch",
+        lambda *_: [{"benchmark_config": {"source": "critpt-official"}}],
+    )
     monkeypatch.setattr(submitter, "build_batch", lambda *args: {})
     monkeypatch.setattr(submitter, "submit_official", lambda *args, **kwargs: {})
     monkeypatch.setattr(

@@ -1,4 +1,4 @@
-"""Bounded, tagged JSON values. No pickle, eval, or string sympify on outputs."""
+"""Bounded CritPt worker values; no pickle, eval, or string sympify on outputs."""
 
 from __future__ import annotations
 
@@ -81,10 +81,16 @@ CONSTANTS = {
 NUMBER = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\Z")
 
 
-def encode(value: Any, depth: int = 0) -> dict:
+def encode(value: Any, depth: int = 0, *, preserve_literals: bool = False) -> dict:
     if depth > 100:
         raise ValueError("value nesting too deep")
-    enc = lambda x: encode(x, depth + 1)
+    enc = lambda x: encode(x, depth + 1, preserve_literals=preserve_literals)
+    # AI grading distinguishes Python literals from symbolic numeric objects.
+    # Leave consensus's historical encoding unchanged by default.
+    if preserve_literals and (value is None or type(value) in (bool, int, float, str)):
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError("nonfinite Python output")
+        return {"t": "literal", "v": value}
     if isinstance(value, (bool, np.bool_)):
         return {"t": "bool", "v": bool(value)}
     if isinstance(value, (int, np.integer)):
@@ -154,6 +160,12 @@ def decode(data: dict, depth: int = 0, budget: list[int] | None = None) -> Any:
         raise ValueError("invalid/oversized encoded value")
     dec = lambda x: decode(x, depth + 1, budget)
     kind, value = data.get("t"), data.get("v")
+    if kind == "literal":
+        if value is not None and type(value) not in (bool, int, float, str):
+            raise ValueError("invalid literal")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError("nonfinite literal")
+        return value
     if kind in {"int", "float", "decimal"}:
         if (
             not isinstance(value, str)

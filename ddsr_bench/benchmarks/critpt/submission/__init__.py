@@ -7,10 +7,11 @@ from typing import Any
 
 from omegaconf import ListConfig
 
-from ddsr_bench.benchmarks.collect import collect_trials
+from ddsr_bench.benchmarks.collect import collect_trials, load_batch
 from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.generation.client import read_api_key
 
+from ..data.schemas import CritPtSource
 from .official import build_batch, submit_official
 
 
@@ -33,14 +34,28 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
     suffix = "" if backend == "official" else "-internal"
     label = "-".join(map(str, attempts))
     output = job / f"submission{suffix}-{label}.json"
-    pending = job / f"submission-{label}.pending.json"
+    pending = job / f"submission{suffix}-{label}.pending.json"
     if output.exists():
         raise ValueError(f"submission result already exists: {output}")
     if backend == "official" and pending.exists():
         raise ValueError(f"submission already pending; reconcile with AA: {pending}")
+    if backend == "internal" and pending.exists():
+        raise ValueError(
+            f"internal submission already pending; reconcile first: {pending}"
+        )
     # Both destinations consume the same collection; never repair it implicitly.
     if not (job / "summary.json").exists():
         collect_trials(job)
+    ai = False
+    if backend == "internal":
+        sources = {
+            CritPtSource(trial.get("benchmark_config", {}).get("source", "critpt"))
+            for attempt in attempts
+            for trial in load_batch(job, attempt)
+        }
+        if len(sources) != 1:
+            raise ValueError("internal submission requires one collected data source")
+        ai = sources == {CritPtSource.AI}
     logging.getLogger("ddsr_bench").info(
         "Submitting attempts %s to %s", attempts, backend
     )
@@ -62,11 +77,21 @@ def submit(job_dir: str | Path, config: Mapping[str, Any]) -> str:
             raise ValueError(f"submission result already exists: {output}")
         # Keep the claim on request/save failure: AA may already have accepted it.
         result = submit_official(payload, api_key, endpoint=endpoint, timeout=timeout)
+    elif ai:
+        from .ai import submit_ai
+
+        result = submit_ai(
+            job,
+            attempts,
+            pending=pending,
+            datasets=config.get("datasets"),
+            **dict(config["ai"]),
+        )
     else:
         from .internal import submit_internal
 
         result = submit_internal(job, attempts, **dict(config["internal"]))
     write_json(output, result, overwrite=False)
-    if backend == "official":
+    if backend == "official" or ai:
         pending.unlink()
     return f"submitted attempts {attempts}; result saved to {output}"

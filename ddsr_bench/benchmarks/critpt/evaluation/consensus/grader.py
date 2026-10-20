@@ -9,9 +9,9 @@ from threading import Lock
 
 from ddsr_bench.benchmarks.utils import read_bytes, read_json, write_json
 
+from ..serialization import encode
 from . import POLICY_VERSION
 from .execution.runtime import Runtime
-from .execution.serialization import encode
 from .matching.cases import inputs
 from .references import checksum
 

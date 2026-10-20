@@ -58,9 +58,9 @@ Problem-specific answer instructions override defaults in
 [ai.yaml](../../../configs/prompts/critpt/ai.yaml).
 AI tasks support static generation and export. The
 [CritPt-AI Python grader](evaluation/ai/README.md) assesses saved responses
-but is not yet wired into static generation or submission. Two-step generation
-and Harbor execution remain unsupported. Regenerate older experimental tasks
-before use.
+through explicit internal submission for rule and LLM assessment. Two-step
+generation and Harbor generation trials remain unsupported for AI tasks.
+Regenerate older experimental tasks before use.
 
 ## Evaluation
 
@@ -183,11 +183,13 @@ views preserve the same recorded prompt and answer.
 
 - `official` (default): submit saved answers to Artificial Analysis's grading API.
 - `internal`: grade saved answers against private consensus references using
-  Harbor-managed Docker workers; this produces internal match scores, not official accuracy.
+  Harbor-managed Docker workers, or use the AI judge described below.
+  Neither produces official accuracy.
 
 Finish generation first. Both backends collect results if `summary.json` is absent
 and reuse it otherwise. To refresh it, run `ddsr-bench action=collect paths.input=JOB_DIR`.
-Submission makes no model calls and never overwrites an existing submission report.
+Submission never generates new answers or overwrites an existing submission report.
+AI semantic assessment calls a judge model.
 
 Set `benchmark.submission.attempts=0` for attempt 0, or
 `'benchmark.submission.attempts=[0,1,2,3,4]'` for five attempts.
@@ -211,7 +213,7 @@ If a request fails, reconcile its outcome with AA before retrying or removing
 
 ### Internal submission
 
-Requires Docker, the [CritPt image](#harbor), and a private reference file
+For official problems, requires Docker, the [CritPt image](#harbor), and a private reference file
 (not distributed with this project):
 
 ```bash
@@ -240,6 +242,15 @@ In-memory reuse within a submission remains enabled.
 
 See the consensus guide for [cache details](evaluation/consensus/README.md#reference-caching)
 and maintainer-only [reference tools](evaluation/consensus/README.md#reference-maintenance).
+
+#### AI answers
+
+For AI tasks, use `benchmark.submission.backend=internal`. Submission
+detects the source from collected trials and reuses the saved job's datasets.
+Each task selects its grader: rule answers execute in isolated workers using the
+[CritPt image](#harbor); LLM assessment needs no Docker. Both use private per-task
+references and saved responses, without changing generation rewards. See the
+[AI assessment guide](evaluation/ai/README.md#submission) for the command and judge settings.
 
 ## Compatibility and limitations
 

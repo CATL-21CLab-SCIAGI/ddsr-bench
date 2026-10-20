@@ -21,10 +21,10 @@
 | `matching/cases.py` | 执行参数和确定性比较采样；不是数据增强 |
 | `matching/rules.py` | 符号假设、边界规则、排除项和精度 |
 | `execution/runtime.py` | 正常提交仅用 Docker，固定镜像 ID 并记录运行来源 |
-| `execution/docker.py` | 默认 Docker worker 的 Harbor 生命周期与资源限制 |
+| `execution/docker.py` | 共识 worker 请求与结果传输；容器限制复用 `../docker.py` |
 | `execution/linux.py` | Linux 沙箱与子进程监督，供参考回放使用 |
 | `execution/worker.py` | 隔离进程内执行代码或比较结果 |
-| `execution/serialization.py` | 有界、带类型的 JSON 编解码；不能替换为普通 JSON 或 pickle |
+| `../serialization.py` | 共用的有界、带类型 JSON 编解码；不能替换为普通 JSON 或 pickle |
 | `cli.py` | 参考构建与回放命令，见下方 Reference maintenance |
 
 ## 结果概览

@@ -1,21 +1,20 @@
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
 pytest.importorskip("ddsr_bench")
 pytest.importorskip("pydantic")
 
+from ddsr_bench.benchmarks.critpt.data.loader import load_ai_task
 from ddsr_bench.benchmarks.critpt.data.schemas import (
     AIAnswerSpec,
     AIProblem,
     AIProblemSpec,
     CritPtSource,
 )
-from ddsr_bench.benchmarks.critpt.evaluation.ai.io.inputs import (
-    load_problem,
-    load_problems,
-)
+from ddsr_bench.benchmarks.critpt.evaluation.ai.grader import parse_problem
 from ddsr_bench.benchmarks.critpt.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.critpt.generation.prompts import load_prompts
 from ddsr_bench.benchmarks.utils import Resources
@@ -82,7 +81,10 @@ def prepared(tmp_path, request, monkeypatch):
 def test_input(prepared):
     task, spec = prepared
     before = (task / "instruction.md").read_bytes()
-    record = load_problem(task).model_dump()
+    problem = load_ai_task(task)
+    assert problem.spec == replace(spec, source_path=Path("problem.json"))
+    assert problem.answer.snippet == "SECRET"
+    record = parse_problem(problem).model_dump()
     assert record["problem_id"] == "native-id"
     assert record["problem_statement"] == spec.statement
     instructions = record["public_solver_output_instructions"]
@@ -109,7 +111,9 @@ def test_input(prepared):
     from ddsr_bench.benchmarks.critpt.evaluation.prepare import encode_instruction
 
     (task / "instruction.md").write_text(encode_instruction(custom))
-    assert load_problem(task).public_solver_output_instructions.startswith("Custom")
+    assert parse_problem(
+        load_ai_task(task)
+    ).public_solver_output_instructions.startswith("Custom")
 
 
 def test_problem_list(prepared, tmp_path):
@@ -122,26 +126,23 @@ def test_problem_list(prepared, tmp_path):
     data = json.loads(reference.read_text())
     data["problem_id"] = "second-id"
     reference.write_text(json.dumps(data))
-    problems = load_problems([other, str(task), other])
-    assert [problem.problem_id for problem in problems] == [
+    problems = [load_ai_task(path) for path in [other, str(task), other]]
+    assert [problem.answer.problem_id for problem in problems] == [
         "second-id",
         "native-id",
         "second-id",
     ]
-    assert problems[1] == load_problem(task)
-    assert load_problems([]) == []
-    with pytest.raises(TypeError, match="sequence"):
-        load_problems(str(task))
+    assert problems[1] == load_ai_task(task)
     reference.write_text("{}")
-    with pytest.raises(ValueError):
-        load_problems([task, other])
+    with pytest.raises(TypeError):
+        load_ai_task(other)
 
 
 def test_missing_reference(prepared):
     task, _ = prepared
     (task / "tests/reference.json").unlink()
     with pytest.raises(ValueError, match="cannot read"):
-        load_problem(task)
+        load_ai_task(task)
 
 
 def test_invalid_reference(prepared):
@@ -151,7 +152,7 @@ def test_invalid_reference(prepared):
     data.pop("grading_plan" if spec.grader == "rule" else "answer_items")
     path.write_text(json.dumps(data))
     with pytest.raises((TypeError, ValueError)):
-        load_problem(task)
+        parse_problem(load_ai_task(task))
 
 
 def test_official(prepared):
@@ -162,4 +163,4 @@ def test_official(prepared):
     data.pop("answer_instructions")
     path.write_text(json.dumps(data))
     with pytest.raises(TypeError, match="critpt-ai"):
-        load_problem(task)
+        load_ai_task(task)

@@ -26,7 +26,9 @@ benchmark-specific semantics.
 CritPt-AI grading lives under `benchmarks/critpt/evaluation/ai/` and owns
 its rules, LLM assessments, answer processing and external Auto/Freestyle I/O.
 Here `ai` describes the problems' source, not the assessment method.
-Its `io/` adapter owns native Auto/Freestyle schemas, input loading and report output.
+Its `io/` adapter supports native Auto/Freestyle records and report output only.
+Prepared tasks use CritPt's `data` loaders and normalized schemas in both DDSR-Bench
+and DDPR; do not add prepared-task compatibility wrappers under grading.
 Keep it separate from consensus and shared grading utilities. DDPR imports this
 package for grading and owns only training metadata and reward mapping; this
 package must never import DDPR. Preserve existing clients and external contracts
