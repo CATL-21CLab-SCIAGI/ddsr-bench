@@ -15,7 +15,7 @@ from ddsr_bench.benchmarks.critpt.data.loader import load_challenge
 from ddsr_bench.benchmarks.critpt.data.schemas import ProblemSpec
 from ddsr_bench.benchmarks.critpt.evaluation.validation import extract_answer
 from ddsr_bench.benchmarks.critpt.generation.runner import generate
-from ddsr_bench.benchmarks.registry import static_runner
+from ddsr_bench.benchmarks.registry import static_runner, submitter
 from ddsr_bench.benchmarks.utils import write_json
 from ddsr_bench.generation.client import CLIENTS, Sampling, read_api_key
 
@@ -30,9 +30,26 @@ async def run_job(
     name = config.get("benchmark", "critpt")
     if not isinstance(name, str):
         raise TypeError("job benchmark must be a name")
-    return await static_runner(name)(
+    submission = config.get("submission")
+    send = None
+    if submission is not None:
+        if not isinstance(submission, dict):
+            raise TypeError("job submission must be a mapping")
+        if submission.get("backend") != "internal":
+            raise ValueError("post-generation submission requires backend: internal")
+        if submission.get("attempts") is None:
+            raise ValueError("job submission requires explicit attempts")
+        send = submitter(name)
+    result = await static_runner(name)(
         path, task_name=task_name, **({"resume": True} if resume else {})
     )
+    if send is not None:
+        # Reuse collection and grading; do not grade inside generation or filter
+        # raw responses by static extraction status. Sync graders own event loops.
+        result["submission"] = await asyncio.to_thread(
+            send, result["output"], submission
+        )
+    return result
 
 
 def _select(path: Path, task_name: str | None) -> ProblemSpec:

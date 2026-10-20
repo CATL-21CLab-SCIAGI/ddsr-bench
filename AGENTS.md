@@ -53,6 +53,9 @@ Collect missing summaries once at the common submission boundary; reuse existing
 summaries unchanged. Share equivalent logic across similar actions, retaining
 backend-specific validation and scoring contracts.
 Submission is verifier-only: never generate new answers or agent trials.
+An optional job `submission` mapping lets `ddsr-solve` call internal submission
+after generation finishes. Reuse both paths; never auto-submit to AA.
+Preserve generated records on grading failure; use grading-only submission to retry.
 AI internal submission reads per-task references and saved full responses.
 Rule answers execute in isolated Harbor workers; LLM assessment stays host-side.
 Only answer code enters workers, never references or judge credentials. Reports stay
