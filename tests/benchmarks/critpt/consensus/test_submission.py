@@ -14,8 +14,32 @@ from ddsr_bench.benchmarks.critpt import submission as submitter
 from ddsr_bench.benchmarks.critpt.evaluation.consensus.execution.runtime import (
     DiagnosticRuntime as Runtime,
 )
-from ddsr_bench.benchmarks.critpt.submission import internal as submission
+from ddsr_bench.benchmarks.critpt.submission import consensus as submission
 from ddsr_bench.commands.dispatch import dispatch
+
+RESOURCES = {"image": "test", "cpus": 2, "memory_mb": 4096, "timeout_sec": 120}
+
+
+@pytest.mark.parametrize(
+    "backend,grader", [("official", "llm"), ("internal", "unknown")]
+)
+def test_unsupported_grader(tmp_path, backend, grader):
+    with pytest.raises(ValueError, match="unsupported grader"):
+        submitter.submit(
+            tmp_path, {"attempts": 0, "backend": backend, "grader": grader}
+        )
+    assert not list(tmp_path.iterdir())
+
+
+def test_resource_override():
+    configs = Path(__file__).resolve().parents[4] / "configs"
+    with initialize_config_dir(version_base="1.3", config_dir=str(configs)):
+        config = compose(
+            config_name="config", overrides=["harbor.timeout_sec=75", "harbor.cpus=1"]
+        )
+    for grader in ("consensus", "ai"):
+        limits = config.benchmark.submission[grader].resources
+        assert limits.timeout_sec == 75 and limits.cpus == 1
 
 
 @pytest.mark.parametrize("benchmark", ["critpt", "scicode", "cmphysbench", "phybench"])
@@ -25,9 +49,13 @@ def test_config_scope(benchmark):
         config = compose(config_name="config", overrides=[f"benchmark={benchmark}"])
     assert "submission" not in config
     submission = config.benchmark.get("submission", {})
-    assert ("internal" in submission) == (benchmark == "critpt")
+    assert ("consensus" in submission) == (benchmark == "critpt")
     if benchmark == "critpt":
-        assert OmegaConf.is_missing(submission.internal, "references")
+        assert OmegaConf.is_missing(submission.consensus, "references")
+        assert (
+            submission.consensus.resources == submission.ai.resources == config.harbor
+        )
+        assert submission.consensus.resources.timeout_sec == 120
 
 
 @pytest.mark.parametrize("backend", ["official", "internal"])
@@ -55,7 +83,7 @@ def test_required_config(tmp_path, monkeypatch, backend):
     monkeypatch.setattr(submitter, "submit_official", lambda *args, **kwargs: {})
     monkeypatch.setattr(
         submission,
-        "submit_internal",
+        "submit_consensus",
         lambda *args, **kwargs: pytest.fail("must not grade"),
     )
     if backend == "internal":
@@ -70,8 +98,9 @@ def test_required_config(tmp_path, monkeypatch, backend):
 
 @pytest.mark.parametrize("collected", [False, True])
 @pytest.mark.parametrize("attempt", [0, 1])
+@pytest.mark.parametrize("grader", [None, "consensus"])
 def test_internal_submission(
-    tmp_path, sample_bundle_path, monkeypatch, collected, attempt
+    tmp_path, sample_bundle_path, monkeypatch, collected, attempt, grader
 ):
     """Collected artifacts retain the fixed policy denominator and saved results."""
     job = tmp_path / "job"
@@ -127,8 +156,13 @@ def test_internal_submission(
                 "name": "critpt",
                 "submission": {
                     "backend": "internal",
+                    "grader": grader,
                     "attempts": [attempt],
-                    "internal": {"references": str(sample_bundle_path), "jobs": 1},
+                    "consensus": {
+                        "references": str(sample_bundle_path),
+                        "jobs": 1,
+                        "resources": RESOURCES,
+                    },
                 },
             },
             "paths": {"input": str(job)},
@@ -142,7 +176,9 @@ def test_internal_submission(
     assert load_batch(job, attempt)[0]["problem_id"] == "Challenge_1_main"
     if collected:
         assert (job / "summary.json").read_bytes() == before
-    internal = json.loads((job / f"submission-internal-{attempt}.json").read_text())
+    internal = json.loads(
+        (job / f"submission-internal-consensus-{attempt}.json").read_text()
+    )
     assert internal["answer_input"]["layout"] == "collected"
     assert internal["summary"]["statuses"] == {
         "matched": 1,
@@ -164,13 +200,13 @@ def test_unknown_backend(tmp_path):
 
 def test_reference_path_required(tmp_path):
     with pytest.raises(TypeError, match="references"):
-        submission.submit_internal(tmp_path, [0])
+        submission.submit_consensus(tmp_path, [0])
 
 
 @pytest.mark.parametrize("path", [None, "", " "])
 def test_empty_reference_path(tmp_path, path):
     with pytest.raises(ValueError, match="explicit references path"):
-        submission.submit_internal(tmp_path, [0], references=path)
+        submission.submit_consensus(tmp_path, [0], references=path, resources=RESOURCES)
 
 
 def test_no_legacy_execution():
@@ -211,7 +247,10 @@ def test_invalid_summary(tmp_path, sample_bundle_path, monkeypatch, content):
             {
                 "backend": "internal",
                 "attempts": 0,
-                "internal": {"references": str(sample_bundle_path)},
+                "consensus": {
+                    "references": str(sample_bundle_path),
+                    "resources": RESOURCES,
+                },
             },
         )
     assert summary.read_text() == content
@@ -268,8 +307,8 @@ def test_failed_generation(tmp_path, sample_bundle_path, monkeypatch):
     monkeypatch.setattr(submission, "provenance", lambda *_: {})
 
     collect_trials(tmp_path)
-    report = submission.submit_internal(
-        tmp_path, [0], references=str(sample_bundle_path)
+    report = submission.submit_consensus(
+        tmp_path, [0], references=str(sample_bundle_path), resources=RESOURCES
     )
 
     result = next(r for r in report["results"] if r["problem_id"] == "Challenge_1_main")
@@ -293,8 +332,8 @@ def test_concurrent_grading(tmp_path, sample_bundle_path, monkeypatch):
     monkeypatch.setattr(submission, "grade", concurrent)
     monkeypatch.setattr(submission, "Runtime", lambda **_: None)
     monkeypatch.setattr(submission, "provenance", lambda *_: {})
-    report = submission.submit_internal(
-        tmp_path, [0], references=str(sample_bundle_path), jobs=2
+    report = submission.submit_consensus(
+        tmp_path, [0], references=str(sample_bundle_path), jobs=2, resources=RESOURCES
     )
     assert len(threads) == 2
     assert len(report["results"]) == 70
@@ -346,14 +385,20 @@ def test_multiple_attempts(tmp_path, sample_bundle_path, monkeypatch, outcome):
     config = {
         "backend": "internal",
         "attempts": [1, 0],
-        "internal": {
+        "consensus": {
             "references": str(sample_bundle_path),
+            "resources": RESOURCES,
             "jobs": 2,
         },
     }
     submit(tmp_path, config)
-    report = json.loads((tmp_path / "submission-internal-0-1.json").read_text())
+    report = json.loads(
+        (tmp_path / "submission-internal-consensus-0-1.json").read_text()
+    )
     assert runtime.call_count == 1
+    runtime.assert_called_once_with(
+        backend="docker", image="test", cpus=2, memory_mb=4096, timeout=120
+    )
     assert report["reference_cache"] == {"hits": 1, "executions": 1}
     summary = report["summary"]
     assert summary["active"] == 122 and summary["skipped"] == 18

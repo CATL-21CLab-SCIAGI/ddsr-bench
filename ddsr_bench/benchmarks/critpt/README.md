@@ -196,6 +196,12 @@ AI semantic assessment calls a judge model.
 Set `benchmark.submission.attempts=0` for attempt 0, or
 `'benchmark.submission.attempts=[0,1,2,3,4]'` for five attempts.
 
+`benchmark.submission.grader=null` preserves default routing. For internal
+submission, select `consensus`, `ai` (task defaults), `rule`, or `llm` explicitly
+to assess saved answers differently. Overrides require the selected implementation's
+reference format; they do not convert references or modify tasks. AA's grader is fixed.
+Internal report names include the resolved grader so separate selections can coexist.
+
 ### Official submission (Artificial Analysis)
 
 Each selected attempt must contain exactly one answer for each of the 70 official
@@ -222,23 +228,26 @@ For official problems, requires Docker, the [CritPt image](#harbor), and a priva
 ddsr-bench action=submit benchmark=critpt \
   paths.input=JOB_DIR 'benchmark.submission.attempts=[0]' \
   benchmark.submission.backend=internal \
-  benchmark.submission.internal.references=/absolute/path/to/consensus-61-v2.json
+  benchmark.submission.consensus.references=/absolute/path/to/consensus-61-v2.json
 ```
 
-Writes `submission-internal-0.json`, or `submission-internal-0-1-2-3-4.json` for
+Writes `submission-internal-consensus-0.json`, or `submission-internal-consensus-0-1-2-3-4.json` for
 five selected attempts, after all grading finishes. Reports include per-attempt
 and aggregate scores; missing or failed answers count as zero. These scores do
 not change trial rewards or training filters. See the [scoring rules](evaluation/consensus/SCORING.md).
 
-Grading defaults to four concurrent problems; adjust `benchmark.submission.internal.jobs`
-for your resources. Worker limits and other settings are documented in the
+Grading defaults to four concurrent problems; adjust `benchmark.submission.consensus.jobs`
+for your resources. Consensus and AI rule workers both inherit `${harbor}` limits,
+including a 120-second timeout. Override `harbor.timeout_sec` for both.
+For grader-specific limits, replace its entire `resources` mapping.
+Worker limits and other settings are documented in the
 [benchmark config](../../../configs/benchmark/critpt.yaml).
 
 #### Reference caching
 
 Successful reference outputs are cached by default in `outputs/cache/critpt-consensus`.
 A new directory starts **cold**; reusing it provides a **warm** cache when settings
-match. Answers always execute afresh. Override `benchmark.submission.internal.cache_dir`
+match. Answers always execute afresh. Override `benchmark.submission.consensus.cache_dir`
 to choose a private directory outside the job, or set it to `null` to disable disk caching.
 In-memory reuse within a submission remains enabled.
 
@@ -249,7 +258,7 @@ and maintainer-only [reference tools](evaluation/consensus/README.md#reference-m
 
 For AI tasks, use `benchmark.submission.backend=internal`. Submission
 detects the source from collected trials and reuses the saved job's datasets.
-Each task selects its grader: rule answers execute in isolated workers using the
+Each task supplies its default grader: rule answers execute in isolated workers using the
 [CritPt image](#harbor); LLM assessment needs no Docker. Both use private per-task
 references and saved responses, without changing generation rewards. See the
 [AI assessment guide](evaluation/ai/README.md#submission) for the command and judge settings.

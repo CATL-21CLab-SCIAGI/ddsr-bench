@@ -3,9 +3,11 @@ source: critpt-official # Official CritPt repository, or critpt-ai for an AI cor
 submission:
   # Submission destination, not the container provider:
   # official -> Artificial Analysis API; uses endpoint/api_key_env/timeout_sec.
-  # internal -> consensus for official data; AI judge for critpt-ai data.
+  # internal defaults -> consensus for official data; AI judge for critpt-ai data.
   # Both grade saved, collected answers without generating new responses.
   backend: official
+  grader: null # Default routing; internal overrides: consensus, ai (task defaults), rule, llm.
+  # Overrides require compatible references. Official supports only its fixed AA grader.
   # Internal grading selects the source from collected trials, not benchmark.source.
   datasets: null # Reuse saved job datasets; override with [{path: /relocated/tasks}].
   attempts: null # Official: [0, 1, 2, 3, 4] combines 350 answers in one request.
@@ -16,22 +18,18 @@ submission:
   api_key_env: ARTIFICIAL_ANALYSIS_API_KEY
   timeout_sec: 7200
   ai:
-    # Each task's grader selects rule or LLM assessment; this only sets the client.
+    # Task graders are defaults; submission.grader may override. This sets the client.
     llm: {} # SemanticJudgeConfig overrides (model, endpoint, timeout, etc.).
     resources: ${harbor} # Rule worker image, cpus, memory_mb, timeout_sec; no host fallback.
-    judge_enabled: false # Optional rule-equivalence LLM fallback (uses judge env settings).
+    llm_fallback: false # Allow LLM equivalence checking when deterministic grading is inconclusive.
     # Rules run in fresh containers; LLM tasks always use the semantic judge.
     # Reports stay private and never change generation rewards or trajectories.
-  internal:
-    references: ??? # Required for internal submission; supply a private reference JSON path.
+  consensus:
+    references: ??? # Required for consensus grading; supply a private reference JSON path.
     cache_dir: ${paths.output}/cache/critpt-consensus # Private reference outputs; null disables disk reuse.
     # docker: fresh worker containers managed by Harbor's Docker environment.
     execution: docker # Normal submission has no Linux/host execution fallback.
-    # Reuse the normal CritPt image and container limits; override here if needed.
-    image: ${harbor.image}
-    cpus: ${harbor.cpus}
-    memory_mb: ${harbor.memory_mb}
-    timeout: 60 # Per worker, in seconds.
+    resources: ${harbor} # Same image, cpus, memory_mb, timeout_sec as AI workers (120s default).
     jobs: 4 # Concurrent problems (1–16); e.g. override to 8 if resources permit.
-    # Each problem runs its workers sequentially; cpus/memory_mb apply per worker.
+    # Each problem runs its workers sequentially; resources apply per worker.
     # This setting is independent of generation/Harbor trial concurrency.

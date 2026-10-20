@@ -90,6 +90,6 @@ def test_missing_references(tmp_path, capsys):
         == 2
     )
     message = capsys.readouterr().err
-    assert "benchmark.submission.internal.references" in message
+    assert "benchmark.submission.consensus.references" in message
     assert "replay --references" in message
     assert not output.exists()
