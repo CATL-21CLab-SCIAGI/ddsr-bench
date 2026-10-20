@@ -56,9 +56,11 @@ For teacher collection, copy a CritPt job, set `datasets[].path` to the prepared
 AI tasks, choose a new `job_name`, and set `agents[].kwargs.style: one-step`.
 Problem-specific answer instructions override defaults in
 [ai.yaml](../../../configs/prompts/critpt/ai.yaml).
-AI tasks currently support static generation and export only; customized grading,
-two-step generation, and Harbor execution are not supported. Regenerate older
-experimental tasks before use.
+AI tasks support static generation and export. The
+[CritPt-AI Python grader](evaluation/ai/README.md) assesses saved responses
+but is not yet wired into static generation or submission. Two-step generation
+and Harbor execution remain unsupported. Regenerate older experimental tasks
+before use.
 
 ## Evaluation
 

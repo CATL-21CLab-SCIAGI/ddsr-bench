@@ -14,6 +14,7 @@ dependencies = [
     "hydra-core>=1.3,<1.4",
     "jinja2>=3.1,<4",
     "mpmath>=1.3,<2",
+    "pydantic>=2.10,<3",
     "numpy>=1.26,<3",
     "pyyaml>=6,<7",
     "scipy>=1.13,<2",
@@ -62,6 +63,11 @@ packages = [
     "ddsr_bench.benchmarks.critpt",
     "ddsr_bench.benchmarks.critpt.data",
     "ddsr_bench.benchmarks.critpt.evaluation",
+    "ddsr_bench.benchmarks.critpt.evaluation.ai",
+    "ddsr_bench.benchmarks.critpt.evaluation.ai.io",
+    "ddsr_bench.benchmarks.critpt.evaluation.ai.llm",
+    "ddsr_bench.benchmarks.critpt.evaluation.ai.llm.clients",
+    "ddsr_bench.benchmarks.critpt.evaluation.ai.rule",
     "ddsr_bench.benchmarks.critpt.submission",
     "ddsr_bench.benchmarks.critpt.evaluation.consensus",
     "ddsr_bench.benchmarks.critpt.evaluation.consensus.matching",
@@ -79,6 +85,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
+"ddsr_bench.benchmarks.critpt.evaluation.ai" = ["LICENSE", "UPSTREAM.md"]
 "ddsr_bench.benchmarks.cmphysbench.evaluation.seed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.phybench.evaluation.eed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]
@@ -110,3 +117,16 @@ target-version = "py312"
 [tool.ruff.lint.per-file-ignores]
 "ddsr_bench/benchmarks/cmphysbench/evaluation/seed/*.py" = ["ALL"]
 "ddsr_bench/benchmarks/phybench/evaluation/eed/*.py" = ["ALL"]
+
+"ddsr_bench/benchmarks/critpt/evaluation/ai/grader.py" = ["BLE001"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/llm/clients/bedrock.py" = ["SIM117", "TRY004"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/llm/equivalence.py" = ["C408", "UP037"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/llm/clients/openai.py" = ["UP037", "UP041"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/llm/utils.py" = ["TRY201"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/llm/semantic.py" = ["BLE001", "UP037"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/llm/clients/config.py" = ["TRY004"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/answer.py" = ["S102", "TRY004"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/runtime.py" = ["BLE001"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/validation.py" = ["SIM101", "SIM102", "TRY004"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/rule/numeric.py" = ["BLE001", "FURB136"]
+"ddsr_bench/benchmarks/critpt/evaluation/ai/rule/symbolic.py" = ["BLE001", "S110"]

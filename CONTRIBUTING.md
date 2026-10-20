@@ -23,6 +23,15 @@ Each benchmark owns its data, generation, evaluation, result, and trajectory
 behavior. Shared code coordinates those capabilities but must not hide
 benchmark-specific semantics.
 
+CritPt-AI grading lives under `benchmarks/critpt/evaluation/ai/` and owns
+its rules, LLM assessments, answer processing and external Auto/Freestyle I/O.
+Here `ai` describes the problems' source, not the assessment method.
+Its `io/` adapter owns native Auto/Freestyle schemas, input loading and report output.
+Keep it separate from consensus and shared grading utilities. DDPR imports this
+package for grading and owns only training metadata and reward mapping; this
+package must never import DDPR. Preserve existing clients and external contracts
+while incorporating; redundancy review is separate work.
+
 ## Adding a benchmark
 
 Follow the closest existing adapter and include:

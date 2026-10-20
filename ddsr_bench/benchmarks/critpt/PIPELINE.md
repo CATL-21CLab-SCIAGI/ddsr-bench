@@ -9,8 +9,8 @@ prompt default, while differing source instructions are retained.
 Prepared AI tasks support one-stage static teacher generation through `ddsr-solve`,
 saving full responses and code/text artifacts without correctness grading.
 AI static results use shared collection and trajectory/SFT export, without
-correctness verification. AI Harbor execution and customized grading remain
-deferred. The execution flow below
+correctness verification. AI Harbor execution and submission grading remain
+deferred; the standalone Python grader is linked below. The execution flow below
 applies to `critpt-official` (the official CritPt repository).
 
 One CritPt challenge contains a main problem and may contain ordered,
@@ -88,3 +88,8 @@ See the [CritPt guide](README.md) for commands and data setup.
 The current CritPt consensus policy scores 61 of 70 main problems. Nine skipped
 problems, including audited exclusions 47 and 51, retain per-attempt records and
 are omitted from score denominators; generation still covers all requested tasks.
+
+CritPt-AI has a separate [Python grader](evaluation/ai/README.md) for
+saved responses. It preserves Auto/Freestyle contracts and does not alter the
+consensus path or automatically score static trials. Submission wiring and
+isolated execution validation remain separate integration steps.
