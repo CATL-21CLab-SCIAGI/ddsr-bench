@@ -19,13 +19,22 @@ def grade_symbolic(
 ) -> PrimitiveGrade:
     unsupported_args = unsupported_grading_args("symbolic", kwargs)
     if unsupported_args:
-        raise ValueError(f"unsupported symbolic args: {unsupported_args}")
-    if not isinstance(target, str) or not target.strip():
-        raise ValueError(
-            "symbolic expected value must be a non-empty expression string"
+        return _grade(
+            "symbolic", False, f"unsupported symbolic args: {unsupported_args}"
         )
-    import sympy as sp
-
+    if not isinstance(target, str) or not target.strip():
+        return _grade(
+            "symbolic",
+            False,
+            "symbolic expected value must be a non-empty expression string",
+        )
+    fallback = _text_only_grade("symbolic", answer)
+    if fallback is not None:
+        return fallback
+    try:
+        import sympy as sp
+    except ImportError as exc:
+        return _grade("symbolic", False, f"sympy is not installed: {exc}")
     variables = kwargs.get("variables")
     if variables is not None and (
         not isinstance(variables, list | tuple)
@@ -33,13 +42,15 @@ def grade_symbolic(
             not isinstance(name, str) or not name.isidentifier() for name in variables
         )
     ):
-        raise ValueError("symbolic variables must be valid Python identifiers")
-
+        return _grade(
+            "symbolic", False, "symbolic variables must be valid Python identifiers"
+        )
     declared_names = list(variables or [])
     raw_assumptions = kwargs.get("variable_assumptions", {})
     if not isinstance(raw_assumptions, dict):
-        raise TypeError("symbolic variable_assumptions must be an object")
-
+        return _grade(
+            "symbolic", False, "symbolic variable_assumptions must be an object"
+        )
     allowed_assumptions = {
         "even",
         "finite",
@@ -55,69 +66,87 @@ def grade_symbolic(
     normalized_assumptions: dict[str, dict[str, bool]] = {}
     for name, assumptions in raw_assumptions.items():
         if name not in declared_names:
-            raise ValueError(
-                f"symbolic assumptions reference undeclared variable {name!r}"
+            return _grade(
+                "symbolic",
+                False,
+                f"symbolic assumptions reference undeclared variable {name!r}",
             )
         if not isinstance(assumptions, dict) or any(
             key not in allowed_assumptions or type(value) is not bool
             for key, value in assumptions.items()
         ):
-            raise ValueError(f"invalid symbolic assumptions for variable {name!r}")
+            return _grade(
+                "symbolic", False, f"invalid symbolic assumptions for variable {name!r}"
+            )
         normalized_assumptions[name] = dict(assumptions)
-
     domain_constraints = kwargs.get("domain_constraints", [])
     if not isinstance(domain_constraints, list) or any(
         not isinstance(constraint, str) or not constraint.strip()
         for constraint in domain_constraints
     ):
-        raise ValueError(
-            "symbolic domain_constraints must be a list of non-empty strings"
-        )
-
-    symbols = {
-        name: sp.Symbol(name, **normalized_assumptions.get(name, {}))
-        for name in declared_names
-    }
-    reference_fallback = _text_only_grade("symbolic", target)
-    if reference_fallback is not None:
-        return _text_only_grade("symbolic", answer) or reference_fallback
-    expected_expr = _parse_expression(target, sp, local_dict=symbols)
-    _validate_closed_form_expression(expected_expr, sp, label="expected")
-    if not expected_expr.free_symbols:
-        raise ValueError("expected symbolic expression must contain a free variable")
-    if declared_names:
-        missing = sorted(
-            {str(s) for s in expected_expr.free_symbols} - set(declared_names)
-        )
-        if missing:
-            raise ValueError(f"symbolic variables omit expected symbols: {missing}")
-    simplified_expected = sp.simplify(expected_expr)
-    if not simplified_expected.free_symbols:
-        raise ValueError("expected symbolic expression simplifies to a constant")
-    fallback = _text_only_grade("symbolic", answer)
-    if fallback is not None:
-        return fallback
-    try:
-        actual_expr = _parse_expression(answer, sp, local_dict=symbols)
-        _validate_closed_form_expression(actual_expr, sp, label="actual")
-    except (SyntaxError, TypeError, ValueError) as exc:
-        return _grade("symbolic", False, f"could not parse symbolic expression: {exc}")
-
-    if not actual_expr.free_symbols:
         return _grade(
             "symbolic",
             False,
-            "actual symbolic expression must contain a free variable",
+            "symbolic domain_constraints must be a list of non-empty strings",
         )
-    # The reference has already been checked for disguised constants.
+    try:
+        initial_symbols = {
+            name: sp.Symbol(name, **normalized_assumptions.get(name, {}))
+            for name in declared_names
+        }
+        actual_expr = _parse_expression(answer, sp, local_dict=initial_symbols)
+        actual_expr = actual_expr.xreplace(
+            {
+                symbol: initial_symbols[str(symbol)]
+                for symbol in actual_expr.free_symbols
+                if str(symbol) in initial_symbols
+            }
+        )
+        actual_symbols = {str(symbol): symbol for symbol in actual_expr.free_symbols}
+        all_names = set(declared_names) | set(actual_symbols)
+        local_dict = {
+            name: actual_symbols.get(name, initial_symbols.get(name, sp.Symbol(name)))
+            for name in all_names
+        }
+        expected_expr = _parse_expression(target, sp, local_dict=local_dict)
+        _validate_closed_form_expression(actual_expr, sp, label="actual")
+        _validate_closed_form_expression(expected_expr, sp, label="expected")
+    except (SyntaxError, TypeError, ValueError) as exc:
+        return _grade("symbolic", False, f"could not parse symbolic expression: {exc}")
+    except Exception as exc:
+        return _grade("symbolic", False, f"could not parse symbolic expression: {exc}")
+    if not actual_expr.free_symbols:
+        return _grade(
+            "symbolic", False, "actual symbolic expression must contain a free variable"
+        )
+    if not expected_expr.free_symbols:
+        return _grade(
+            "symbolic",
+            False,
+            "expected symbolic expression must contain a free variable",
+        )
+    if declared_names:
+        expected_names = {str(symbol) for symbol in expected_expr.free_symbols}
+        missing = sorted(expected_names - set(declared_names))
+        if missing:
+            return _grade(
+                "symbolic",
+                False,
+                f"symbolic variables omit expected symbols: {missing}",
+            )
     if actual_expr == expected_expr:
+        if not _has_observable_symbolic_dependence(actual_expr, sp):
+            return _grade(
+                "symbolic",
+                False,
+                "actual symbolic expression simplifies to a value with no free variables",
+            )
         return _grade(
             "symbolic",
             True,
             "symbolic expressions are structurally identical",
             equivalence_candidate=False,
         )
-
     # SymPy represents Li_s(z) both as polylog(s, z) and, for integer s, as
     # hypergeometric forms such as z*hyper((1,1,1),(2,2),z).  Normalizing that
     # recognized function identity is much cheaper and more predictable than
@@ -130,44 +159,60 @@ def grade_symbolic(
             pass
         else:
             if expanded_actual == expanded_expected:
+                if not _has_observable_symbolic_dependence(expanded_actual, sp):
+                    return _grade(
+                        "symbolic",
+                        False,
+                        "actual symbolic expression simplifies to a value with no free variables",
+                    )
                 return _grade(
                     "symbolic",
                     True,
                     "symbolic special-function forms are structurally equivalent",
                     equivalence_candidate=False,
                 )
-
-    simplified_actual = sp.simplify(actual_expr)
+    try:
+        simplified_actual = sp.simplify(actual_expr)
+        simplified_expected = sp.simplify(expected_expr)
+    except Exception as exc:
+        return _grade(
+            "symbolic", False, f"could not simplify symbolic expression: {exc}"
+        )
     if not simplified_actual.free_symbols:
         return _grade(
             "symbolic",
             False,
             "actual symbolic expression simplifies to a value with no free variables",
         )
-    comparison_actual = _canonicalize_piecewise_conditions(actual_expr, sp)
-    comparison_expected = _canonicalize_piecewise_conditions(expected_expr, sp)
-    if bool(kwargs.get("equivalent_up_to_constant_factor", False)):
-        symbols = list(
-            comparison_actual.free_symbols | comparison_expected.free_symbols
+    if not simplified_expected.free_symbols:
+        return _grade(
+            "symbolic",
+            False,
+            "expected symbolic expression simplifies to a value with no free variables",
         )
-        passed = _symbolic_constant_factor_equal(
-            comparison_actual,
-            comparison_expected,
-            symbols,
-            sp,
-        )
-    else:
-        difference = sp.simplify(comparison_actual - comparison_expected)
-        passed = difference == 0
-        if not passed and comparison_expected != 0:
-            passed = sp.simplify(comparison_actual / comparison_expected) == 1
-        if not passed:
-            passed = _symbolic_integer_parity_equal(
-                comparison_actual,
-                comparison_expected,
-                sp,
+    try:
+        comparison_actual = _canonicalize_piecewise_conditions(actual_expr, sp)
+        comparison_expected = _canonicalize_piecewise_conditions(expected_expr, sp)
+        if bool(kwargs.get("equivalent_up_to_constant_factor", False)):
+            symbols = list(
+                comparison_actual.free_symbols | comparison_expected.free_symbols
             )
-
+            passed = _symbolic_constant_factor_equal(
+                comparison_actual, comparison_expected, symbols, sp
+            )
+        else:
+            difference = sp.simplify(comparison_actual - comparison_expected)
+            passed = difference == 0
+            if not passed and comparison_expected != 0:
+                passed = sp.simplify(comparison_actual / comparison_expected) == 1
+            if not passed:
+                passed = _symbolic_integer_parity_equal(
+                    comparison_actual, comparison_expected, sp
+                )
+    except Exception as exc:
+        return _grade(
+            "symbolic", False, f"could not compare symbolic expressions: {exc}"
+        )
     reason = (
         "symbolic expressions are equivalent"
         if passed
@@ -297,3 +342,40 @@ def _canonicalize_boolean_condition(condition: Any, sp: Any) -> Any:
         else sp.LessThan
     )
     return relation(sp.simplify(normalized_difference), sp.Integer(0))
+
+
+def _has_observable_symbolic_dependence(expression: Any, sp: Any) -> bool:
+    """Cheaply reject disguised constants without invoking ``simplify``.
+
+    The structural-identity fast path exists specifically to avoid expensive
+    symbolic normalization.  A few deterministic rational substitutions keep
+    the prior guard against answers such as ``sin(x)**2 + cos(x)**2`` while
+    preserving that no simplify call occurs on this path.  If numeric
+    evaluation is unsupported, retain the expression rather than introducing
+    a false rejection; the enclosing deterministic audit is separately
+    isolated behind a hard resource deadline.
+    """
+    symbols = sorted(expression.free_symbols, key=lambda item: str(item))
+    if not symbols:
+        return False
+    if expression.has(sp.floor, sp.ceiling, sp.Piecewise):
+        return True
+    samples: list[Any] = []
+    sample_points = ((2, 7), (5, 11), (11, 17))
+    for numerator, denominator in sample_points:
+        substitutions = {
+            symbol: sp.Rational(numerator + index, denominator + 2 * index)
+            for index, symbol in enumerate(symbols)
+        }
+        try:
+            value = sp.N(expression.subs(substitutions), 30)
+            if value.free_symbols or value.has(sp.nan, sp.zoo):
+                return True
+            samples.append(complex(value))
+        except (TypeError, ValueError, OverflowError):
+            return True
+    baseline = samples[0]
+    return any(
+        abs(value - baseline) > 1e-12 * max(1.0, abs(value), abs(baseline))
+        for value in samples[1:]
+    )

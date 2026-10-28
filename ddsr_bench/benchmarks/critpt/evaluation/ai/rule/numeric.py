@@ -20,16 +20,26 @@ def grade_floating_numeric(
 ) -> PrimitiveGrade:
     unsupported_args = unsupported_grading_args("floating_numeric", kwargs)
     if unsupported_args:
-        raise ValueError(f"unsupported floating_numeric args: {unsupported_args}")
+        return _grade(
+            "floating_numeric",
+            False,
+            f"unsupported floating_numeric args: {unsupported_args}",
+        )
     if not ({"abs_tol", "rel_tol"} & kwargs.keys()):
-        raise ValueError("floating_numeric grading requires abs_tol or rel_tol")
+        return _grade(
+            "floating_numeric",
+            False,
+            "floating_numeric grading requires abs_tol or rel_tol",
+        )
     raw_abs_tol = kwargs.get("abs_tol", 0.0)
     raw_rel_tol = kwargs.get("rel_tol", 0.0)
     if any(
         isinstance(value, bool) or not isinstance(value, int | float)
         for value in (raw_abs_tol, raw_rel_tol)
     ):
-        raise ValueError("floating tolerances must be JSON numbers")
+        return _grade(
+            "floating_numeric", False, "floating tolerances must be JSON numbers"
+        )
     abs_tol = float(raw_abs_tol)
     rel_tol = float(raw_rel_tol)
     if (
@@ -38,16 +48,19 @@ def grade_floating_numeric(
         or abs_tol < 0
         or rel_tol < 0
     ):
-        raise ValueError("floating tolerances must be finite and non-negative")
-    if type(target) is not float or not math.isfinite(target):
-        raise ValueError("expected value must be a finite Python float")
-    if type(answer) is not float or not math.isfinite(answer):
         return _grade(
             "floating_numeric",
             False,
-            "actual value must be a finite Python float",
+            "floating tolerances must be finite and non-negative",
         )
-
+    if type(answer) is not float or not math.isfinite(answer):
+        return _grade(
+            "floating_numeric", False, "actual value must be a finite Python float"
+        )
+    if type(target) is not float or not math.isfinite(target):
+        return _grade(
+            "floating_numeric", False, "expected value must be a finite Python float"
+        )
     passed = math.isclose(answer, target, abs_tol=abs_tol, rel_tol=rel_tol)
     reason = "floating values match" if passed else "floating values differ"
     return _grade("floating_numeric", passed, reason)
@@ -60,32 +73,31 @@ def grade_exact_numeric(
 ) -> PrimitiveGrade:
     unsupported_args = unsupported_grading_args("exact", kwargs)
     if unsupported_args:
-        raise ValueError(f"unsupported exact args: {unsupported_args}")
+        return _grade("exact", False, f"unsupported exact args: {unsupported_args}")
     if not isinstance(target, str) or not target.strip():
-        raise ValueError("exact expected value must be a non-empty expression string")
-    import sympy as sp
-
-    reference_fallback = _text_only_grade("exact", target)
-    if reference_fallback is not None:
-        return _text_only_grade("exact", answer) or reference_fallback
-    expected_expr = _parse_expression(target, sp)
-    _validate_closed_form_expression(expected_expr, sp, label="expected")
-    _validate_exact_expression(expected_expr, sp, label="expected")
+        return _grade(
+            "exact", False, "exact expected value must be a non-empty expression string"
+        )
     fallback = _text_only_grade("exact", answer)
     if fallback is not None:
         return fallback
     try:
+        import sympy as sp
+
         actual_expr = _parse_expression(answer, sp)
+        expected_expr = _parse_expression(target, sp)
         _validate_closed_form_expression(actual_expr, sp, label="actual")
+        _validate_closed_form_expression(expected_expr, sp, label="expected")
         _validate_exact_expression(actual_expr, sp, label="actual")
+        _validate_exact_expression(expected_expr, sp, label="expected")
+        difference = sp.simplify(actual_expr - expected_expr)
+        passed = difference == 0
+        if not passed:
+            passed = difference.equals(0) is True
     except (TypeError, ValueError) as exc:
         return _grade("exact", False, str(exc))
-
-    difference = sp.simplify(actual_expr - expected_expr)
-    passed = difference == 0
-    if not passed:
-        passed = difference.equals(0) is True
-
+    except Exception as exc:
+        return _grade("exact", False, f"could not compare exact expressions: {exc}")
     reason = "exact values are equivalent" if passed else "exact values differ"
     return _grade(
         "exact",

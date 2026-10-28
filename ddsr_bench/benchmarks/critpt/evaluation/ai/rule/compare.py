@@ -49,14 +49,17 @@ def compose_grades(
         call.required and not grade.passed
         for call, grade in zip(grading_plan.calls, grades, strict=True)
     )
-    total_weight = sum(call.weight for call in grading_plan.calls)
-    score = (
-        sum(
-            call.weight * grade.score
-            for call, grade in zip(grading_plan.calls, grades, strict=True)
+    total_weight = sum(max(call.weight, 0.0) for call in grading_plan.calls)
+    if total_weight <= 0:
+        score = 1.0 if all(grade.passed for grade in grades) else 0.0
+    else:
+        score = (
+            sum(
+                max(call.weight, 0.0) * grade.score
+                for call, grade in zip(grading_plan.calls, grades, strict=True)
+            )
+            / total_weight
         )
-        / total_weight
-    )
     passed = (not required_failed) and (
         score >= 1.0 if grading_plan.composition == "all_required" else score > 0
     )

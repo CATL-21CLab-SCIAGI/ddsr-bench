@@ -86,7 +86,7 @@ def test_equivalence_confidence_contract(confidence, resolution):
     from pydantic import ValidationError
 
     def complete(messages, _config):
-        assert "confidence must be a number from 0 to 1" in messages[1]["content"]
+        assert "uncertain), confidence," in messages[1]["content"]
         return json.dumps(
             {
                 "verdict": "equivalent",
@@ -373,21 +373,33 @@ def test_bedrock_semantic_client(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "content",
+    "content,expected",
     [
-        '{"verdict":"correct","verdict":"incorrect"}',
-        'First: {"verdict":"correct"} Final: {"verdict":"incorrect"}',
-        '```json\n{"verdict":"correct"}\n```\n```json\n{"verdict":"incorrect"}\n```',
-        '{"result":{"verdict":"correct","verdict":"incorrect"}}',
+        ('{"verdict":"correct","verdict":"incorrect"}', {"verdict": "incorrect"}),
+        (
+            'First: {"verdict":"correct"} Final: {"verdict":"incorrect"}',
+            {"verdict": "correct"},
+        ),
+        (
+            '```json\n{"verdict":"correct"}\n```\n```json\n{"verdict":"incorrect"}\n```',
+            None,
+        ),
+        (
+            '{"result":{"verdict":"correct","verdict":"incorrect"}}',
+            {"result": {"verdict": "incorrect"}},
+        ),
     ],
 )
-def test_ambiguous_judge_json_is_rejected(content):
+def test_upstream_judge_json_selection(content, expected):
     from ddsr_bench.benchmarks.critpt.evaluation.ai.llm.utils import (
         extract_json_object,
     )
 
-    with pytest.raises(ValueError):
-        extract_json_object(content)
+    if expected is None:
+        with pytest.raises(ValueError):
+            extract_json_object(content)
+    else:
+        assert extract_json_object(content) == expected
 
 
 @pytest.mark.parametrize("wrapper", ["{}", "```json\n{}\n```", "Result: {} Done."])
@@ -401,7 +413,7 @@ def test_single_judge_json_preserves_content(wrapper):
 
 
 @pytest.mark.parametrize("kind", ["equivalence", "semantic"])
-def test_blank_judge_explanations_are_rejected(kind):
+def test_upstream_whitespace_explanations(kind):
     calls = []
 
     def complete(messages, config):
@@ -419,19 +431,20 @@ def test_blank_judge_explanations_are_rejected(kind):
         judge = LLMEquivalenceJudge(
             config=EquivalenceJudgeConfig(model="mock"), completion=complete
         )
-        with pytest.raises(ValueError):
-            judge.judge(
-                call=GradingCall(primitive="exact", target="answer", expected="2"),
-                answer="2",
-                deterministic_grade=PrimitiveGrade(
-                    primitive="exact", target="answer", passed=False, score=0
-                ),
-            )
+        result = judge.judge(
+            call=GradingCall(primitive="exact", target="answer", expected="2"),
+            answer="2",
+            deterministic_grade=PrimitiveGrade(
+                primitive="exact", target="answer", passed=False, score=0
+            ),
+        )
+        assert result.resolution == "equivalent"
+        assert result.rationale == ""
         assert len(calls) == 1
     else:
         judge = LLMSemanticJudge(
             config=SemanticJudgeConfig(model="mock"), completion=complete
         )
         report = grade_response(problem(), "E=2", semantic_judge=judge)
-        assert report.grading_status == "grader_error"
-        assert len(calls) == 2
+        assert report.grading_status == "pass"
+        assert len(calls) == 1

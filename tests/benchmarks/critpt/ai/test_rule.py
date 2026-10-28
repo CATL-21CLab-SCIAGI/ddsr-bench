@@ -29,8 +29,9 @@ from ddsr_bench.benchmarks.critpt.evaluation.ai.schemas import (
 @pytest.mark.parametrize(
     "expression,passed",
     [
-        ("x/10**20", True),
-        ("(x-2/7)*(x-5/11)*(x-11/17)", True),
+        # Preserve upstream's sampling heuristic, including known false negatives.
+        ("x/10**20", False),
+        ("(x-2/7)*(x-5/11)*(x-11/17)", False),
         ("floor(x)", True),
     ],
 )
@@ -106,11 +107,11 @@ def test_inert_answer_survives_worker_transfer():
 
 
 @pytest.mark.parametrize("actual", ["x", "symbol"])
-def test_submitted_assumptions_cannot_change_reference(actual):
+def test_upstream_symbol_assumptions(actual):
     import sympy as sp
 
     value = sp.Symbol("x", positive=True) if actual == "symbol" else actual
-    assert not grade_symbolic(value, "sqrt(x**2)").passed
+    assert grade_symbolic(value, "sqrt(x**2)").passed is (actual == "symbol")
     assert grade_symbolic(
         value,
         "sqrt(x**2)",
@@ -120,30 +121,30 @@ def test_submitted_assumptions_cannot_change_reference(actual):
 
 
 @pytest.mark.parametrize("reverse", [False, True])
-def test_conflicting_aliases_are_rejected(reverse):
+def test_upstream_alias_order(reverse):
     from ddsr_bench.benchmarks.critpt.evaluation.ai.rule.categorical import (
         grade_categorical,
     )
 
     items = [("A", ["B"]), ("B", [])]
     aliases = dict(reversed(items) if reverse else items)
-    with pytest.raises(ValueError, match="conflicting"):
-        grade_categorical("A", "B", allowed_aliases=aliases)
+    assert grade_categorical("A", "B", allowed_aliases=aliases).passed is reverse
 
 
 @pytest.mark.parametrize("weight", [-1, float("nan"), float("inf"), 0])
-def test_invalid_plan_weights(weight):
-    with pytest.raises(ValueError):
-        GradingPlan(
-            calls=[
-                {
-                    "primitive": "exact",
-                    "target": "answer",
-                    "expected": "2",
-                    "weight": weight,
-                }
-            ]
-        )
+def test_upstream_plan_weights(weight):
+    # Upstream accepts the raw weight; compose_grades applies its own policy.
+    plan = GradingPlan(
+        calls=[
+            {
+                "primitive": "exact",
+                "target": "answer",
+                "expected": "2",
+                "weight": weight,
+            }
+        ]
+    )
+    assert len(plan.calls) == 1
 
 
 def test_valid_weighted_comparison():

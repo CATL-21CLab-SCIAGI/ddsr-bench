@@ -48,6 +48,12 @@ Inline trivial one-use wrappers around shared helpers when they add no contract.
 
 ## Benchmark integration review
 
+The pinned Auto_CritPt_Grader is the AI grading behavior contract for DDSR-Bench
+and DDPR. Preserve extraction, scores, fallback decisions and failure semantics,
+including upstream edge cases; fixes to those rules need separate approval.
+Use differential tests before changing the incorporated grader. Keep task/client
+adapters and execution isolation separate from scoring policy.
+
 Both CritPt submission backends reuse shared collection of completed generation.
 Collect missing summaries once at the common submission boundary; reuse existing
 summaries unchanged. Share equivalent logic across similar actions, retaining

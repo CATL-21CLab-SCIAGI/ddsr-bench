@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, Self
@@ -70,15 +69,8 @@ class GradingCall(BaseModel):
     expected: Any
     args: dict[str, Any] = Field(default_factory=dict)
     precision: PrecisionSpec | None = None
-    weight: float = Field(default=1.0, ge=0.0, allow_inf_nan=False)
+    weight: float = 1.0
     required: bool = True
-
-    @field_validator("target")
-    @classmethod
-    def validate_target(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("grading target must be non-empty")
-        return value
 
     @model_validator(mode="after")
     def validate_contract(self) -> Self:
@@ -112,13 +104,6 @@ class GradingPlan(BaseModel):
 
     calls: list[GradingCall] = Field(min_length=1)
     composition: Literal["all_required", "weighted"] = "all_required"
-
-    @model_validator(mode="after")
-    def validate_weights(self) -> Self:
-        total = sum(call.weight for call in self.calls)
-        if not math.isfinite(total) or total <= 0:
-            raise ValueError("grading weights must have a finite positive total")
-        return self
 
 
 class PrimitiveGrade(BaseModel):
@@ -202,15 +187,10 @@ class EquivalenceResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    verdict: Literal["equivalent", "not_equivalent", "uncertain"]
+    verdict: str
     confidence: float = Field(ge=0.0, le=1.0)
     rationale: str = Field(min_length=1)
     assumptions_used: list[str] = Field(default_factory=list)
-
-    @field_validator("verdict", "rationale", mode="before")
-    @classmethod
-    def strip_text(cls, value: Any) -> Any:
-        return value.strip() if isinstance(value, str) else value
 
     @field_validator("assumptions_used", mode="before")
     @classmethod
@@ -229,13 +209,10 @@ class EquivalenceResponse(BaseModel):
             ]
         return value
 
-    @field_validator("assumptions_used")
-    @classmethod
-    def strip_assumptions(cls, value: list[str]) -> list[str]:
-        return [item.strip() for item in value]
-
 
 class EquivalenceJudgment(EquivalenceResponse):
+    verdict: Literal["equivalent", "not_equivalent", "uncertain"]
+    rationale: str
     primitive: Literal["exact", "symbolic"]
     target: str
     resolution: Literal["equivalent", "not_equivalent", "uncertain"]
@@ -250,24 +227,17 @@ class SemanticResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    verdict: Literal["correct", "incorrect", "uncertain"]
+    verdict: str
     confidence: float = Field(ge=0.0, le=1.0)
     solver_answer_summary: str = Field(min_length=1)
     assessment: str = Field(min_length=1)
     substantive_errors: list[str] = Field(default_factory=list)
 
-    @field_validator("verdict", "solver_answer_summary", "assessment", mode="before")
-    @classmethod
-    def strip_text(cls, value: Any) -> Any:
-        return value.strip() if isinstance(value, str) else value
-
-    @field_validator("substantive_errors")
-    @classmethod
-    def strip_errors(cls, value: list[str]) -> list[str]:
-        return [item.strip() for item in value]
-
 
 class SemanticJudgment(SemanticResponse):
+    verdict: Literal["correct", "incorrect", "uncertain"]
+    solver_answer_summary: str
+    assessment: str
     attempt_id: str
     model: str
     raw_response: str

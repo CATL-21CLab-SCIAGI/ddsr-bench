@@ -23,7 +23,7 @@ records only. References and reports are private verifier data.
 Keep them out of student prompts and public generation artifacts.
 
 Rule grading supports floating, exact, symbolic and categorical answers using
-an `answer()` function; composite/multi-target grading remains unsupported.
+an `answer()` function, including upstream composite/multi-target grading.
 Freestyle assesses natural-language responses against the reference answer and
 solution. Existing schemas, report fields and prompt semantics are preserved.
 The nested `io/` directory handles native record compatibility and report output,
@@ -147,5 +147,8 @@ DDSR_TEST_AI_IMAGE=ddsr-bench-critpt:latest \
 ```
 
 Core tests cover rules, validation, deadlines, provider errors and mocked judgments.
+For differential checks, set `DDSR_TEST_AUTO_CRITPT` to an upstream checkout at
+the commit pinned in [UPSTREAM.md](UPSTREAM.md), then run
+`python -m pytest -q tests/benchmarks/critpt/ai/test_parity.py`.
 DDPR retains reward mapping, compiled-task and saved-judgment replay checks.
 Neither unit tests nor replay establish live model quality or execution isolation.
