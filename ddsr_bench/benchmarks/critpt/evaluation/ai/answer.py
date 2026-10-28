@@ -142,7 +142,10 @@ def extract_gradeable_answer(
 
 
 def _execute_answer_code(code: str) -> dict[str, Any]:
-    import sympy as sp
+    try:
+        import sympy as sp
+    except ImportError as exc:
+        raise ValueError(f"sympy is not installed: {exc}") from exc
 
     allowed_sp = _sympy_execution_namespace(sp)
 
@@ -166,7 +169,10 @@ def _execute_answer_code(code: str) -> dict[str, Any]:
 
 
 def _call_answer_function(fn: Callable[..., Any], namespace: dict[str, Any]) -> Any:
-    import sympy as sp
+    try:
+        import sympy as sp
+    except ImportError as exc:
+        raise ValueError(f"sympy is not installed: {exc}") from exc
 
     signature = inspect.signature(fn)
     args: list[Any] = []

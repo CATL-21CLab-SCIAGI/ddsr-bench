@@ -72,7 +72,9 @@ class LLMSemanticJudge:
                     source="SemanticJudge response",
                 )
                 parsed_response = SemanticResponse.model_validate(payload)
-            except (ValueError, TypeError) as exc:
+                if parsed_response.verdict not in {"correct", "incorrect", "uncertain"}:
+                    raise ValueError("verdict must be correct, incorrect, or uncertain")
+            except Exception as exc:
                 last_error = exc
                 if schema_attempt == 2:
                     break

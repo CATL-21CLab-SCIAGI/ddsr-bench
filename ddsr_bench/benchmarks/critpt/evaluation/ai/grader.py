@@ -57,12 +57,10 @@ def parse_problem(problem: AIProblem) -> GradingInput:
         "public_solver_output_instructions": instructions,
     }
     if spec.grader == "rule":
-        return _validate_problem(
-            ProblemGradingInput(
-                **fields,
-                answer_contract=answer.answer_contract,
-                grading_plan=answer.grading_plan,
-            )
+        return ProblemGradingInput(
+            **fields,
+            answer_contract=answer.answer_contract,
+            grading_plan=answer.grading_plan,
         )
     if spec.grader == "llm":
         return FreestyleProblemGradingInput(
@@ -73,16 +71,6 @@ def parse_problem(problem: AIProblem) -> GradingInput:
             answer_items=answer.answer_items,
         )
     raise ValueError(f"unknown answer grader: {spec.grader}")
-
-
-def _validate_problem(problem: GradingInput) -> GradingInput:
-    if isinstance(problem, ProblemGradingInput):
-        calls = problem.grading_plan.calls
-        if problem.answer_type == "composite" or len(calls) != 1:
-            raise ValueError("Auto composite/multi-target grading is not supported")
-        if calls[0].primitive != problem.answer_type:
-            raise ValueError("Auto answer type must match its grading primitive")
-    return problem
 
 
 def grade_response(
@@ -109,7 +97,7 @@ def grade_response(
     selected_problem = (
         parse_problem(problem)
         if isinstance(problem, AIProblem)
-        else _validate_problem(parse_grading_problem(problem))  # Native compatibility.
+        else parse_grading_problem(problem)  # Native compatibility.
     )
     if isinstance(selected_problem, FreestyleProblemGradingInput):
         return _grade_freestyle_response(
@@ -189,10 +177,7 @@ def grade_response(
         return format_report(
             selected_problem,
             response,
-            extracted_answer=extracted_answer,
-            extraction_status=(
-                "success" if extracted_answer is not None else "not_attempted"
-            ),
+            extraction_status="not_attempted",
             grading_status="grader_error",
             passed=False,
             error_message=str(exc),
@@ -257,25 +242,25 @@ def grade_response(
     ):
         if grade.passed or not grade.equivalence_candidate:
             continue
+        numeric_comparison = None
+        if call.primitive == "exact" and grade.deterministic_skip_reason in {
+            None,
+            "comparison_timeout",
+        }:
+            numeric_comparison = _evaluate_numeric_agreement_with_deadline(
+                extracted_answer[call.target],
+                call.expected,
+                field_name=call.target,
+                significant_digits=16,
+            )
+            exact_numeric_comparisons.append(numeric_comparison)
+        if not llm_fallback:
+            if grade.deterministic_skip_reason is not None:
+                uncertain_indexes.add(index)
+            continue
+        if selected_judge is None:
+            selected_judge = LLMEquivalenceJudge()
         try:
-            numeric_comparison = None
-            if call.primitive == "exact" and grade.deterministic_skip_reason in {
-                None,
-                "comparison_timeout",
-            }:
-                numeric_comparison = _evaluate_numeric_agreement_with_deadline(
-                    extracted_answer[call.target],
-                    call.expected,
-                    field_name=call.target,
-                    significant_digits=16,
-                )
-                exact_numeric_comparisons.append(numeric_comparison)
-            if not llm_fallback:
-                if grade.deterministic_skip_reason is not None:
-                    uncertain_indexes.add(index)
-                continue
-            if selected_judge is None:
-                selected_judge = LLMEquivalenceJudge()
             judgment = selected_judge.judge(
                 call=call,
                 answer=extracted_answer[call.target],
@@ -297,7 +282,7 @@ def grade_response(
                 equivalence_judgments=judgments,
                 exact_numeric_comparisons=exact_numeric_comparisons,
                 grading_results=deterministic_results,
-                error_message=("Expression equivalence assessment failed: " + str(exc)),
+                error_message=("Expression equivalence Judge failed: " + str(exc)),
             )
         if numeric_comparison is not None:
             judgment = _reconcile_numeric_evidence(
@@ -521,6 +506,7 @@ def _classify_extraction_error(message: str) -> str:
         for marker in (
             "could not execute",
             "could not call",
+            "sympy is not installed",
         )
     ):
         return "runtime_failure"

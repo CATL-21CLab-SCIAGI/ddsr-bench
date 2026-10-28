@@ -13,11 +13,12 @@ def grade_categorical(
 ) -> PrimitiveGrade:
     unsupported_args = unsupported_grading_args("categorical", kwargs)
     if unsupported_args:
-        raise ValueError(f"unsupported categorical args: {unsupported_args}")
+        return _grade(
+            "categorical", False, f"unsupported categorical args: {unsupported_args}"
+        )
     case_sensitive = bool(kwargs.get("case_sensitive", True))
     allowed_aliases = kwargs.get("allowed_aliases") or {}
     allowed_choices = kwargs.get("allowed_choices") or kwargs.get("choices")
-
     actual_set = _category_set(answer, case_sensitive, allowed_aliases)
     expected_set = _category_set(target, case_sensitive, allowed_aliases)
     allowed_set = (
@@ -25,8 +26,6 @@ def grade_categorical(
         if allowed_choices is not None
         else None
     )
-    if allowed_set is not None and not expected_set <= allowed_set:
-        raise ValueError("reference categories are not among the allowed choices")
     if allowed_set is not None and not actual_set <= allowed_set:
         extra = sorted(actual_set - allowed_set)
         return _grade(
@@ -34,7 +33,6 @@ def grade_categorical(
             False,
             f"selected categories are not candidates: {extra}",
         )
-
     passed = actual_set == expected_set
     reason = (
         "category set matches"
@@ -67,15 +65,11 @@ def _alias_lookup(
     lookup: dict[str, str] = {}
     for canonical, aliases in allowed_aliases.items():
         normalized_canonical = _normalize_category(canonical, case_sensitive)
+        lookup[normalized_canonical] = normalized_canonical
         if isinstance(aliases, str):
             alias_values = [aliases]
         else:
             alias_values = list(aliases)
-        for alias in [canonical, *alias_values]:
-            normalized = _normalize_category(alias, case_sensitive)
-            if normalized in lookup and lookup[normalized] != normalized_canonical:
-                raise ValueError(
-                    f"category alias {normalized!r} has conflicting meanings"
-                )
-            lookup[normalized] = normalized_canonical
+        for alias in alias_values:
+            lookup[_normalize_category(alias, case_sensitive)] = normalized_canonical
     return lookup

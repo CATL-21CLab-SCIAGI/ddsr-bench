@@ -70,10 +70,7 @@ def _parse_expression(
     if isinstance(value, bool | float):
         raise TypeError("expression values may not be booleans or Python floats")
     if isinstance(value, sp.Expr):
-        symbols = local_dict or {}
-        return value.xreplace(
-            {s: symbols.get(str(s), sp.Symbol(str(s))) for s in value.free_symbols}
-        )
+        return value
     if isinstance(value, int):
         return sp.Integer(value)
     if not isinstance(value, str) or not value.strip():
@@ -105,10 +102,7 @@ def _parse_expression(
     )
     if not isinstance(expression, sp.Expr):
         raise TypeError("expression value must be a scalar SymPy expression")
-    symbols = local_dict or {}
-    return expression.xreplace(
-        {s: symbols.get(str(s), sp.Symbol(str(s))) for s in expression.free_symbols}
-    )
+    return expression
 
 
 def _bare_expression_identifiers(value: str) -> set[str]:

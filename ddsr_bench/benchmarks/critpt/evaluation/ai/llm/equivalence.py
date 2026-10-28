@@ -116,6 +116,10 @@ class LLMEquivalenceJudge:
                 source="LLMEquivalenceJudge response",
             )
         )
+        if response.verdict not in {"equivalent", "not_equivalent", "uncertain"}:
+            raise ValueError(
+                "equivalence verdict must be equivalent, not_equivalent, or uncertain"
+            )
         resolution = response.verdict
         if (
             response.verdict == "equivalent"
@@ -123,7 +127,7 @@ class LLMEquivalenceJudge:
         ):
             resolution = "uncertain"
         return EquivalenceJudgment(
-            **response.model_dump(),
+            **{**response.model_dump(), "rationale": response.rationale.strip()},
             primitive=call.primitive,
             target=call.target,
             resolution=resolution,
@@ -160,9 +164,7 @@ def _messages(payload: dict[str, Any]) -> list[dict[str, str]]:
                 "Determine whether these expressions are mathematically "
                 "equivalent. Return exactly one JSON object with verdict "
                 "(equivalent, not_equivalent, or uncertain), confidence, "
-                "rationale, and assumptions_used. confidence must be a number "
-                "from 0 to 1, not a label such as high or low. "
-                "assumptions_used must be an "
+                "rationale, and assumptions_used. assumptions_used must be an "
                 "array of short strings; use [] when no assumptions are needed. "
                 "Keep rationale to the decisive algebraic transformation.\n\n"
                 "Input:\n" + json.dumps(payload, indent=2, ensure_ascii=False)
