@@ -34,10 +34,19 @@ def test_scicode_image() -> None:
     assert "!datasets/scicode/test_data.h5" in ignored
 
 
+def test_cmtbench_image() -> None:
+    dockerfile = (ROOT / "docker" / "cmtbench" / "Dockerfile").read_text()
+
+    assert dockerfile.startswith("FROM python:3.12-slim\n")
+    assert all(name in dockerfile for name in ("numpy", "regex", "sympy"))
+    assert "COPY ddsr_bench /opt/ddsr-bench/ddsr_bench" in dockerfile
+    assert "COPY ." not in dockerfile
+
+
 def test_all_solver_contexts_exclude_local_artifacts():
     from docker.utils.build import exclude_paths
 
-    for benchmark in ("critpt", "scicode", "cmphysbench", "phybench"):
+    for benchmark in ("critpt", "scicode", "cmphysbench", "phybench", "cmtbench"):
         patterns = (
             (ROOT / "docker" / benchmark / "Dockerfile.dockerignore")
             .read_text()

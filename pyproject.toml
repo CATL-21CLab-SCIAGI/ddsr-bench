@@ -22,6 +22,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cmtbench = [
+    "datasets>=4,<6",
+    "numpy==2.2.5",
+    "regex==2024.11.6",
+    "sympy==1.13.3",
+]
 cmphysbench = [
     "datasets>=4,<6",
     "latex2sympy2-extended>=1.11,<2",
@@ -50,6 +56,11 @@ ddsr-vllm = "ddsr_bench.commands.serve:main"
 packages = [
     "ddsr_bench",
     "ddsr_bench.benchmarks",
+    "ddsr_bench.benchmarks.cmtbench",
+    "ddsr_bench.benchmarks.cmtbench.data",
+    "ddsr_bench.benchmarks.cmtbench.evaluation",
+    "ddsr_bench.benchmarks.cmtbench.evaluation.scorer",
+    "ddsr_bench.benchmarks.cmtbench.generation",
     "ddsr_bench.benchmarks.cmphysbench",
     "ddsr_bench.benchmarks.cmphysbench.data",
     "ddsr_bench.benchmarks.cmphysbench.evaluation",
@@ -92,11 +103,13 @@ configs = [
     "*.yaml",
     "benchmark/*.yaml",
     "harbor/*.yaml",
+    "jobs/cmtbench/*.yaml",
     "jobs/critpt/*.yaml",
     "jobs/cmphysbench/*.yaml",
     "jobs/phybench/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
+    "prompts/cmtbench/*.txt",
     "prompts/cmphysbench/*.txt",
     "prompts/phybench/*.txt",
     "prompts/scicode/*.txt",

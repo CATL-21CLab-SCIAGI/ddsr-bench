@@ -1,0 +1,4 @@
+*
+!ddsr_bench/
+!ddsr_bench/**
+**/__pycache__/

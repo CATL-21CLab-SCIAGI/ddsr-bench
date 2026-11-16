@@ -22,6 +22,7 @@ def test_static_capabilities() -> None:
     assert static_runner("critpt").__name__ == "run_job"
     assert static_runner("cmphysbench").__name__ == "run_job"
     assert static_runner("phybench").__name__ == "run_job"
+    assert static_runner("cmtbench").__name__ == "run_job"
     with pytest.raises(ValueError, match="no static runner"):
         static_runner("scicode")
 
@@ -36,6 +37,7 @@ def test_result_capabilities(name: str) -> None:
 def test_summary_capabilities() -> None:
     assert summarizer("cmphysbench").__name__ == "summarize"
     assert summarizer("phybench").__name__ == "summarize"
+    assert summarizer("cmtbench").__name__ == "summarize"
     assert summarizer("critpt") is None
 
 
@@ -52,6 +54,7 @@ def test_preparation_capabilities() -> None:
     assert preparer("scicode").__name__ == "prepare_tasks"
     assert preparer("cmphysbench").__name__ == "prepare_tasks"
     assert preparer("phybench").__name__ == "prepare_tasks"
+    assert preparer("cmtbench").__name__ == "prepare_tasks"
 
 
 def test_submission_capabilities() -> None:

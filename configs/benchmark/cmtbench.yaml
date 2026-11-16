@@ -1,0 +1,6 @@
+name: cmtbench
+dataset: CMTBenchmark/cmt_benchmark
+revision: c6aa803a6ca553091095ecf07e747b8720b1fbc2
+version: 2.0.0
+data_file: cmt_data.jsonl
+split: train

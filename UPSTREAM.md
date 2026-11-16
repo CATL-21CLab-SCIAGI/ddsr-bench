@@ -84,6 +84,30 @@
   boxed-answer extraction, and SEED scoring behavior.
 - License: Apache-2.0.
 
+## CMT-Benchmark
+
+- Dataset: `CMTBenchmark/cmt_benchmark`
+- Dataset revision: `c6aa803a6ca553091095ecf07e747b8720b1fbc2`
+- Dataset version: `2.0.0` (2026-10-22)
+- Scorer repository: https://github.com/JamesRoggeveen/cmt_benchmark_data
+- Scorer commit: `c1141831af337724a4a47f66f2410c525c861b66`
+- Pinned for: the system instruction, final boxed-answer extraction, numeric and
+  parameterized comparison, functional expressions, and non-commuting operator
+  normal ordering. The raw v2 `prompt` field remains the user message.
+- Verified source shape: 50 records with unique indices 0 through 49; all 50 v2
+  references parse and self-score under the pinned upstream scorer.
+- Metric policy: the paper and dataset card report strict pass@1 over all 50
+  problems. The upstream plotting script instead divides by successfully parsed
+  responses. DDSR follows the published fixed denominator, assigns parser
+  failures zero reward, and reports parse rate separately.
+- The maintained v2 dataset supersedes the anonymous dataset still named in the
+  pinned repository's query configuration. DDSR uses the maintained dataset and
+  does not incorporate upstream model clients, plotting, or dataset-build scripts.
+- License boundary: the Hugging Face dataset and repository README declare MIT,
+  but the scorer commit has no standalone license file or notice. Until that is
+  clarified, DDSR will not copy the scorer source; it will implement the public
+  behavior and check it differentially against the pinned repository.
+
 ## PHYBench
 
 - Repository: https://github.com/phybench-official/phybench
