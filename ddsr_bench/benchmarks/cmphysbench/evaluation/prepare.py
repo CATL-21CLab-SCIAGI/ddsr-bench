@@ -10,7 +10,9 @@ from typing import Any
 from ddsr_bench import __version__
 from ddsr_bench.benchmarks.cmphysbench.data.loader import (
     DATASET,
+    GRADABLE_ONLY,
     REVISION,
+    SPLIT,
     load_split,
 )
 from ddsr_bench.benchmarks.cmphysbench.data.schemas import Problem, ProblemSpec
@@ -114,13 +116,13 @@ def prepare_tasks(
         config.get("name") != "cmphysbench"
         or config.get("dataset") != DATASET
         or config.get("revision") != REVISION
-        or not isinstance(config.get("split"), str)
-        or config.get("gradable_only") is not True
+        or config.get("split") != SPLIT
+        or config.get("gradable_only") is not GRADABLE_ONLY
     ):
         raise ValueError("CMPhysBench preparation requires its pinned configuration")
     problems = load_split(
-        split=config["split"],
-        revision=config["revision"],
-        gradable_only=True,
+        split=SPLIT,
+        revision=REVISION,
+        gradable_only=GRADABLE_ONLY,
     )
     return compile_problems(problems, output, resources)

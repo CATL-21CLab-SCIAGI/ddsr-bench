@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench import __version__
-from ddsr_bench.benchmarks.scicode.data.loader import load_split
+from ddsr_bench.benchmarks.scicode.data.loader import (
+    DATASET,
+    REVISION,
+    SPLIT,
+    load_split,
+)
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
 from ddsr_bench.benchmarks.utils import Resources
 
@@ -102,6 +107,12 @@ def prepare_tasks(
     resources: Resources,
 ) -> tuple[Path, ...]:
     """Load the selected SciCode split and compile its Harbor tasks."""
-    if config.get("name") != "scicode" or not isinstance(config.get("split"), str):
-        raise ValueError("SciCode preparation requires a configured split")
+    configured = (
+        config.get("name"),
+        config.get("dataset"),
+        config.get("revision"),
+        config.get("split"),
+    )
+    if configured != ("scicode", DATASET, REVISION, SPLIT):
+        raise ValueError("SciCode preparation requires its pinned configuration")
     return compile_problems(load_split(config["split"]), output, resources)

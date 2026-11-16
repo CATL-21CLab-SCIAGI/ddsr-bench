@@ -11,6 +11,7 @@ import pytest
         ("cmphysbench", "CMPhysBenchAgent"),
         ("phybench", "PHYBenchAgent"),
         ("cmtbench", "CMTBenchAgent"),
+        ("prismphysics", "PRISMPhysicsAgent"),
     ],
 )
 @pytest.mark.parametrize(

@@ -3,12 +3,15 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any, get_args
 
-from ddsr_bench.benchmarks.utils import read_text
+from ddsr_bench.benchmarks.utils import benchmark_config, read_text
 
 from .schemas import AnswerSpec, AnswerType, Problem, ProblemSpec
 
-DATASET = "weidawang/CMPhysBench"
-REVISION = "43d185851f731e23aa5737c3667b3a9e87bf8cd1"
+_CONFIG = benchmark_config("cmphysbench")
+DATASET = str(_CONFIG["dataset"])
+REVISION = str(_CONFIG["revision"])
+SPLIT = str(_CONFIG["split"])
+GRADABLE_ONLY = _CONFIG["gradable_only"] is True
 
 
 def load_problem(record: Mapping[str, Any]) -> Problem:
@@ -43,7 +46,7 @@ def load_problem(record: Mapping[str, Any]) -> Problem:
 
 
 def load_problems(
-    records: Iterable[Mapping[str, Any]], gradable_only: bool = True
+    records: Iterable[Mapping[str, Any]], gradable_only: bool = GRADABLE_ONLY
 ) -> list[Problem]:
     """Normalize a dataset and optionally omit records without references."""
     problems = [load_problem(record) for record in records]
@@ -56,9 +59,9 @@ def load_problems(
 
 
 def load_split(
-    split: str = "train",
+    split: str = SPLIT,
     revision: str = REVISION,
-    gradable_only: bool = True,
+    gradable_only: bool = GRADABLE_ONLY,
 ) -> list[Problem]:
     """Load one pinned CMPhysBench split from Hugging Face."""
     from datasets import load_dataset

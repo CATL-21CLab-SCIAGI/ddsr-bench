@@ -6,7 +6,10 @@ import pytest
 
 from ddsr_bench.benchmarks.phybench.data.loader import (
     DATA_FILE,
+    DATASET,
+    GRADABLE_ONLY,
     REVISION,
+    SPLIT,
     load_problem,
     load_problems,
 )
@@ -64,5 +67,8 @@ def test_unique_ids() -> None:
 
 
 def test_pinned_source() -> None:
+    assert DATASET == "Eureka-Lab/PHYBench"
     assert REVISION == "d6d91c787b7abb865eb2490a328bf85a9f5095f0"
     assert DATA_FILE == "PHYBench-questions_v1.json"
+    assert SPLIT == "train"
+    assert GRADABLE_ONLY is True

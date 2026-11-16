@@ -71,6 +71,8 @@
 
 - Repository: https://github.com/scicode-bench/SciCode
 - Commit: `e3158ea011d4235245a547460d3688d7ccbf9900`
+- Dataset: `SciCode1/SciCode`
+- Dataset revision: `4510f6a6aa27c43fad7b43da2c59602a86e88480`
 - Reimplemented locally: prompts, sequential generation, dataset loading, HDF5
   target decoding, exceptional-step substitutions, and official test execution.
 
@@ -124,3 +126,37 @@
   inference driver, so the single-user-message envelope and final-balanced-box
   selection are documented project choices.
 - License: MIT.
+
+## PRISM-Physics
+
+- Repository: https://github.com/Open-PRISM/PRISM-Physics-Code
+- Repository commit: `d2958d12a99e7a38a41832e4e0cc9f40ef7d474f`
+- Paper: https://arxiv.org/abs/2510.03185
+- Project site: https://open-prism.github.io/PRISM-Physics/
+- Dataset: `open-prism/PRISM-Physics`
+- Dataset revision: `89d1e1cb91ec14b319482ec36b43fca5305f9c86`
+- Dataset files: `01_cleaned_dag.json` through `07_cleaned_dag.json` (1,401
+  records; raw IDs repeat between shards, so DDSR uses `shard-id`).
+- Prompt source: `utils/prompt_utils.py:get_eval_prompt` at the pinned repository
+  commit. Inference defaults are also reported in arXiv `2510.03185v2`,
+  Appendix E.1.
+- Formula engine: `gradePhyX==1.0.2`, PyPI wheel SHA-256
+  `f01ee559570e8d3fb8f9cfee3a9368d2cac38d8999307f85d1c5c5e729264f70`.
+- Pinned for: the text-only inference prompt, output settings (`8096`, `0.0`),
+  low effort for supported reasoning models, formula extraction and matching,
+  ancestor-closure DAG score, and correctness threshold (`0.8`).
+- Dataset and formula engine licenses: MIT. The benchmark code repository has
+  no standalone license file. DDSR reproduces the evaluation prompt required
+  by the benchmark contract and reimplements the public orchestration, but
+  vendors no Python code from that repository; the formula engine is copied
+  only from its separately MIT-licensed wheel.
+- DDSR vendors the engine's formula-comparison and base normalization modules
+  under their MIT license, with a compatibility layer for the pinned repository's
+  script-token normalization. Its `sympy.parse_latex` call is routed through
+  `latex2sympy2-extended`: gradePhyX requires ANTLR 4.11, while the framework's
+  Hydra/OmegaConf runtime requires ANTLR 4.9. Algebraic rearrangement, unit
+  conversion, and inverted-equation cases are checked against the pinned
+  repository behavior.
+- The dataset contains image metadata, but its Hugging Face repository does not
+  distribute those referenced assets. DDSR initially exposes the official
+  text-only setting and preserves image metadata for a later multimodal source.

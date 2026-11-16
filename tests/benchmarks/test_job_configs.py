@@ -162,3 +162,28 @@ def test_cmtbench_job_config(name: str, client: str) -> None:
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"cmtbench-v2{suffix}"
+
+
+@pytest.mark.parametrize(
+    ("name", "client"),
+    [
+        ("vllm", "vllm"),
+        ("openai", "openai"),
+        ("bedrock", "bedrock"),
+        ("aliyun", "aliyun"),
+    ],
+)
+def test_prismphysics_job_config(name: str, client: str) -> None:
+    path = Path("configs/jobs/prismphysics") / f"{name}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+    agent = config.agents[0]
+
+    assert raw["benchmark"] == "prismphysics"
+    assert agent.name.endswith("prismphysics.evaluation.harbor:PRISMPhysicsAgent")
+    assert agent.kwargs["client_name"] == client
+    assert agent.kwargs["sampling"]["max_tokens"] == 8096
+    assert config.datasets[0].path == Path("tasks/prismphysics")
+    assert config.jobs_dir == Path("outputs/harbor")
+    suffix = "" if name == "vllm" else f"-{name}"
+    assert config.job_name == f"prismphysics-text{suffix}"

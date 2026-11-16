@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.cmphysbench.data.schemas import AnswerType
-from ddsr_bench.benchmarks.cmphysbench.evaluation.seed import score
 from ddsr_bench.benchmarks.utils import write_json
 
 
@@ -39,6 +38,8 @@ def _worker(
 ) -> None:
     try:
         with redirect_stdout(StringIO()):
+            from ddsr_bench.benchmarks.cmphysbench.evaluation.seed import score
+
             result = score(reference, prediction, answer_type)
         data = asdict(result) | {
             "reward": result.reward,

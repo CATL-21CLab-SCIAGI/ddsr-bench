@@ -1,2 +1,4 @@
 name: scicode
+dataset: SciCode1/SciCode
+revision: 4510f6a6aa27c43fad7b43da2c59602a86e88480
 split: validation

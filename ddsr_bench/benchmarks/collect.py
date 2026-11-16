@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.registry import result_adapter, summarizer
-from ddsr_bench.benchmarks.utils import read_json, write_json
+from ddsr_bench.benchmarks.utils import atomic_write, read_json, write_json
 
 
 def group_results(
@@ -82,7 +83,11 @@ def _trial(record: TrialRecord, job: Path) -> Trial:
     static = data.get("static_result")
     rewards = (data.get("verifier_result") or {}).get("rewards") or {}
     reward = static.get("reward") if isinstance(static, dict) else rewards.get("reward")
-    if isinstance(reward, bool) or not isinstance(reward, int | float):
+    if (
+        isinstance(reward, bool)
+        or not isinstance(reward, int | float)
+        or not math.isfinite(reward)
+    ):
         reward = None
     verifier_path = result_path.parent / "verifier" / "result.json"
     verifier = read_json(verifier_path) if verifier_path.exists() else {}
@@ -253,7 +258,7 @@ def collect_trials(job_dir: str | Path) -> dict[str, Any]:
     if summarize is not None and rows:
         summary["metrics"] = summarize([asdict(trial) for trial in rows])
     write_json(job / "summary.json", summary)
-    with (job / "summary.csv").open("w", newline="", encoding="utf-8") as file:
+    with atomic_write(job / "summary.csv", newline="") as file:
         fields = tuple(Trial.__dataclass_fields__)
         writer = csv.DictWriter(file, fieldnames=fields)
         writer.writeheader()

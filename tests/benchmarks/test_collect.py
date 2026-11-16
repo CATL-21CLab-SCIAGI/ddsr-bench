@@ -45,6 +45,8 @@ def write_trial(
         "scicode": "solution.py",
         "cmphysbench": "answer.txt",
         "phybench": "answer.txt",
+        "cmtbench": "answer.txt",
+        "prismphysics": "answer.txt",
     }
     artifact = artifacts[benchmark]
     (trial / "artifacts" / artifact).write_text("def answer():\n    pass\n")
@@ -62,7 +64,7 @@ def write_trial(
         "config": {"agent": {"kwargs": kwargs}},
         "verifier_result": {"rewards": {"reward": reward}},
     }
-    if benchmark in ("cmphysbench", "phybench"):
+    if benchmark in ("cmphysbench", "phybench", "cmtbench", "prismphysics"):
         static_result = {
             "reward": reward,
             "status": "passed" if reward == 1 else "different",
@@ -74,8 +76,12 @@ def write_trial(
                     "topic": "Theoretical Foundations",
                 }
             )
-        else:
+        elif benchmark == "phybench":
             static_result["tag"] = "MECHANICS"
+        elif benchmark == "cmtbench":
+            static_result["type"] = "DMRG"
+        elif benchmark == "prismphysics":
+            static_result.update(domain="optics", shard="03")
         result["static_result"] = static_result
     (trial / "result.json").write_text(json.dumps(result))
     (trial / "verifier" / "result.json").write_text(
@@ -200,6 +206,44 @@ def test_collects_phybench(tmp_path: Path) -> None:
     assert summary["metrics"]["by_tag"]["MECHANICS"]["mean_eed"] == 80
 
 
+def test_collects_cmtbench(tmp_path: Path) -> None:
+    write_trial(
+        tmp_path,
+        "trial",
+        "39",
+        "2026-01-01",
+        1,
+        agent="cmtbench",
+        benchmark="cmtbench",
+    )
+
+    summary = collect_trials(tmp_path)
+    trial = summary["batches"][0]["trials"][0]
+
+    assert trial["benchmark_config"] == {"type": "DMRG"}
+    assert trial["artifact"] == "trial/artifacts/answer.txt"
+    assert summary["metrics"]["overall"]["pass_rate"] == 100
+
+
+def test_collects_prismphysics(tmp_path: Path) -> None:
+    write_trial(
+        tmp_path,
+        "trial",
+        "03-1",
+        "2026-01-01",
+        0.5,
+        agent="prismphysics",
+        benchmark="prismphysics",
+    )
+
+    summary = collect_trials(tmp_path)
+    trial = summary["batches"][0]["trials"][0]
+
+    assert trial["benchmark_config"] == {"domain": "optics", "shard": "03"}
+    assert trial["artifact"] == "trial/artifacts/answer.txt"
+    assert summary["metrics"]["overall"]["step_score"] == 50
+
+
 def test_rejects_unknown_benchmark(tmp_path: Path) -> None:
     write_trial(tmp_path, "trial", "problem", "2026-01-01", 1)
     path = tmp_path / "trial" / "result.json"
@@ -217,6 +261,14 @@ def test_rejects_multiple_agents(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="multiple benchmarks, agents"):
         collect_trials(tmp_path)
+
+
+def test_nonfinite_reward_is_unscored(tmp_path: Path) -> None:
+    write_trial(tmp_path, "trial", "problem", "2026-01-01", float("nan"))
+
+    summary = collect_trials(tmp_path)
+
+    assert summary["batches"][0]["trials"][0]["reward"] is None
 
 
 @pytest.mark.parametrize("source", ["static", "verifier", "exception"])

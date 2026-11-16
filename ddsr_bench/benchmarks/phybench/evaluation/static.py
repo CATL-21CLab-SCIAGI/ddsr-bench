@@ -12,17 +12,12 @@ from typing import Any
 import yaml
 from harbor.models.job.config import JobConfig
 
-from ddsr_bench.benchmarks.phybench.data.loader import (
-    DATA_FILE,
-    DATASET,
-    REVISION,
-    load_split,
-)
+from ddsr_bench.benchmarks.phybench.data.loader import load_split
 from ddsr_bench.benchmarks.phybench.data.schemas import AnswerSpec, Problem
 from ddsr_bench.benchmarks.phybench.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.phybench.evaluation.verifier import verify
 from ddsr_bench.benchmarks.phybench.generation.runner import generate
-from ddsr_bench.benchmarks.registry import benchmark_config
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.benchmarks.utils import write_json as _write
 from ddsr_bench.commands.resume import completed, prepare_job
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling, read_api_key
@@ -129,14 +124,7 @@ async def run_job(
     if not isinstance(raw, dict) or raw.get("benchmark") != "phybench":
         raise ValueError("job benchmark must be 'phybench'")
     settings = benchmark_config("phybench")
-    configured = (
-        settings.get("dataset"),
-        settings.get("revision"),
-        settings.get("data_file"),
-        settings.get("split"),
-        settings.get("gradable_only"),
-    )
-    if configured != (DATASET, REVISION, DATA_FILE, "train", True):
+    if settings.get("gradable_only") is not True:
         raise ValueError("PHYBench configuration must use its gradable pinned data")
 
     config = JobConfig.model_validate(raw)
@@ -152,7 +140,7 @@ async def run_job(
         problems = load_split(
             split=str(settings["split"]),
             revision=str(settings["revision"]),
-            gradable_only=True,
+            gradable_only=settings["gradable_only"],
         )
     except (ImportError, OSError, ValueError) as source_error:
         try:

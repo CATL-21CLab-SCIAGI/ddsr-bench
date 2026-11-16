@@ -3,13 +3,16 @@ import os
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, TextIO
 
 
 @contextmanager
-def atomic_write(path: Path, *, overwrite: bool = True) -> Iterator[TextIO]:
+def atomic_write(
+    path: Path, *, overwrite: bool = True, newline: str | None = None
+) -> Iterator[TextIO]:
     """Publish UTF-8 text only on success; its parent directory must exist.
 
     Create-only writes use a hard link so competing writers cannot overwrite
@@ -20,7 +23,7 @@ def atomic_write(path: Path, *, overwrite: bool = True) -> Iterator[TextIO]:
     temporary = None
     try:
         with NamedTemporaryFile(
-            "w", dir=path.parent, encoding="utf-8", delete=False
+            "w", dir=path.parent, encoding="utf-8", newline=newline, delete=False
         ) as file:
             temporary = Path(file.name)
             yield file
@@ -103,6 +106,24 @@ def read_json(
             else "expected a JSON object"
         )
     return value
+
+
+def benchmark_config(name: str) -> dict[str, Any]:
+    """Load one benchmark's shared YAML configuration."""
+    import yaml
+
+    if not name or not all(
+        character.isalnum() or character == "_" for character in name
+    ):
+        raise ValueError(f"invalid benchmark name {name!r}")
+    path = resources.files("configs").joinpath("benchmark", f"{name}.yaml")
+    try:
+        config = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise ValueError(f"unknown benchmark {name!r}") from error
+    if not isinstance(config, dict) or config.get("name") != name:
+        raise ValueError(f"invalid benchmark configuration for {name!r}")
+    return config
 
 
 @dataclass(frozen=True, slots=True)

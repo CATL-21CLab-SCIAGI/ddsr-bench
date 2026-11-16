@@ -1,0 +1,2 @@
+# Preserve the pinned PRISM prompt's intentional trailing whitespace.
+configs/prompts/prismphysics/template.txt -whitespace

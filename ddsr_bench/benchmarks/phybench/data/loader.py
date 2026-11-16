@@ -3,13 +3,16 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-from ddsr_bench.benchmarks.utils import read_text
+from ddsr_bench.benchmarks.utils import benchmark_config, read_text
 
 from .schemas import AnswerSpec, Problem, ProblemSpec
 
-DATASET = "Eureka-Lab/PHYBench"
-REVISION = "d6d91c787b7abb865eb2490a328bf85a9f5095f0"
-DATA_FILE = "PHYBench-questions_v1.json"
+_CONFIG = benchmark_config("phybench")
+DATASET = str(_CONFIG["dataset"])
+REVISION = str(_CONFIG["revision"])
+DATA_FILE = str(_CONFIG["data_file"])
+SPLIT = str(_CONFIG["split"])
+GRADABLE_ONLY = _CONFIG["gradable_only"] is True
 
 
 def load_problem(record: Mapping[str, Any]) -> Problem:
@@ -33,7 +36,7 @@ def load_problem(record: Mapping[str, Any]) -> Problem:
 
 
 def load_problems(
-    records: Iterable[Mapping[str, Any]], gradable_only: bool = True
+    records: Iterable[Mapping[str, Any]], gradable_only: bool = GRADABLE_ONLY
 ) -> list[Problem]:
     """Normalize records and optionally omit the 400 public-only problems."""
     problems = [load_problem(record) for record in records]
@@ -46,9 +49,9 @@ def load_problems(
 
 
 def load_split(
-    split: str = "train",
+    split: str = SPLIT,
     revision: str = REVISION,
-    gradable_only: bool = True,
+    gradable_only: bool = GRADABLE_ONLY,
 ) -> list[Problem]:
     """Load the canonical 500-row file without concatenating its subsets."""
     from datasets import load_dataset

@@ -11,7 +11,9 @@ from ddsr_bench import __version__
 from ddsr_bench.benchmarks.phybench.data.loader import (
     DATA_FILE,
     DATASET,
+    GRADABLE_ONLY,
     REVISION,
+    SPLIT,
     load_split,
 )
 from ddsr_bench.benchmarks.phybench.data.schemas import Problem, ProblemSpec
@@ -113,13 +115,13 @@ def prepare_tasks(
         or config.get("dataset") != DATASET
         or config.get("revision") != REVISION
         or config.get("data_file") != DATA_FILE
-        or not isinstance(config.get("split"), str)
-        or config.get("gradable_only") is not True
+        or config.get("split") != SPLIT
+        or config.get("gradable_only") is not GRADABLE_ONLY
     ):
         raise ValueError("PHYBench preparation requires its pinned configuration")
     problems = load_split(
-        split=config["split"],
-        revision=config["revision"],
-        gradable_only=True,
+        split=SPLIT,
+        revision=REVISION,
+        gradable_only=GRADABLE_ONLY,
     )
     return compile_problems(problems, output, resources)

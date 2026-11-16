@@ -47,3 +47,4 @@ is verified:
 - [CMPhysBench pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md)
 - [CMT-Benchmark pipeline](ddsr_bench/benchmarks/cmtbench/PIPELINE.md)
 - [PHYBench pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md)
+- [PRISM-Physics pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md)

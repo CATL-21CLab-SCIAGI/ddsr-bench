@@ -1,0 +1,32 @@
+benchmark: prismphysics
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: prismphysics-text
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: local OpenAI-compatible vLLM endpoint.
+agents:
+  - name: ddsr_bench.benchmarks.prismphysics.evaluation.harbor:PRISMPhysicsAgent
+    model_name: ddsr-local
+    include_logs: [response.json]
+    extra_allowed_hosts: [127.0.0.1]
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: true
+      # Official text-only defaults: 8096 output tokens and temperature 0.
+      # Reasoning is unset because this local model is user-selected.
+      sampling:
+        max_tokens: 8096
+        temperature: 0.0
+        top_p: 1.0
+        top_k: null
+        seed: null
+        reasoning_effort: null
+        enable_thinking: null
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/prismphysics

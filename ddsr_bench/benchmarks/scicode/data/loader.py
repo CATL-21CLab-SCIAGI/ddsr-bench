@@ -9,8 +9,12 @@ import h5py
 import scipy.sparse
 
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
-from ddsr_bench.benchmarks.utils import read_text
+from ddsr_bench.benchmarks.utils import benchmark_config, read_text
 
+_CONFIG = benchmark_config("scicode")
+DATASET = str(_CONFIG["dataset"])
+REVISION = str(_CONFIG["revision"])
+SPLIT = str(_CONFIG["split"])
 _FIXED_STEPS = {"13.6", "62.1", "76.3"}
 
 
@@ -51,12 +55,23 @@ def load_problem(record: Mapping[str, Any]) -> SciCodeProblem:
     )
 
 
-def load_split(split: str = "test") -> list[SciCodeProblem]:
+def load_problems(records: Iterable[Mapping[str, Any]]) -> list[SciCodeProblem]:
+    """Normalize SciCode records and require unique problem IDs."""
+    problems = [load_problem(record) for record in records]
+    ids = [problem.id for problem in problems]
+    if len(ids) != len(set(ids)):
+        raise ValueError("SciCode problem IDs must be unique")
+    return problems
+
+
+def load_split(split: str = SPLIT) -> list[SciCodeProblem]:
     """Load one official SciCode split from Hugging Face."""
     from datasets import load_dataset
 
-    records: Iterable[Mapping[str, Any]] = load_dataset("SciCode1/SciCode", split=split)
-    return [load_problem(record) for record in records]
+    records: Iterable[Mapping[str, Any]] = load_dataset(
+        DATASET, split=split, revision=REVISION
+    )
+    return load_problems(records)
 
 
 def load_fixed(step_id: str) -> str | None:

@@ -12,12 +12,12 @@ from typing import Any
 import yaml
 from harbor.models.job.config import JobConfig
 
-from ddsr_bench.benchmarks.cmphysbench.data.loader import DATASET, REVISION, load_split
+from ddsr_bench.benchmarks.cmphysbench.data.loader import load_split
 from ddsr_bench.benchmarks.cmphysbench.data.schemas import AnswerSpec, Problem
 from ddsr_bench.benchmarks.cmphysbench.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.cmphysbench.evaluation.verifier import verify
 from ddsr_bench.benchmarks.cmphysbench.generation.runner import generate
-from ddsr_bench.benchmarks.registry import benchmark_config
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.benchmarks.utils import write_json as _write
 from ddsr_bench.commands.resume import completed, prepare_job
 from ddsr_bench.generation.client import CLIENTS, ChatClient, Sampling, read_api_key
@@ -133,8 +133,6 @@ async def run_job(
     if not isinstance(raw, dict) or raw.get("benchmark") != "cmphysbench":
         raise ValueError("job benchmark must be 'cmphysbench'")
     benchmark = benchmark_config("cmphysbench")
-    if benchmark.get("dataset") != DATASET or benchmark.get("revision") != REVISION:
-        raise ValueError("CMPhysBench configuration must use the pinned dataset")
     if benchmark.get("gradable_only") is not True:
         raise ValueError("CMPhysBench evaluation requires gradable_only: true")
 
@@ -153,10 +151,13 @@ async def run_job(
         problems = load_split(
             split=str(benchmark["split"]),
             revision=str(benchmark["revision"]),
-            gradable_only=True,
+            gradable_only=benchmark["gradable_only"],
         )
-    except OSError:
-        problems = _prepared(config)
+    except (ImportError, OSError, ValueError) as source_error:
+        try:
+            problems = _prepared(config)
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            raise source_error
         source = "prepared"
     if task_name is not None:
         problems = [problem for problem in problems if problem.spec.id == task_name]
