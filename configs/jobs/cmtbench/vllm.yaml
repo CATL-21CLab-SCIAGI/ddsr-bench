@@ -1,0 +1,32 @@
+benchmark: cmtbench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: cmtbench-v2
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: local OpenAI-compatible vLLM endpoint.
+agents:
+  - name: ddsr_bench.benchmarks.cmtbench.evaluation.harbor:CMTBenchAgent
+    model_name: ddsr-local
+    include_logs: [response.json]
+    extra_allowed_hosts: [127.0.0.1]
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: true
+      # Upstream OpenAI-compatible calls use provider defaults. DDSR explicitly
+      # selects this deterministic project policy for repeatable local runs.
+      sampling:
+        max_tokens: 8192
+        temperature: 0.0
+        top_p: 1.0
+        top_k: null
+        seed: null
+        reasoning_effort: null
+        enable_thinking: null
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/cmtbench

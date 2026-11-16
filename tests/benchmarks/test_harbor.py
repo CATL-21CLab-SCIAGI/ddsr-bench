@@ -10,6 +10,7 @@ import pytest
         ("scicode", "SciCodeAgent"),
         ("cmphysbench", "CMPhysBenchAgent"),
         ("phybench", "PHYBenchAgent"),
+        ("cmtbench", "CMTBenchAgent"),
     ],
 )
 @pytest.mark.parametrize(

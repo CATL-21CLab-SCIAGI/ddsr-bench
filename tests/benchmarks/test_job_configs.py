@@ -137,3 +137,28 @@ def test_phybench_job_config(name: str, client: str) -> None:
     if name in ("vllm", "aliyun"):
         assert config.agents[0].kwargs["sampling"]["temperature"] == 0.6
         assert config.agents[0].kwargs["sampling"]["top_p"] == 0.95
+
+
+@pytest.mark.parametrize(
+    ("name", "client"),
+    [
+        ("vllm", "vllm"),
+        ("openai", "openai"),
+        ("bedrock", "bedrock"),
+        ("aliyun", "aliyun"),
+    ],
+)
+def test_cmtbench_job_config(name: str, client: str) -> None:
+    path = Path("configs/jobs/cmtbench") / f"{name}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+    agent = config.agents[0]
+
+    assert raw["benchmark"] == "cmtbench"
+    assert agent.name.endswith("cmtbench.evaluation.harbor:CMTBenchAgent")
+    assert agent.kwargs["client_name"] == client
+    assert agent.kwargs["sampling"]["max_tokens"] == 8192
+    assert config.datasets[0].path == Path("tasks/cmtbench")
+    assert config.jobs_dir == Path("outputs/harbor")
+    suffix = "" if name == "vllm" else f"-{name}"
+    assert config.job_name == f"cmtbench-v2{suffix}"

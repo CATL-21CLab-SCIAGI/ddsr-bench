@@ -1,0 +1,8 @@
+{
+  "prompt": "Consider a half filled fermionic system with Hamiltonian \\[ H = -t_1\\sum_{i=1}^n (c^\\dagger_{2i-1}c_{2i} + h.c.) -t_2\\sum_{i=1}^{n-1} ( c^\\dagger_{2i}c_{2i+1} + h.c.). \\] What is the leading contribution to the energy gap between the lowest excited state and the ground state of a chain as $n\\to\\infty$ when $t_2>t_1>0$? Using only the variables $t_1$, $t_2$, and $n$, present the final answer in a single $\\boxed{}$ LaTeX environment. Your final solution must be placed in a $\\boxed{}$ LaTeX environment. Use only the variables and constants given in the problem; do not define additional constants.",
+  "parameters": "$t_1;t_2;n$",
+  "functions": "",
+  "solution": "$\\boxed{2\\frac{t_2^2-t_1^2}{t_2}(t_1/t_2)^n}$",
+  "type": "Other",
+  "index": 39
+}

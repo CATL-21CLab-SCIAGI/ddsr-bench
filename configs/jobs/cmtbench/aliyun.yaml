@@ -1,0 +1,30 @@
+benchmark: cmtbench
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: cmtbench-v2-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: ALIYUN_API_KEY is read from the environment.
+agents:
+  - name: ddsr_bench.benchmarks.cmtbench.evaluation.harbor:CMTBenchAgent
+    # Text LLM examples: qwen3.8-max, deepseek-v4-pro, kimi-k2.7-code, glm-5.2.
+    model_name: qwen3.8-max
+    include_logs: [response.json]
+    extra_allowed_hosts: [cn-beijing.pai-token.aliyuncs.com]
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: true
+      # Upstream uses provider defaults. DDSR selects this deterministic project
+      # policy so the OpenAI-compatible endpoints share explicit controls.
+      sampling:
+        max_tokens: 8192
+        temperature: 0.0
+        top_p: 1.0
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/cmtbench

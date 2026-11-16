@@ -9,6 +9,7 @@ across all benchmarks.
 | CritPt | Physics derivation returned as executable answers | Static validation or Harbor; optional official submission | [Guide](ddsr_bench/benchmarks/critpt/README.md) · [Pipeline](ddsr_bench/benchmarks/critpt/PIPELINE.md) |
 | SciCode | Sequential scientific function generation | Harbor execution of official assertions | [Guide](ddsr_bench/benchmarks/scicode/README.md) · [Pipeline](ddsr_bench/benchmarks/scicode/PIPELINE.md) |
 | CMPhysBench | Condensed-matter reasoning with boxed LaTeX answers | Direct static SEED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/cmphysbench/README.md) · [Pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md) |
+| CMT-Benchmark | Condensed-matter formulas with symbolic equivalence | Direct static binary scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/cmtbench/README.md) · [Pipeline](ddsr_bench/benchmarks/cmtbench/PIPELINE.md) |
 | PHYBench | Advanced physics reasoning with boxed LaTeX answers | Direct static EED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/phybench/README.md) · [Pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
