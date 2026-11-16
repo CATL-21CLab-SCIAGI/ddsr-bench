@@ -40,6 +40,11 @@ phybench = [
     "latex2sympy2-extended>=1.11,<2",
     "timeout-decorator>=0.5,<1",
 ]
+prismphysics = [
+    "huggingface-hub>=0.27,<2",
+    "latex2sympy2-extended>=1.11,<2",
+    "regex>=2024.11,<2027",
+]
 scicode = [
     "datasets>=4,<6",
     "h5py>=3,<4",
@@ -71,6 +76,11 @@ packages = [
     "ddsr_bench.benchmarks.phybench.evaluation",
     "ddsr_bench.benchmarks.phybench.evaluation.eed",
     "ddsr_bench.benchmarks.phybench.generation",
+    "ddsr_bench.benchmarks.prismphysics",
+    "ddsr_bench.benchmarks.prismphysics.data",
+    "ddsr_bench.benchmarks.prismphysics.evaluation",
+    "ddsr_bench.benchmarks.prismphysics.evaluation.gradephyx",
+    "ddsr_bench.benchmarks.prismphysics.generation",
     "ddsr_bench.benchmarks.critpt",
     "ddsr_bench.benchmarks.critpt.data",
     "ddsr_bench.benchmarks.critpt.evaluation",
@@ -98,6 +108,7 @@ packages = [
 "ddsr_bench.benchmarks.critpt.evaluation.ai" = ["LICENSE", "UPSTREAM.md"]
 "ddsr_bench.benchmarks.cmphysbench.evaluation.seed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.phybench.evaluation.eed" = ["LICENSE", "NOTICE.md"]
+"ddsr_bench.benchmarks.prismphysics.evaluation.gradephyx" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]
 configs = [
     "*.yaml",
@@ -107,11 +118,13 @@ configs = [
     "jobs/critpt/*.yaml",
     "jobs/cmphysbench/*.yaml",
     "jobs/phybench/*.yaml",
+    "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
     "prompts/cmtbench/*.txt",
     "prompts/cmphysbench/*.txt",
     "prompts/phybench/*.txt",
+    "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",
 ]
@@ -129,6 +142,7 @@ target-version = "py312"
 [tool.ruff.lint.per-file-ignores]
 "ddsr_bench/benchmarks/cmphysbench/evaluation/seed/*.py" = ["ALL"]
 "ddsr_bench/benchmarks/phybench/evaluation/eed/*.py" = ["ALL"]
+"ddsr_bench/benchmarks/prismphysics/evaluation/gradephyx/*.py" = ["ALL"]
 
 "ddsr_bench/benchmarks/critpt/evaluation/ai/grader.py" = ["BLE001"]
 "ddsr_bench/benchmarks/critpt/evaluation/ai/llm/clients/bedrock.py" = ["SIM117", "TRY004"]

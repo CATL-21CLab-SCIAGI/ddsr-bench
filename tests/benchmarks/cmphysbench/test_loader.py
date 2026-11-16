@@ -3,7 +3,10 @@ from dataclasses import asdict
 import pytest
 
 from ddsr_bench.benchmarks.cmphysbench.data.loader import (
+    DATASET,
+    GRADABLE_ONLY,
     REVISION,
+    SPLIT,
     load_problem,
     load_problems,
 )
@@ -55,4 +58,7 @@ def test_unique_ids() -> None:
 
 
 def test_pinned_revision() -> None:
+    assert DATASET == "weidawang/CMPhysBench"
     assert REVISION == "43d185851f731e23aa5737c3667b3a9e87bf8cd1"
+    assert SPLIT == "train"
+    assert GRADABLE_ONLY is True

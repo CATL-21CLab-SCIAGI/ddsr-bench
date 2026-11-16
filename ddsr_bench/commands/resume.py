@@ -10,6 +10,9 @@ from ddsr_bench.benchmarks.utils import write_json
 
 
 def prepare_job(output: Path, config: dict, problems: list, *, resume: bool) -> None:
+    ids = [problem.spec.id for problem in problems]
+    if len(ids) != len(set(ids)):
+        raise ValueError("static job problem IDs must be unique")
     # Fingerprint selected inputs, including references, without storing them.
     encoded = json.dumps([asdict(p) for p in problems], sort_keys=True).encode()
     settings = {k: v for k, v in config.items() if k != "n_concurrent_trials"}

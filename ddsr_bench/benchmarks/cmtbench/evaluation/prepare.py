@@ -12,6 +12,8 @@ from ddsr_bench.benchmarks.cmtbench.data.loader import (
     DATA_FILE,
     DATASET,
     REVISION,
+    SPLIT,
+    VERSION,
     load_split,
 )
 from ddsr_bench.benchmarks.cmtbench.data.schemas import Problem, ProblemSpec
@@ -111,11 +113,12 @@ def prepare_tasks(
         config.get("name"),
         config.get("dataset"),
         config.get("revision"),
+        config.get("version"),
         config.get("data_file"),
         config.get("split"),
     )
-    if configured != ("cmtbench", DATASET, REVISION, DATA_FILE, "train"):
+    if configured != ("cmtbench", DATASET, REVISION, VERSION, DATA_FILE, SPLIT):
         raise ValueError("CMT-Benchmark preparation requires its pinned configuration")
     return compile_problems(
-        load_split(split="train", revision=REVISION), output, resources
+        load_split(split=SPLIT, revision=REVISION), output, resources
     )

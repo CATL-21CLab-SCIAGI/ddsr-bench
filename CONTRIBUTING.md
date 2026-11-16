@@ -47,6 +47,11 @@ Follow the closest existing adapter and include:
 - benchmark `README.md` and `PIPELINE.md` files;
 - result collection and teacher-data export where applicable.
 
+Treat `configs/benchmark/NAME.yaml` as the single source for dataset names,
+revisions, files, splits, and official metric settings. Loaders may expose
+concise derived constants for callers, but must not repeat those values as
+independent Python literals.
+
 Update the root benchmark catalog and framework pipeline without dropping links
 to existing benchmarks. Keep copied upstream code attributed under its license.
 The reusable integration and release checklist is recorded in

@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from importlib import import_module, resources
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Protocol
 
-import yaml
-
 from ddsr_bench.training.schemas import SftSample, Trajectory
 
+from . import utils as _utils
 from .utils import Resources
+
+benchmark_config = _utils.benchmark_config
 
 
 class StaticRunner(Protocol):
@@ -88,6 +89,14 @@ BENCHMARKS = {
         sft_adapter="ddsr_bench.benchmarks.cmtbench.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.cmtbench.evaluation.prepare:prepare_tasks",
     ),
+    "prismphysics": Benchmark(
+        static_runner="ddsr_bench.benchmarks.prismphysics.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.prismphysics.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.prismphysics.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.prismphysics.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.prismphysics.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.prismphysics.evaluation.prepare:prepare_tasks",
+    ),
 }
 
 
@@ -96,16 +105,6 @@ def benchmark(name: str) -> Benchmark:
         return BENCHMARKS[name]
     except KeyError as error:
         raise ValueError(f"unknown benchmark {name!r}") from error
-
-
-def benchmark_config(name: str) -> dict[str, Any]:
-    """Load one benchmark's shared configuration."""
-    benchmark(name)
-    path = resources.files("configs").joinpath("benchmark", f"{name}.yaml")
-    config = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(config, dict) or config.get("name") != name:
-        raise ValueError(f"invalid benchmark configuration for {name!r}")
-    return config
 
 
 def _resolve(target: str) -> Any:

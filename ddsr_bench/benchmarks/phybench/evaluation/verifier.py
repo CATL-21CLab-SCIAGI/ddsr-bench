@@ -9,7 +9,6 @@ from multiprocessing.connection import Connection
 from pathlib import Path
 from typing import Any
 
-from ddsr_bench.benchmarks.phybench.evaluation.eed import score
 from ddsr_bench.benchmarks.utils import write_json
 
 
@@ -57,6 +56,8 @@ def normalize_reference(text: str) -> str:
 def _worker(connection: Connection, reference: str, prediction: str) -> None:
     try:
         with redirect_stdout(StringIO()):
+            from ddsr_bench.benchmarks.phybench.evaluation.eed import score
+
             result = score(reference, prediction)
         connection.send(("ok", asdict(result)))
     except Exception as error:  # noqa: BLE001 - scorer failures receive zero

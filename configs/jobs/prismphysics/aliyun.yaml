@@ -1,0 +1,31 @@
+benchmark: prismphysics
+
+# Evaluation layer: Harbor scheduling and result location.
+job_name: prismphysics-text-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: ALIYUN_API_KEY is read from the environment.
+agents:
+  - name: ddsr_bench.benchmarks.prismphysics.evaluation.harbor:PRISMPhysicsAgent
+    # Text LLM examples: qwen3.8-max, deepseek-v4-pro, kimi-k2.7-code, glm-5.2.
+    model_name: qwen3.8-max
+    include_logs: [response.json]
+    extra_allowed_hosts: [cn-beijing.pai-token.aliyuncs.com]
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: true
+      # Official text-only defaults: 8096 output tokens, temperature 0,
+      # and low effort for reasoning models.
+      sampling:
+        max_tokens: 8096
+        temperature: 0.0
+        top_p: 1.0
+        reasoning_effort: low
+
+# Dataset layer: optional Harbor tasks and static fallback.
+datasets:
+  - path: tasks/prismphysics

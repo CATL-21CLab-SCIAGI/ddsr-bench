@@ -1008,30 +1008,3 @@ def SEED(answer_latex, test_latex, expr_type, debug_mode=False):
     # Non-numeric types use tree-based scoring
     score = score_calc(distance_number, tree_size)
     return score, rel_distance, tree_size, distance_number
-
-
-if __name__ == "__main__":
-    # Example usage of SEED scoring
-    # -----------------------------------------------------------
-    # Fill in the variables below to test SEED:
-    #   gt   : Ground truth LaTeX expression string
-    #   pred : Model-predicted LaTeX expression string
-    #   t    : Expression type (choose one of):
-    #          "Expression", "Equation", "Tuple", "Interval", "Numeric"
-    # -----------------------------------------------------------
-
-    gt = "4.08 \\times 10^{-5}(\\mathrm{~cm})"  # Ground truth LaTeX expression
-    pred = "4.08 \\times 10^{-7}(\\mathrm{~m})"  # Predicted LaTeX expression
-    expr_type = "Numeric"  # Answer type
-
-    score, rel_distance, tree_size, dist = SEED(gt, pred, expr_type)
-
-    print("\n=== Test Result ===")
-    print(f"GT LaTeX:      {gt}")
-    print(f"Predicted:     {pred}")
-    print(f"Score:         {score}")  # Final SEED score
-    print(f"Rel Distance:  {rel_distance}")  # Relative edit distance
-    print(
-        f"Tree Size:     {tree_size}"
-    )  # Number of nodes in the ground truth expression tree
-    print(f"Raw Distance:  {dist}")  # Raw node edit distance

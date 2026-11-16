@@ -3,14 +3,16 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any, get_args
 
-from ddsr_bench.benchmarks.utils import read_text
+from ddsr_bench.benchmarks.utils import benchmark_config, read_text
 
 from .schemas import AnswerSpec, Problem, ProblemSpec, ProblemType
 
-DATASET = "CMTBenchmark/cmt_benchmark"
-REVISION = "c6aa803a6ca553091095ecf07e747b8720b1fbc2"
-VERSION = "2.0.0"
-DATA_FILE = "cmt_data.jsonl"
+_CONFIG = benchmark_config("cmtbench")
+DATASET = str(_CONFIG["dataset"])
+REVISION = str(_CONFIG["revision"])
+VERSION = str(_CONFIG["version"])
+DATA_FILE = str(_CONFIG["data_file"])
+SPLIT = str(_CONFIG["split"])
 
 
 def load_problem(record: Mapping[str, Any]) -> Problem:
@@ -48,7 +50,7 @@ def load_problems(records: Iterable[Mapping[str, Any]]) -> list[Problem]:
     return problems
 
 
-def load_split(split: str = "train", revision: str = REVISION) -> list[Problem]:
+def load_split(split: str = SPLIT, revision: str = REVISION) -> list[Problem]:
     """Load the pinned official CMT-Benchmark JSONL file."""
     from datasets import load_dataset
 

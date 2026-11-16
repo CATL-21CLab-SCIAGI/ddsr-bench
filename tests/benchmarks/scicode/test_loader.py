@@ -3,7 +3,13 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.scicode.data.loader import load_problem
+from ddsr_bench.benchmarks.scicode.data.loader import (
+    DATASET,
+    REVISION,
+    SPLIT,
+    load_problem,
+    load_problems,
+)
 from ddsr_bench.benchmarks.scicode.generation.runner import render_prompt
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "scicode_19.json"
@@ -40,3 +46,14 @@ def test_unique_steps() -> None:
 
     with pytest.raises(ValueError, match="duplicate step IDs"):
         load_problem(data)
+
+
+def test_unique_problems() -> None:
+    with pytest.raises(ValueError, match="problem IDs must be unique"):
+        load_problems([record(), record()])
+
+
+def test_pinned_source() -> None:
+    assert DATASET == "SciCode1/SciCode"
+    assert REVISION == "4510f6a6aa27c43fad7b43da2c59602a86e88480"
+    assert SPLIT == "validation"

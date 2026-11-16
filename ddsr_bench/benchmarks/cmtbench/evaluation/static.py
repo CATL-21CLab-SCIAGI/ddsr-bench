@@ -11,18 +11,12 @@ from typing import Any
 import yaml
 from harbor.models.job.config import JobConfig
 
-from ddsr_bench.benchmarks.cmtbench.data.loader import (
-    DATA_FILE,
-    DATASET,
-    REVISION,
-    load_split,
-)
+from ddsr_bench.benchmarks.cmtbench.data.loader import load_split
 from ddsr_bench.benchmarks.cmtbench.data.schemas import AnswerSpec, Problem
 from ddsr_bench.benchmarks.cmtbench.evaluation.prepare import decode_instruction
 from ddsr_bench.benchmarks.cmtbench.evaluation.verifier import verify
 from ddsr_bench.benchmarks.cmtbench.generation.runner import generate
-from ddsr_bench.benchmarks.registry import benchmark_config
-from ddsr_bench.benchmarks.utils import read_json, write_json
+from ddsr_bench.benchmarks.utils import benchmark_config, read_json, write_json
 from ddsr_bench.commands.resume import completed, prepare_job
 from ddsr_bench.generation.client import (
     CLIENTS,
@@ -133,14 +127,6 @@ async def run_job(
     if not isinstance(raw, dict) or raw.get("benchmark") != "cmtbench":
         raise ValueError("job benchmark must be 'cmtbench'")
     settings = benchmark_config("cmtbench")
-    configured = (
-        settings.get("dataset"),
-        settings.get("revision"),
-        settings.get("data_file"),
-        settings.get("split"),
-    )
-    if configured != (DATASET, REVISION, DATA_FILE, "train"):
-        raise ValueError("CMT-Benchmark configuration must use its pinned data")
 
     config = JobConfig.model_validate(raw)
     if len(config.agents) != 1:

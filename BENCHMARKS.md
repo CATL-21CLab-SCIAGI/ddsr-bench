@@ -11,6 +11,7 @@ across all benchmarks.
 | CMPhysBench | Condensed-matter reasoning with boxed LaTeX answers | Direct static SEED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/cmphysbench/README.md) · [Pipeline](ddsr_bench/benchmarks/cmphysbench/PIPELINE.md) |
 | CMT-Benchmark | Condensed-matter formulas with symbolic equivalence | Direct static binary scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/cmtbench/README.md) · [Pipeline](ddsr_bench/benchmarks/cmtbench/PIPELINE.md) |
 | PHYBench | Advanced physics reasoning with boxed LaTeX answers | Direct static EED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/phybench/README.md) · [Pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md) |
+| PRISM-Physics | Process-level physics reasoning over formula DAGs | Direct static ancestor-closure scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/prismphysics/README.md) · [Pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.

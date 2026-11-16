@@ -14,21 +14,39 @@ from ddsr_bench.generation.client import ChatResponse
 
 @dataclass
 class Problem:
+    spec: "Spec"
     statement: str
+
+
+@dataclass
+class Spec:
+    id: str
+
+
+@dataclass
+class BenchmarkProblem:
+    spec: Spec
 
 
 def test_job_settings(tmp_path: Path) -> None:
     output = tmp_path / "job"
     config = {"model": "teacher", "n_concurrent_trials": 1}
-    problems = [Problem("question")]
+    problems = [Problem(Spec("problem"), "question")]
     prepare_job(output, config, problems, resume=False)
     prepare_job(output, dict(config, n_concurrent_trials=4), problems, resume=True)
     with pytest.raises(ValueError, match="unchanged"):
         prepare_job(output, dict(config, model="other"), problems, resume=True)
     with pytest.raises(ValueError, match="unchanged"):
-        prepare_job(output, config, [Problem("changed")], resume=True)
+        prepare_job(output, config, [Problem(Spec("problem"), "changed")], resume=True)
     with pytest.raises(FileExistsError):
         prepare_job(output, config, problems, resume=False)
+
+
+def test_duplicate_problem_ids(tmp_path: Path) -> None:
+    problems = [BenchmarkProblem(Spec("same")), BenchmarkProblem(Spec("same"))]
+
+    with pytest.raises(ValueError, match="IDs must be unique"):
+        prepare_job(tmp_path / "job", {}, problems, resume=False)
 
 
 def test_unfinished_trial(tmp_path: Path) -> None:

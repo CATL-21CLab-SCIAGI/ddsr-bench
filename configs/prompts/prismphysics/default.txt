@@ -1,0 +1,22 @@
+
+### Standard Formatting Requirements for LaTeX Solutions
+1) **One Formula Per Block**
+   - Each formula must be wrapped in its own `$$...$$` block.
+   - Avoid chaining multiple equalities or expressions in a single block.
+   - Exception: Chained variable comparisons in inequalities are allowed **only if explicitly required**.
+2) **No Terminal Punctuation**
+   - Do not end any formula block with punctuation marks (e.g., `,`, `.`, `;`).
+3) **SI Unit Format**
+   - Always write units using `\\unit{}` to ensure proper parsing (e.g., `\\unit{m}`, `\\unit{m/s}`). Notice that the numbers should be put outside the unit, i.e. use $3\unit{km/h}$ instead of $\unit{3km/s}$.
+4) **Strip Extra Formatting Commands**
+    REMOVE the following:
+   - Delimiters: `\left`, `\right`
+   - Fonts/Styles: `\mathrm`, `\mathit`, `\mathbf`, `\text`
+   - Spacing: `\,`, `\;`, `\!`, `~`, `\quad`, `\qquad`
+   - Multi-line: `\begin{aligned}...\end{aligned}`
+5) **Standard Calculus Notation**
+    Use canonical forms for all calculus expressions:
+   - Derivatives: `\frac{dy}{dx}`
+   - Partial derivatives: `\frac{\partial f}{\partial x}`
+   - Integrals: `\int_0^t v dt` (omit spacing commands)
+   - Summations: `\sum_{i=1}^n x_i`

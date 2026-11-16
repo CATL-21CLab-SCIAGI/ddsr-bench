@@ -5,8 +5,10 @@ from pathlib import Path
 import pytest
 
 from ddsr_bench.benchmarks.cmtbench.data.loader import (
+    DATA_FILE,
     DATASET,
     REVISION,
+    SPLIT,
     VERSION,
     load_problem,
     load_problems,
@@ -65,3 +67,5 @@ def test_pinned_source() -> None:
     assert DATASET == "CMTBenchmark/cmt_benchmark"
     assert REVISION == "c6aa803a6ca553091095ecf07e747b8720b1fbc2"
     assert VERSION == "2.0.0"
+    assert DATA_FILE == "cmt_data.jsonl"
+    assert SPLIT == "train"
