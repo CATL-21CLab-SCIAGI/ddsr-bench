@@ -1,7 +1,7 @@
 benchmark: scicode
 
 # Evaluation layer: Harbor scheduling and result location.
-job_name: scicode-validation-bedrock
+job_name: scicode-verified-bedrock
 jobs_dir: outputs/harbor
 n_attempts: 1
 n_concurrent_trials: 4
@@ -24,4 +24,4 @@ agents:
 
 # Dataset layer: normalized Harbor tasks.
 datasets:
-  - path: tasks/scicode-validation
+  - path: tasks/scicode/v2.2

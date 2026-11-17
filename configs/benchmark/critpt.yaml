@@ -1,5 +1,15 @@
 name: critpt
 source: critpt-official # Official CritPt repository, or critpt-ai for an AI corpus.
+repository: CritPt-Benchmark/CritPt
+data_dir: data/public_test_challenges/json
+edition: v2
+authority: official
+status: revised
+revision: bc37a22bedb8744dff8996ccce7f9eedec548915
+dataset_revision: 37ecba7e9d00eda858d7be1adba19a38ba50e7a6
+prompt_revision: 17c2545c302762d2f2d644d923ea4c301605cb08
+expected_challenges: 70
+source_sha256: eea62bc8a33935ef36dfa86a6f8caebf4ff1994f21c70941c76ab620d027f4a6
 submission:
   # Submission destination, not the container provider:
   # official -> Artificial Analysis API; uses endpoint/api_key_env/timeout_sec.

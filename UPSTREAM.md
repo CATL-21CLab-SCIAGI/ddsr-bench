@@ -3,8 +3,14 @@
 ## CritPt
 
 - Repository: https://github.com/CritPt-Benchmark/CritPt
-- Commit: `17c2545c302762d2f2d644d923ea4c301605cb08`
-- Reused: the prompt text and one-step/two-step conversation behavior.
+- Data commit: `bc37a22bedb8744dff8996ccce7f9eedec548915` (CritPt v2).
+- Dataset revision: `37ecba7e9d00eda858d7be1adba19a38ba50e7a6`.
+- Prompt commit: `17c2545c302762d2f2d644d923ea4c301605cb08`.
+- Reused: v2 challenge data plus the inspected prompt text and one-step/two-step
+  conversation behavior. Data and prompt revisions are intentionally separate.
+- Data status: official, revised. The v2 commit changes 52 of 70 challenge JSON
+  records relative to the prompt commit, but publishes no item-level correction
+  ledger; DDSR therefore does not describe every change as a verified fix.
 
 ### CritPt consensus and long-context generation
 
@@ -69,12 +75,19 @@
 
 ## SciCode
 
-- Repository: https://github.com/scicode-bench/SciCode
-- Commit: `e3158ea011d4235245a547460d3688d7ccbf9900`
-- Dataset: `SciCode1/SciCode`
-- Dataset revision: `4510f6a6aa27c43fad7b43da2c59602a86e88480`
+- Corrected repository: https://github.com/flyingwagner/scicode-verified
+- Repository commit: `a7b0a308b99cb010e51bfdee535059c3ebe5e8b0`
+- Dataset: `shhu2001/SciCode-Verified`
+- Dataset revision: `752eb6b786b0e0d0a3b44cdb7c066c559b952658`
+- Dataset version: `v2.2` (64 problems; 287 scored subproblems).
+- Problem MD5: `e107a70b4de390c25852348c19567d33`; matching HDF5 MD5:
+  `32c5602f2bf08393f917f03ff0b80d40`.
+- Data status: independent, corrected and human-verified. The release excludes
+  one underdetermined original problem and retains 64 problems with 287 scored
+  subproblems.
 - Reimplemented locally: prompts, sequential generation, dataset loading, HDF5
-  target decoding, exceptional-step substitutions, and official test execution.
+  target decoding, exceptional-step substitutions, and SciCode-compatible test
+  execution.
 
 ## CMPhysBench
 
@@ -85,12 +98,16 @@
 - Pinned for: the prompt, vLLM sampling parameters (`16384`, `0.6`, `0.95`),
   boxed-answer extraction, and SEED scoring behavior.
 - License: Apache-2.0.
+- Data status: official, unverified. No accessible semantic correction was found
+  in the bounded search recorded in [DATASETS.md](DATASETS.md).
 
 ## CMT-Benchmark
 
 - Dataset: `CMTBenchmark/cmt_benchmark`
 - Dataset revision: `c6aa803a6ca553091095ecf07e747b8720b1fbc2`
 - Dataset version: `2.0.0` (2026-10-22)
+- Data status: official, corrected. Its changelog records expert-reviewed fixes
+  to 10 problems, including seven changed reference answers.
 - Scorer repository: https://github.com/JamesRoggeveen/cmt_benchmark_data
 - Scorer commit: `c1141831af337724a4a47f66f2410c525c861b66`
 - Pinned for: the system instruction, final boxed-answer extraction, numeric and
@@ -114,10 +131,14 @@
 
 - Repository: https://github.com/phybench-official/phybench
 - Commit: `d9db3ec7246f3678aaee65d44a32649ad93beea2`
-- Dataset: `Eureka-Lab/PHYBench`
-- Dataset revision: `d6d91c787b7abb865eb2490a328bf85a9f5095f0`
-- Canonical file: `PHYBench-questions_v1.json` (500 unique problems; 100
-  publish reference solutions and answers, and 400 are generation-only).
+- Corrected data source: https://github.com/Science-Discovery/LOCA
+- Corrected data commit: `0e3b86b2ee18ab6118dd57029a3f8de444db365e`.
+- Corrected file: `problem_set/PHYBENCH_100/PHYBENCH_100_fixed.jsonl` (100
+  public-reference problems), SHA-256
+  `262a0037b4339a0ab5ce330a7b083c4bd2513399ac952aa7805999e16fe7d7f3`.
+- Data status: independent, corrected. LOCA section 4.2 reports expert review,
+  20 incorrect PHYBench answers, and corrections where possible; this is not an
+  official PHYBench revision or a claim of conclusive verification of all rows.
 - Prompt source: arXiv `2504.16074v2`, Appendix D, “Evaluation Experiment
   Setup” (arXiv source file `paper/sec/appendix.tex`).
 - Inference settings: provider defaults for API models; local models use
@@ -150,6 +171,9 @@
   by the benchmark contract and reimplements the public orchestration, but
   vendors no Python code from that repository; the formula engine is copied
   only from its separately MIT-licensed wheel.
+- Data status: official, unverified. The accessible Alliance release is a
+  74-problem audited subset of a frozen 100-problem sample, not a correction of
+  the full 1,401-record formula-DAG dataset.
 - DDSR vendors the engine's formula-comparison and base normalization modules
   under their MIT license, with a compatibility layer for the pinned repository's
   script-token normalization. Its `sympy.parse_latex` call is routed through
@@ -157,6 +181,12 @@
   Hydra/OmegaConf runtime requires ANTLR 4.9. Algebraic rearrangement, unit
   conversion, and inverted-equation cases are checked against the pinned
   repository behavior.
-- The dataset contains image metadata, but its Hugging Face repository does not
-  distribute those referenced assets. DDSR initially exposes the official
-  text-only setting and preserves image metadata for a later multimodal source.
+- The upstream driver defaults to text mode and offers a separate multimodal mode
+  whose image base defaults to an unpublished local `PHYBE` tree. The pinned
+  Hugging Face tree bundles no JPEG assets, although its JSON contains 90 public
+  CDN URLs, 596 unresolved root-relative image paths, and one malformed HTML
+  location. DDSR keeps this released metadata in its raw loader but omits unused
+  image metadata from text-only tasks and generation records. Four question
+  texts contain embedded relative Markdown image links; DDSR retains those
+  upstream prompt strings and documents the unresolved assets rather than
+  silently rewriting the questions.

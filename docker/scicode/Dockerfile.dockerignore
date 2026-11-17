@@ -1,5 +1,5 @@
 *
 !ddsr_bench/
 !ddsr_bench/**
-!datasets/scicode/test_data.h5
+!datasets/scicode/v2.2/test_data_cleaned.h5
 **/__pycache__/

@@ -29,8 +29,10 @@ number of reference formulas. Empty DAGs or responses without relational
 double-dollar blocks score zero. Worker exceptions and timeouts also receive
 zero; no repair or judge prompt is sent.
 
-Harbor stores public input in `instruction.md`, the private formula DAG in
-`tests/reference.json`, and generation in `answer.txt`. The verifier container
-has no network. Direct static runs create the analogous `agent/`, `artifacts/`,
-and `validation/` directories per trial, so concurrent attempts never share
-writable files.
+Harbor stores the text-only public input in `instruction.md`, the private formula
+DAG in `tests/reference.json`, and generation in `answer.txt`. Image locations
+remain in the raw loader projection; unused and partly unresolved image metadata
+is not copied into the text-only task. The verifier container has no network.
+Direct static runs create the analogous `agent/`, `artifacts/`, and
+`validation/` directories per trial, so concurrent attempts never share writable
+files.

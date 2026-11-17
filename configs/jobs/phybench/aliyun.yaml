@@ -26,4 +26,4 @@ agents:
 
 # Dataset layer: Harbor tasks and static fallback.
 datasets:
-  - path: tasks/phybench
+  - path: tasks/phybench/loca

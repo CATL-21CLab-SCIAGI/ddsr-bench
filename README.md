@@ -30,6 +30,18 @@ Shared model-client setup is documented in the
 Follow your benchmark's guide for generation and recovery. Job configurations follow
 `configs/jobs/BENCHMARK/CLIENT.yaml` for local vLLM and hosted providers.
 
+Materialize every pinned dataset edition locally before a reproducible batch:
+
+```bash
+ddsr-bench action=fetch benchmark=all
+```
+
+Use `benchmark=NAME` to fetch one edition. The command checks its pinned tree
+digest and benchmark-native loader, reuses an exact local copy, and never
+overwrites an invalid edition. See [Dataset editions](DATASETS.md) for the
+resulting layout and provenance policy. Install every benchmark extra before
+using `benchmark=all` in a fresh environment.
+
 ## 🧠 Check model access
 
 For a local vLLM server, start the configured model:
@@ -102,6 +114,7 @@ their benchmark-specific behavior.
 ## 📚 Learn more
 
 - [Benchmarks](BENCHMARKS.md): supported datasets and capabilities
+- [Dataset editions](DATASETS.md): correction status, exact pins, and alternatives
 - [Framework pipeline](PIPELINE.md): configuration layers and artifact flow
 - [Contributing](CONTRIBUTING.md): repository structure and development checks
 - [Upstream sources](UPSTREAM.md): pinned repositories, datasets, and provenance

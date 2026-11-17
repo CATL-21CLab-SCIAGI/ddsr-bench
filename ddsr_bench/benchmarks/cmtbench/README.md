@@ -5,10 +5,12 @@ such as DMRG, exact diagonalization, Hartree–Fock, PEPS, QMC, shell models, an
 VMC. A model returns one or more expressions inside a final `\boxed{}` answer;
 the deterministic scorer checks mathematical equivalence with the reference.
 
-The adapter pins the maintained v2 dataset, official system instruction, and
-scoring behavior. See the [CMT pipeline](PIPELINE.md) for the data and scoring
-flow. Shared client setup, collection, and trajectory export are documented by
-the root [workflow](../../../README.md).
+The adapter pins the maintained official v2.0.0 dataset, whose changelog records
+expert-reviewed fixes to 10 problems, together with the official system
+instruction and scoring behavior. See the [dataset catalog](../../../DATASETS.md)
+for edition provenance and the [CMT pipeline](PIPELINE.md) for the data and
+scoring flow. Shared client setup, collection, and trajectory export are
+documented by the root [workflow](../../../README.md).
 
 ## Data and preparation
 
@@ -25,6 +27,12 @@ from model messages, response logs, and training exports.
 
 Preparing Harbor tasks is optional because static runs read the pinned dataset
 directly.
+
+For reproducible local preparation, materialize and validate the pinned source:
+
+```bash
+ddsr-bench action=fetch benchmark=cmtbench
+```
 
 ## Evaluation
 
@@ -67,15 +75,17 @@ docker build -f docker/cmtbench/Dockerfile -t ddsr-bench-cmtbench:latest .
 
 ddsr-bench action=prepare benchmark=cmtbench \
   harbor.image=ddsr-bench-cmtbench:latest \
-  paths.output=tasks/cmtbench
+  paths.input=datasets/cmtbench/v2/cmt_data.jsonl \
+  paths.output=tasks/cmtbench/v2
 
 harbor run --config configs/jobs/cmtbench/vllm.yaml
 ```
 
-Append `--path tasks/cmtbench --include-task-name 39` to run only problem 39.
-Preparation stores public input in `instruction.md` and private scoring fields
-under `tests/reference.json`. Static runs fall back to prepared tasks if the
-pinned dataset cannot be imported or reached.
+Append `--path tasks/cmtbench/v2 --include-task-name 39` to run only problem 39.
+Preparation reads the supplied pinned JSONL file, stores public input in
+`instruction.md`, and keeps private scoring fields under `tests/reference.json`.
+Omit `paths.input` only to let the loader use the same remote release. Static
+runs fall back to prepared tasks if the source cannot be imported or reached.
 
 ## Results and teacher data
 

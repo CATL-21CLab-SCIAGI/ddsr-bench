@@ -4,8 +4,10 @@ CMPhysBench evaluates graduate-level condensed-matter reasoning. A model writes
 a derivation and places its final LaTeX expression in `\boxed{}`. The SEED metric
 compares that expression with the official reference and awards partial credit.
 
-The adapter pins both the upstream implementation and Hugging Face dataset. See
-the [CMPhysBench pipeline](PIPELINE.md) for the data boundary and scoring flow.
+The adapter pins both the upstream implementation and Hugging Face dataset. No
+accessible corrected edition was found in the bounded search recorded in the
+[dataset catalog](../../../DATASETS.md). See the
+[CMPhysBench pipeline](PIPELINE.md) for the data boundary and scoring flow.
 Shared client setup, collection, and trajectory export are documented by the
 root [workflow](../../../README.md). Client configuration is covered
 by the [generation guide](../../generation/README.md).
@@ -30,6 +32,12 @@ messages, response logs, and training exports.
 
 Preparing Harbor tasks is optional; the static path below reads the pinned
 Hugging Face dataset directly.
+
+For reproducible local preparation, materialize and validate the pinned source:
+
+```bash
+ddsr-bench action=fetch benchmark=cmphysbench
+```
 
 ## Evaluation
 
@@ -79,15 +87,18 @@ docker build -f docker/cmphysbench/Dockerfile \
 
 ddsr-bench action=prepare benchmark=cmphysbench \
   harbor.image=ddsr-bench-cmphysbench:latest \
-  paths.output=tasks/cmphysbench
+  paths.input=datasets/cmphysbench/official/CMPhysBench.json \
+  paths.output=tasks/cmphysbench/official
 
 harbor run --config configs/jobs/cmphysbench/vllm.yaml
 ```
 
-Append `--path tasks/cmphysbench --include-task-name 1` to run only problem 1.
+Append `--path tasks/cmphysbench/official --include-task-name 1` to run only
+problem 1.
 
-Preparation downloads the same pinned Hugging Face split and writes only the
-100 gradeable problems. Harbor stores public input in `instruction.md` and the
+Preparation reads the supplied pinned file and writes only the 100 gradeable
+problems. Omit `paths.input` only to let the loader use the same remote split.
+Harbor stores public input in `instruction.md` and the
 official answer separately under `tests/reference.json`. The same job files are
 accepted by `harbor run` and `ddsr-solve`; direct static runs ignore the prepared
 dataset path while Hugging Face is reachable. If access fails with an I/O or

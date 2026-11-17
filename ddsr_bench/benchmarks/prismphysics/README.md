@@ -7,8 +7,11 @@ credit to every prerequisite of a matched formula. The result is a continuous
 process score and a thresholded problem-level decision.
 
 The adapter pins the official seven-shard dataset, text-only prompt, formula
-engine, score propagation, and `0.8` correctness threshold. See the
-[PRISM pipeline](PIPELINE.md) for the artifact flow. Shared client setup,
+engine, score propagation, and `0.8` correctness threshold. No accessible full
+correction was found; the available independent audit covers only a frozen
+100-problem subset, as recorded in the
+[dataset catalog](../../../DATASETS.md). See the [PRISM pipeline](PIPELINE.md)
+for the artifact flow. Shared client setup,
 collection, and trajectory export are documented by the root
 [workflow](../../../README.md).
 
@@ -32,10 +35,24 @@ example contains a form-feed created by a non-raw `\frac`, and released plural
 `final_answer_instructions` are not appended because the upstream renderer
 looks for singular keys.
 
-The dataset exposes image captions and locations for 549 records, but its Hugging
-Face repository does not distribute the referenced image assets. This adapter
-therefore implements the paper's official text-only setting and preserves image
-metadata for future multimodal sourcing.
+The upstream driver defaults to text mode and separately supports multimodal
+evaluation when a local image tree is supplied. The pinned Hugging Face revision
+contains only the seven JSON shards and its README; it bundles no task JPEGs.
+The JSON is a partial public image source: 90 image entries are absolute CDN
+URLs, while 596 entries are unresolved root-relative paths and one entry is
+malformed HTML. A live CDN JPEG was verified on 2026-11-17, but the complete
+multimodal corpus could not be located. DDSR therefore implements the upstream
+default text mode, retains image metadata only in the raw loader projection, and
+omits unused image metadata from prepared instructions and generation records.
+Four released question texts also contain relative Markdown image links inside
+their context or subquestions. Those strings remain for byte-level prompt parity;
+their corresponding relative assets were not found in the checked public trees.
+
+Materialize and validate all seven pinned shards with:
+
+```bash
+ddsr-bench action=fetch benchmark=prismphysics
+```
 
 ## Evaluation
 
@@ -81,13 +98,16 @@ docker build \
 
 ddsr-bench action=prepare benchmark=prismphysics \
   harbor.image=ddsr-bench-prismphysics:latest \
-  paths.output=tasks/prismphysics
+  paths.input=datasets/prismphysics/official \
+  paths.output=tasks/prismphysics/official
 
 harbor run --config configs/jobs/prismphysics/vllm.yaml
 ```
 
-Append `--path tasks/prismphysics --include-task-name 02-3006` to run one
-prepared task. Static evaluation falls back to those tasks when Hugging Face is
+Preparation reads all seven pinned shards from the supplied directory; omit
+`paths.input` only to let the loader fetch them directly. Append
+`--path tasks/prismphysics/official --include-task-name 02-3006` to run one
+prepared task. Static evaluation falls back to those tasks when the source is
 unavailable.
 
 ## Results and teacher data

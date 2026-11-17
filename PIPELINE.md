@@ -6,8 +6,10 @@ clients, job configuration, collection, and training-data export.
 
 ```mermaid
 flowchart TD
-    A["Benchmark source data"] --> B["Benchmark data adapter"]
-    B --> C["Prepared task directories"]
+    A["Pinned benchmark source"] --> B["Shared source catalog"]
+    B --> C0["Validated local edition"]
+    C0 --> B0["Benchmark data adapter"]
+    B0 --> C["Prepared task directories"]
     C --> D["Job configuration"]
     D --> E{"Evaluation mode"}
     E -->|"Harbor"| F["Schedule problem × attempt"]

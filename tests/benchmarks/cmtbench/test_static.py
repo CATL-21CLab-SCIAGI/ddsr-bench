@@ -110,7 +110,7 @@ async def test_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
     compile_problem(
         problem(),
-        tmp_path / "tasks" / "cmtbench",
+        tmp_path / "tasks" / "cmtbench" / "v2",
         Resources("cmtbench:test", 2, 4096, 120),
     )
 
@@ -134,7 +134,7 @@ agents:
       client_name: vllm
       sampling: {max_tokens: 8192, temperature: 0.0, top_p: 1.0}
 datasets:
-  - path: tasks/cmtbench
+  - path: tasks/cmtbench/v2
 """,
         encoding="utf-8",
     )

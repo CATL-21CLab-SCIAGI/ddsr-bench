@@ -21,17 +21,20 @@ def test_collect_action(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
     def prepare(config, source, output, resources):
-        assert config.split == "validation"
-        assert source is None
-        assert output == "tasks/scicode-validation"
+        assert config.split == "test"
+        assert source == "datasets/scicode/v2.2/data/problems_test.jsonl"
+        assert output == "tasks/scicode/v2.2"
         assert resources.cpus == 2
         return [Path(output)]
 
     monkeypatch.setattr("ddsr_bench.commands.dispatch.preparer", lambda _: prepare)
     config = SimpleNamespace(
         action="prepare",
-        benchmark=SimpleNamespace(name="scicode", split="validation"),
-        paths=SimpleNamespace(input=None, output="tasks/scicode-validation"),
+        benchmark=SimpleNamespace(name="scicode", split="test"),
+        paths=SimpleNamespace(
+            input="datasets/scicode/v2.2/data/problems_test.jsonl",
+            output="tasks/scicode/v2.2",
+        ),
         harbor=SimpleNamespace(
             image="ddsr-bench-scicode:test",
             cpus=2,
@@ -40,7 +43,22 @@ def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
 
-    assert dispatch(config) == "prepared 1 Harbor tasks in tasks/scicode-validation"
+    assert dispatch(config) == "prepared 1 Harbor tasks in tasks/scicode/v2.2"
+
+
+def test_fetches_all_datasets(monkeypatch: pytest.MonkeyPatch) -> None:
+    datasets = [SimpleNamespace(reused=False), SimpleNamespace(reused=True)]
+    monkeypatch.setattr(
+        "ddsr_bench.commands.dispatch.fetch_sources",
+        lambda names, root: datasets if names is None and root == "datasets" else [],
+    )
+    config = SimpleNamespace(
+        action="fetch",
+        benchmark=SimpleNamespace(name="all"),
+        paths=SimpleNamespace(datasets="datasets"),
+    )
+
+    assert dispatch(config) == "fetched 1 and reused 1 dataset editions under datasets"
 
 
 def test_rejects_unknown_action() -> None:
@@ -115,8 +133,10 @@ def test_submit_action(
 
 def test_logging_is_idempotent() -> None:
     first = configure_logging()
+    first.disabled = True
     second = configure_logging()
 
     assert first is second
+    assert not second.disabled
     assert first.name == LOGGER_NAME
     assert len(first.handlers) == 1

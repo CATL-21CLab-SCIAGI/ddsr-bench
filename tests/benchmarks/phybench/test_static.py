@@ -116,7 +116,7 @@ async def test_job(
 
     compile_problem(
         problem(),
-        tmp_path / "tasks" / "phybench",
+        tmp_path / "tasks" / "phybench" / "loca",
         Resources("phybench:test", 2, 4096, 120),
     )
     monkeypatch.setattr(static, "load_split", unavailable)
@@ -136,7 +136,7 @@ agents:
       client_name: vllm
       sampling: {max_tokens: 32768, temperature: 0.6, top_p: 0.95}
 datasets:
-  - path: tasks/phybench
+  - path: tasks/phybench/loca
 """,
         encoding="utf-8",
     )

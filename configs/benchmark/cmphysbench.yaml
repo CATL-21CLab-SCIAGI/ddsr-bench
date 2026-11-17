@@ -1,5 +1,12 @@
 name: cmphysbench
 dataset: weidawang/CMPhysBench
 revision: 43d185851f731e23aa5737c3667b3a9e87bf8cd1
+data_file: CMPhysBench.json
 split: train
 gradable_only: true
+edition: official
+authority: official
+status: unverified
+expected_records: 520
+expected_gradable: 100
+source_sha256: ba3b2d53faf20e66bb87dfa7d21be4d1162d70d246b0d8c186b9b716a9813832

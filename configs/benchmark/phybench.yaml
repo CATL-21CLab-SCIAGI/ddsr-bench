@@ -1,6 +1,15 @@
 name: phybench
-dataset: Eureka-Lab/PHYBench
-revision: d6d91c787b7abb865eb2490a328bf85a9f5095f0
-data_file: PHYBench-questions_v1.json
+# Independent LOCA correction release, not an official PHYBench revision.
+# LOCA section 4.2 reports expert review of all 100 public-reference problems,
+# 20 incorrect answers, and corrected answers where possible:
+# https://arxiv.org/abs/2510.01249
+dataset: Science-Discovery/LOCA
+revision: 0e3b86b2ee18ab6118dd57029a3f8de444db365e
+data_file: problem_set/PHYBENCH_100/PHYBENCH_100_fixed.jsonl
 split: train
 gradable_only: true
+edition: loca
+authority: independent
+status: corrected
+expected_records: 100
+source_sha256: d2042c2e84a12ffc71d027c7ffb3dbea6a0ff23fee4de03b39eaadbbdf027e51

@@ -1,6 +1,10 @@
 name: prismphysics
 dataset: open-prism/PRISM-Physics
 revision: 89d1e1cb91ec14b319482ec36b43fca5305f9c86
+edition: official
+authority: official
+status: unverified
+expected_records: 1401
 files:
   - 01_cleaned_dag.json
   - 02_cleaned_dag.json
@@ -10,3 +14,4 @@ files:
   - 06_cleaned_dag.json
   - 07_cleaned_dag.json
 threshold: 0.8
+source_sha256: 665569b68c8e43ef8d114fbc48b99c90385c384f3e78447818ce02cbcf30ef8f

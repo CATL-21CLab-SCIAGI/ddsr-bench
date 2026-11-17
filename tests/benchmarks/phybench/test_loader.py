@@ -15,6 +15,7 @@ from ddsr_bench.benchmarks.phybench.data.loader import (
 )
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "phybench_133.json"
+CORRECTED_FIXTURE = Path(__file__).parents[2] / "fixtures" / "phybench_loca_41.json"
 
 
 def record(problem_id: int = 10, answer: str = "x^2") -> dict:
@@ -46,6 +47,15 @@ def test_real_problem() -> None:
     assert problem.answer.value == "$$\\frac{v^3}{R v_x}$$"
 
 
+def test_corrected_problem() -> None:
+    value = json.loads(CORRECTED_FIXTURE.read_text(encoding="utf-8"))
+    problem = load_problem(value)
+
+    assert problem.spec.id == "41"
+    assert problem.answer is not None
+    assert problem.answer.value.startswith("$$R\\left")
+
+
 def test_gradable_filter() -> None:
     records = [record(10), record(11, "")]
 
@@ -67,8 +77,8 @@ def test_unique_ids() -> None:
 
 
 def test_pinned_source() -> None:
-    assert DATASET == "Eureka-Lab/PHYBench"
-    assert REVISION == "d6d91c787b7abb865eb2490a328bf85a9f5095f0"
-    assert DATA_FILE == "PHYBench-questions_v1.json"
+    assert DATASET == "Science-Discovery/LOCA"
+    assert REVISION == "0e3b86b2ee18ab6118dd57029a3f8de444db365e"
+    assert DATA_FILE == "problem_set/PHYBENCH_100/PHYBENCH_100_fixed.jsonl"
     assert SPLIT == "train"
     assert GRADABLE_ONLY is True

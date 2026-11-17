@@ -17,20 +17,29 @@ collection, and export. Configure model access with the shared
 
 ### Official problems
 
-Download the pinned
-[official challenge JSON files](https://github.com/CritPt-Benchmark/CritPt/tree/17c2545c302762d2f2d644d923ea4c301605cb08/data/public_test_challenges/json).
-Provide the downloaded directory as `paths.input`:
+Fetch the pinned CritPt v2 challenge files, then provide the materialized
+directory as `paths.input`:
+
+```bash
+ddsr-bench action=fetch benchmark=critpt
+```
 
 ```bash
 ddsr-bench \
   action=prepare \
-  paths.input=path/to/CritPt/data/public_test_challenges/json \
-  paths.output=tasks/critpt-official
+  paths.input=datasets/critpt/v2 \
+  paths.output=tasks/critpt/v2
 ```
 
 Preparation emits one task per main or indexed subproblem. The official public
 set produces 70 main tasks. Public fields go into the model instruction;
 reference code and optional testcases remain verifier-only.
+
+The challenge data and prompt text are pinned separately: v2 revises 52 of the
+70 challenge records, while DDSR's prompt renderer remains byte-compatible with
+its inspected official prompt commit. Upstream does not publish an item-level
+correction ledger, so DDSR calls this edition `revised`, not `corrected`. See the
+[dataset catalog](../../../DATASETS.md) for the distinction.
 
 ### AI-generated problems
 
@@ -78,7 +87,7 @@ harbor run --config configs/jobs/critpt/vllm.yaml
 
 Other client configurations live beside `vllm.yaml`. The default job directory
 is `outputs/harbor/critpt-official`. To select one prepared problem, append
-`--path tasks/critpt-official --include-task-name Challenge_1_main`.
+`--path tasks/critpt/v2 --include-task-name Challenge_1_main`.
 
 ### Static
 

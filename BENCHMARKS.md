@@ -15,3 +15,6 @@ across all benchmarks.
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.
+
+The selected source edition and accessible correction alternatives are recorded
+in the [dataset catalog](DATASETS.md).

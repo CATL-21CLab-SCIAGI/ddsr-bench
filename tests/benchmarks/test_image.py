@@ -30,8 +30,12 @@ def test_scicode_image() -> None:
 
     assert "scicode-bench/SciCode" not in dockerfile
     assert all(name in dockerfile for name in ("h5py", "matplotlib", "numpy", "scipy"))
-    assert "COPY datasets/scicode/test_data.h5 /opt/scicode/test_data.h5" in dockerfile
-    assert "!datasets/scicode/test_data.h5" in ignored
+    assert (
+        "COPY datasets/scicode/v2.2/test_data_cleaned.h5 /opt/scicode/test_data.h5"
+        in dockerfile
+    )
+    assert "!datasets/scicode/v2.2/test_data_cleaned.h5" in ignored
+    assert "32c5602f2bf08393f917f03ff0b80d40" in dockerfile
 
 
 def test_cmtbench_image() -> None:

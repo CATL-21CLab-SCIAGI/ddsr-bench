@@ -35,6 +35,7 @@ Preparer = Callable[
     tuple[Path, ...],
 ]
 Submitter = Callable[[str | Path, Mapping[str, Any]], str]
+DatasetValidator = Callable[[Path], None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +49,7 @@ class Benchmark:
     sft_adapter: str | None = None
     preparer: str | None = None
     submitter: str | None = None
+    dataset_validator: str | None = None
 
 
 BENCHMARKS = {
@@ -58,12 +60,14 @@ BENCHMARKS = {
         sft_adapter="ddsr_bench.benchmarks.critpt.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.critpt.evaluation.prepare:prepare_tasks",
         submitter="ddsr_bench.benchmarks.critpt.submission:submit",
+        dataset_validator="ddsr_bench.benchmarks.critpt.data.official:validate_source",
     ),
     "scicode": Benchmark(
         result_adapter="ddsr_bench.benchmarks.scicode.result:trial_fields",
         trajectory_adapter="ddsr_bench.benchmarks.scicode.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.scicode.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.scicode.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.scicode.data.loader:validate_source",
     ),
     "cmphysbench": Benchmark(
         static_runner="ddsr_bench.benchmarks.cmphysbench.evaluation.static:run_job",
@@ -72,6 +76,7 @@ BENCHMARKS = {
         trajectory_adapter="ddsr_bench.benchmarks.cmphysbench.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.cmphysbench.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.cmphysbench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.cmphysbench.data.loader:validate_source",
     ),
     "phybench": Benchmark(
         static_runner="ddsr_bench.benchmarks.phybench.evaluation.static:run_job",
@@ -80,6 +85,7 @@ BENCHMARKS = {
         trajectory_adapter="ddsr_bench.benchmarks.phybench.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.phybench.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.phybench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.phybench.data.loader:validate_source",
     ),
     "cmtbench": Benchmark(
         static_runner="ddsr_bench.benchmarks.cmtbench.evaluation.static:run_job",
@@ -88,6 +94,7 @@ BENCHMARKS = {
         trajectory_adapter="ddsr_bench.benchmarks.cmtbench.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.cmtbench.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.cmtbench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.cmtbench.data.loader:validate_source",
     ),
     "prismphysics": Benchmark(
         static_runner="ddsr_bench.benchmarks.prismphysics.evaluation.static:run_job",
@@ -96,6 +103,7 @@ BENCHMARKS = {
         trajectory_adapter="ddsr_bench.benchmarks.prismphysics.trajectory:normalize",
         sft_adapter="ddsr_bench.benchmarks.prismphysics.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.prismphysics.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.prismphysics.data.loader:validate_source",
     ),
 }
 
@@ -158,4 +166,11 @@ def submitter(name: str) -> Submitter:
     target = benchmark(name).submitter
     if target is None:
         raise ValueError(f"benchmark {name!r} does not support submission")
+    return _resolve(target)
+
+
+def dataset_validator(name: str) -> DatasetValidator:
+    target = benchmark(name).dataset_validator
+    if target is None:
+        raise ValueError(f"benchmark {name!r} has no dataset validator")
     return _resolve(target)

@@ -8,6 +8,7 @@ action: prepare
 paths:
   input: null
   output: outputs
+  datasets: datasets
 run:
   name: default
 training:

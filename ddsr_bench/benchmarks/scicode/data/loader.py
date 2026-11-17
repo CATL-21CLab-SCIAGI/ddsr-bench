@@ -9,12 +9,17 @@ import h5py
 import scipy.sparse
 
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
-from ddsr_bench.benchmarks.utils import benchmark_config, read_text
+from ddsr_bench.benchmarks.utils import benchmark_config, read_jsonl, read_text
 
 _CONFIG = benchmark_config("scicode")
 DATASET = str(_CONFIG["dataset"])
 REVISION = str(_CONFIG["revision"])
+VERSION = str(_CONFIG["version"])
+DATA_FILE = str(_CONFIG["data_file"])
+TARGETS_FILE = str(_CONFIG["targets_file"])
 SPLIT = str(_CONFIG["split"])
+EXPECTED_PROBLEMS = int(_CONFIG["expected_problems"])
+EXPECTED_SCORED_STEPS = int(_CONFIG["expected_scored_steps"])
 _FIXED_STEPS = {"13.6", "62.1", "76.3"}
 
 
@@ -23,18 +28,23 @@ def _step(record: Mapping[str, Any], problem_id: str) -> SciCodeStep:
     tests = record.get("test_cases")
     if not isinstance(tests, list) or any(not isinstance(test, str) for test in tests):
         raise TypeError(f"SciCode step {step_id!r} requires text test cases")
+    return_line = record.get("return_line")
+    if return_line is None and step_id in _FIXED_STEPS:
+        return_line = ""
+    if not isinstance(return_line, str):
+        raise TypeError(f"{step_id} requires text at 'return_line'")
     return SciCodeStep(
         id=step_id,
         statement=read_text(record, "step_description_prompt", step_id),
         function=read_text(record, "function_header", step_id),
-        return_line=read_text(record, "return_line", step_id),
+        return_line=return_line,
         background=read_text(record, "step_background", step_id),
         tests=tuple(tests),
     )
 
 
 def load_problem(record: Mapping[str, Any]) -> SciCodeProblem:
-    """Normalize one problem from the official SciCode dataset."""
+    """Normalize one problem from the selected SciCode edition."""
     problem_id = read_text(record, "problem_id", "SciCode problem")
     records = record.get("sub_steps")
     if not isinstance(records, list) or any(
@@ -65,13 +75,45 @@ def load_problems(records: Iterable[Mapping[str, Any]]) -> list[SciCodeProblem]:
 
 
 def load_split(split: str = SPLIT) -> list[SciCodeProblem]:
-    """Load one official SciCode split from Hugging Face."""
-    from datasets import load_dataset
+    """Load the pinned corrected SciCode evaluation split."""
+    from huggingface_hub import hf_hub_download
 
-    records: Iterable[Mapping[str, Any]] = load_dataset(
-        DATASET, split=split, revision=REVISION
+    if split != SPLIT:
+        raise ValueError(f"SciCode-Verified provides only the {SPLIT!r} split")
+    path = Path(
+        hf_hub_download(DATASET, DATA_FILE, repo_type="dataset", revision=REVISION)
     )
-    return load_problems(records)
+    return load_file(path)
+
+
+def load_file(path: str | Path) -> list[SciCodeProblem]:
+    """Load the pinned SciCode edition from a local JSONL file."""
+    problems = load_problems(read_jsonl(path))
+    scored = sum(
+        step.id not in _FIXED_STEPS for problem in problems for step in problem.steps
+    )
+    if len(problems) != EXPECTED_PROBLEMS or scored != EXPECTED_SCORED_STEPS:
+        raise ValueError("SciCode-Verified does not match its pinned release counts")
+    return problems
+
+
+def validate_source(path: Path) -> None:
+    """Validate one materialized SciCode edition."""
+    problems = load_file(path / DATA_FILE)
+    targets = path / TARGETS_FILE
+    try:
+        with h5py.File(targets, "r") as file:
+            for problem in problems:
+                for step in problem.steps:
+                    if step.id in _FIXED_STEPS:
+                        continue
+                    for index in range(1, len(step.tests) + 1):
+                        if f"{step.id}/test{index}" not in file:
+                            raise ValueError(
+                                f"SciCode targets require {step.id!r} test {index}"
+                            )
+    except OSError as error:
+        raise ValueError(f"cannot read SciCode targets {targets}") from error
 
 
 def load_fixed(step_id: str) -> str | None:

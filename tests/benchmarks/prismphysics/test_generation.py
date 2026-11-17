@@ -60,6 +60,7 @@ async def test_single_call() -> None:
     assert record["sampling"] == asdict(sampling)
     assert record["responses"][0]["reasoning"] == "teacher reasoning"
     assert record["problem"]["domain"] == "electromagnetism"
+    assert record["problem"]["images"] == []
     serialized = json.dumps(record)
     assert "grading_standard" not in serialized
     assert "parallel-plate capacitor" not in serialized

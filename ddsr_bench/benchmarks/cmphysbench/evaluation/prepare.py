@@ -13,6 +13,7 @@ from ddsr_bench.benchmarks.cmphysbench.data.loader import (
     GRADABLE_ONLY,
     REVISION,
     SPLIT,
+    load_file,
     load_split,
 )
 from ddsr_bench.benchmarks.cmphysbench.data.schemas import Problem, ProblemSpec
@@ -107,7 +108,7 @@ def compile_problems(
 
 def prepare_tasks(
     config: Mapping[str, Any],
-    _source: str | Path | None,
+    source: str | Path | None,
     output: str | Path,
     resources: Resources,
 ) -> tuple[Path, ...]:
@@ -120,9 +121,9 @@ def prepare_tasks(
         or config.get("gradable_only") is not GRADABLE_ONLY
     ):
         raise ValueError("CMPhysBench preparation requires its pinned configuration")
-    problems = load_split(
-        split=SPLIT,
-        revision=REVISION,
-        gradable_only=GRADABLE_ONLY,
+    problems = (
+        load_file(source, GRADABLE_ONLY)
+        if source is not None
+        else load_split(gradable_only=GRADABLE_ONLY)
     )
     return compile_problems(problems, output, resources)

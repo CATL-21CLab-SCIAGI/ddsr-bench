@@ -12,6 +12,7 @@ from ddsr_bench.benchmarks.scicode.data.loader import (
     DATASET,
     REVISION,
     SPLIT,
+    load_file,
     load_split,
 )
 from ddsr_bench.benchmarks.scicode.data.schemas import SciCodeProblem, SciCodeStep
@@ -115,4 +116,5 @@ def prepare_tasks(
     )
     if configured != ("scicode", DATASET, REVISION, SPLIT):
         raise ValueError("SciCode preparation requires its pinned configuration")
-    return compile_problems(load_split(config["split"]), output, resources)
+    problems = load_file(source) if source is not None else load_split()
+    return compile_problems(problems, output, resources)
