@@ -1,4 +1,13 @@
 name: scicode
-dataset: SciCode1/SciCode
-revision: 4510f6a6aa27c43fad7b43da2c59602a86e88480
-split: validation
+dataset: shhu2001/SciCode-Verified
+revision: 752eb6b786b0e0d0a3b44cdb7c066c559b952658
+version: v2.2
+data_file: data/problems_test.jsonl
+targets_file: test_data_cleaned.h5
+split: test
+edition: v2.2
+authority: independent
+status: corrected
+expected_problems: 64
+expected_scored_steps: 287
+source_sha256: aa90bd3a738322d05ee756e80a0888399e152bb68fc338a60793beb55f66d953

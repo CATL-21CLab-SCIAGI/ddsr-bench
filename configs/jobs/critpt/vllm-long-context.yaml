@@ -37,4 +37,4 @@ agents:
 
 # Dataset layer: normalized Harbor tasks.
 datasets:
-  - path: tasks/critpt-official
+  - path: tasks/critpt/v2

@@ -16,6 +16,7 @@ DATASET = str(_CONFIG["dataset"])
 REVISION = str(_CONFIG["revision"])
 FILES = tuple(str(file) for file in _CONFIG["files"])
 THRESHOLD = float(_CONFIG["threshold"])
+EXPECTED_RECORDS = int(_CONFIG["expected_records"])
 DOMAINS = {
     "01": "mechanics",
     "02": "electromagnetism",
@@ -155,4 +156,24 @@ def load_split(revision: str = REVISION) -> list[Problem]:
         hf_hub_download(DATASET, filename, repo_type="dataset", revision=revision)
         for filename in FILES
     ]
-    return [problem for path in paths for problem in load_shard(path)]
+    return _checked([problem for path in paths for problem in load_shard(path)])
+
+
+def load_directory(path: str | Path) -> list[Problem]:
+    """Load the pinned PRISM-Physics edition from a local shard directory."""
+    root = Path(path)
+    problems = [
+        problem for filename in FILES for problem in load_shard(root / filename)
+    ]
+    return _checked(problems)
+
+
+def validate_source(path: Path) -> None:
+    """Validate one materialized PRISM-Physics edition."""
+    load_directory(path)
+
+
+def _checked(problems: list[Problem]) -> list[Problem]:
+    if len(problems) != EXPECTED_RECORDS:
+        raise ValueError("PRISM-Physics does not match its pinned release count")
+    return problems

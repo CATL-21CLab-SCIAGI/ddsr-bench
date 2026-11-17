@@ -14,6 +14,7 @@ from ddsr_bench.benchmarks.prismphysics.data.loader import (
     FILES,
     REVISION,
     THRESHOLD,
+    load_directory,
     load_split,
 )
 from ddsr_bench.benchmarks.prismphysics.data.schemas import (
@@ -31,8 +32,15 @@ python -m ddsr_bench.benchmarks.prismphysics.evaluation.verifier
 
 
 def encode_instruction(problem: ProblemSpec) -> str:
-    """Serialize the public model input for a normalized task."""
-    return json.dumps(asdict(problem), indent=2, ensure_ascii=False)
+    """Serialize the text-only model input for a normalized task.
+
+    The pinned dataset publishes image metadata but not its relative image files.
+    Keep all unused image metadata in the raw loader projection, not in a task
+    whose configured text mode does not supply images to the model.
+    """
+    value = asdict(problem)
+    value["images"] = []
+    return json.dumps(value, indent=2, ensure_ascii=False)
 
 
 def decode_instruction(instruction: str) -> ProblemSpec:
@@ -125,7 +133,7 @@ def compile_problems(
 
 def prepare_tasks(
     config: Mapping[str, Any],
-    _source: str | Path | None,
+    source: str | Path | None,
     output: str | Path,
     resources: Resources,
 ) -> tuple[Path, ...]:
@@ -139,6 +147,7 @@ def prepare_tasks(
     )
     if configured != ("prismphysics", DATASET, REVISION, FILES, THRESHOLD):
         raise ValueError("PRISM-Physics preparation requires its pinned configuration")
+    problems = load_directory(source) if source is not None else load_split()
     return compile_problems(
-        load_split(REVISION), output, resources, threshold=float(config["threshold"])
+        problems, output, resources, threshold=float(config["threshold"])
     )

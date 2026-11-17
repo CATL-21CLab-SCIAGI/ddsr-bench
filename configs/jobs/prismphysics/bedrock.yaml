@@ -24,4 +24,4 @@ agents:
 
 # Dataset layer: optional Harbor tasks and static fallback.
 datasets:
-  - path: tasks/prismphysics
+  - path: tasks/prismphysics/official

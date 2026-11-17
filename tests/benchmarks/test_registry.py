@@ -5,6 +5,7 @@ import pytest
 from ddsr_bench.benchmarks import registry
 from ddsr_bench.benchmarks.registry import (
     BENCHMARKS,
+    dataset_validator,
     preparer,
     result_adapter,
     sft_adapter,
@@ -79,6 +80,11 @@ def test_preparation_capabilities() -> None:
     assert preparer("phybench").__name__ == "prepare_tasks"
     assert preparer("cmtbench").__name__ == "prepare_tasks"
     assert preparer("prismphysics").__name__ == "prepare_tasks"
+
+
+@pytest.mark.parametrize("name", BENCHMARKS)
+def test_dataset_source_capabilities(name: str) -> None:
+    assert callable(dataset_validator(name))
 
 
 def test_submission_capabilities() -> None:

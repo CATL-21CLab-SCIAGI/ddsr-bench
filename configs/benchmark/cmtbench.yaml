@@ -2,5 +2,10 @@ name: cmtbench
 dataset: CMTBenchmark/cmt_benchmark
 revision: c6aa803a6ca553091095ecf07e747b8720b1fbc2
 version: 2.0.0
+edition: v2
+authority: official
+status: corrected
+expected_records: 50
 data_file: cmt_data.jsonl
 split: train
+source_sha256: 1e3798eb32dc9ffefd9e9cdbe4c312ba7f6bdd7d5a9efa29823c7246919f2854

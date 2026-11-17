@@ -12,6 +12,7 @@ from ddsr_bench.benchmarks.critpt.data.schemas import (
     Problem,
     ProblemSpec,
 )
+from ddsr_bench.benchmarks.utils import benchmark_config
 
 from .utils import read_json, require_text
 
@@ -109,3 +110,10 @@ def load_challenges(root: str | Path) -> list[Challenge]:
     if len(ids) != len(set(ids)):
         raise ValueError("challenge IDs must be unique")
     return challenges
+
+
+def validate_source(path: Path) -> None:
+    """Validate one materialized CritPt edition."""
+    config = benchmark_config("critpt")
+    if len(load_challenges(path)) != int(config["expected_challenges"]):
+        raise ValueError("CritPt does not match its pinned challenge count")

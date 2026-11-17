@@ -29,4 +29,4 @@ agents:
 
 # Dataset layer: optional Harbor tasks and static fallback.
 datasets:
-  - path: tasks/cmtbench
+  - path: tasks/cmtbench/v2

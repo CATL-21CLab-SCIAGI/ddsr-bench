@@ -3,10 +3,14 @@
 PHYBench evaluates advanced physics reasoning. A model produces a step-by-step
 solution and places its final readable LaTeX formula in `\boxed{}`. The
 Expression Edit Distance (EED) metric gives partial credit by comparing the
-symbolic expression tree with the official reference.
+symbolic expression tree with the selected reference.
 
-The adapter pins the official dataset, prompt, and EED implementation. See the
-[PHYBench pipeline](PIPELINE.md) for the data and scoring flow. Shared client
+The adapter pins LOCA's independently corrected 100-problem edition together
+with the official prompt and EED implementation. LOCA reports expert review of
+all 100 public-reference problems, identification of 20 wrong answers, and
+corrections where possible; this is not an official PHYBench revision. See the
+[dataset catalog](../../../DATASETS.md) for the evidence and limitations, and
+the [PHYBench pipeline](PIPELINE.md) for the data and scoring flow. Shared client
 setup, collection, and trajectory export are documented by the root
 [workflow](../../../README.md).
 
@@ -18,14 +22,22 @@ Install the optional benchmark dependencies:
 python -m pip install -e '.[phybench]'
 ```
 
-The canonical Hugging Face file contains 500 unique problems. One hundred have
-official solutions and answers and can be scored locally; the other 400 are
-generation-only. Default evaluation selects the 100 gradeable records.
+The selected edition preserves all 100 public IDs and is DDSR's default because
+it is the strongest accessible full semantic correction found. Parser-only
+repairs, a 59-problem verified subset, and an independent 87-problem audited
+subset remain separately named alternatives in the
+[dataset catalog](../../../DATASETS.md).
 
 Only the ID, physics tag, and question enter model messages. Worked solutions
-and reference answers remain evaluator-side and are absent from response logs
-and training exports. Preparing Harbor tasks is optional because static runs
-read the pinned Hugging Face file directly.
+and corrected reference answers remain evaluator-side and are absent from
+response logs and training exports. Preparing Harbor tasks is optional because
+static runs read the pinned source file directly.
+
+Materialize and validate that corrected source with:
+
+```bash
+ddsr-bench action=fetch benchmark=phybench
+```
 
 ## Evaluation
 
@@ -68,15 +80,18 @@ docker build -f docker/phybench/Dockerfile \
 ddsr-bench action=prepare benchmark=phybench \
   harbor.image=ddsr-bench-phybench:latest \
   harbor.timeout_sec=1800 \
-  paths.output=tasks/phybench
+  paths.input=datasets/phybench/loca/PHYBENCH_100_fixed.jsonl \
+  paths.output=tasks/phybench/loca
 
 harbor run --config configs/jobs/phybench/vllm.yaml
 ```
 
-Append `--path tasks/phybench --include-task-name 133` to run only problem 133.
-Preparation writes public input to `instruction.md` and the reference answer to
-`tests/reference.json`. Static runs fall back to these prepared tasks if the
-pinned dataset cannot be imported or reached.
+Append `--path tasks/phybench/loca --include-task-name 133` to run only problem
+133. Preparation reads the supplied pinned JSONL file, writes public input to
+`instruction.md`, and keeps the reference answer in `tests/reference.json`.
+Omit `paths.input` only to let the loader use the same remote release. Static
+runs fall back to these prepared tasks if the source cannot be imported or
+reached.
 
 ## Results and teacher data
 
@@ -96,6 +111,10 @@ Provider job files document any explicit project choices that differ.
 
 The paper defines boxed-answer extraction but does not publish that driver; this
 adapter selects the final balanced box before applying the official EED code.
+EED also short-circuits identical strings before parsing. In a pinned-data
+compatibility probe, all 100 corrected references self-score by that path, but
+only 77 self-score after harmless trailing whitespace forces parsing. This is a
+metric limitation, not evidence that LOCA corrected only 77 records.
 Upstream provenance and pinned revisions are recorded in
 [UPSTREAM.md](../../../UPSTREAM.md). The adapted EED source retains its MIT
 attribution and is protected by parity tests.

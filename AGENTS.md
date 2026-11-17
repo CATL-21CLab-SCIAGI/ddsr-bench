@@ -112,6 +112,9 @@ When adding or auditing a benchmark:
   and published inference settings in `UPSTREAM.md`. Distinguish upstream
   behavior from project choices where roles, extraction, or API details are
   unpublished.
+- Register acquisition in the shared source catalog and validate each fetched
+  tree by digest plus its existing native loader. Do not create a parallel
+  source module for every benchmark.
 - Exercise real pinned data when available. Check field shapes, unique IDs,
   gradable counts, public/private projection, and prepared-task fallback using
   the exceptions actually raised by the data library.

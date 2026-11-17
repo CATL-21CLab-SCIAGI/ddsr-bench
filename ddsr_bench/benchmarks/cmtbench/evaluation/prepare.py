@@ -14,6 +14,7 @@ from ddsr_bench.benchmarks.cmtbench.data.loader import (
     REVISION,
     SPLIT,
     VERSION,
+    load_file,
     load_split,
 )
 from ddsr_bench.benchmarks.cmtbench.data.schemas import Problem, ProblemSpec
@@ -104,7 +105,7 @@ def compile_problems(
 
 def prepare_tasks(
     config: Mapping[str, Any],
-    _source: str | Path | None,
+    source: str | Path | None,
     output: str | Path,
     resources: Resources,
 ) -> tuple[Path, ...]:
@@ -119,6 +120,5 @@ def prepare_tasks(
     )
     if configured != ("cmtbench", DATASET, REVISION, VERSION, DATA_FILE, SPLIT):
         raise ValueError("CMT-Benchmark preparation requires its pinned configuration")
-    return compile_problems(
-        load_split(split=SPLIT, revision=REVISION), output, resources
-    )
+    problems = load_file(source) if source is not None else load_split()
+    return compile_problems(problems, output, resources)

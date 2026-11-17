@@ -89,7 +89,7 @@ async def test_job_from_prepared_task(
 
     compile_problem(
         problem(),
-        tmp_path / "tasks" / "prismphysics",
+        tmp_path / "tasks" / "prismphysics" / "official",
         Resources("prismphysics:test", 2, 4096, 120),
     )
 
@@ -113,7 +113,7 @@ agents:
       client_name: vllm
       sampling: {max_tokens: 8096, temperature: 0.0, top_p: 1.0}
 datasets:
-  - path: tasks/prismphysics
+  - path: tasks/prismphysics/official
 """,
         encoding="utf-8",
     )

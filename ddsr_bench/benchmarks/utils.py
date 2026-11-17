@@ -108,6 +108,25 @@ def read_json(
     return value
 
 
+def read_jsonl(path: str | Path) -> Iterator[dict[str, Any]]:
+    """Stream JSON objects from a UTF-8 JSONL file."""
+    source = Path(path)
+    try:
+        with source.open(encoding="utf-8") as lines:
+            for number, line in enumerate(lines, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    value = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise ValueError(f"cannot read {source}:{number}") from error
+                if not isinstance(value, dict):
+                    raise TypeError(f"{source}:{number} must contain a JSON object")
+                yield value
+    except OSError as error:
+        raise ValueError(f"cannot read {source}") from error
+
+
 def benchmark_config(name: str) -> dict[str, Any]:
     """Load one benchmark's shared YAML configuration."""
     import yaml

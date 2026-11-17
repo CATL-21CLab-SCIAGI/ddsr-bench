@@ -9,6 +9,7 @@ from omegaconf import DictConfig
 
 from ddsr_bench.benchmarks.collect import collect_trials
 from ddsr_bench.benchmarks.registry import preparer, submitter
+from ddsr_bench.benchmarks.sources import fetch_sources
 from ddsr_bench.benchmarks.utils import Resources
 from ddsr_bench.training.export import export_sft, export_trajectories
 
@@ -20,6 +21,7 @@ LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s | %(message)s"
 def configure_logging(verbose: bool = False) -> logging.Logger:
     """Configure the command logger once."""
     logger = logging.getLogger(LOGGER_NAME)
+    logger.disabled = False
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
     logger.propagate = False
     if not logger.handlers:
@@ -45,6 +47,17 @@ def prepare(config: DictConfig) -> str:
         resources,
     )
     return f"prepared {len(tasks)} Harbor tasks in {config.paths.output}"
+
+
+def fetch(config: DictConfig) -> str:
+    name = str(config.benchmark.name)
+    names = None if name == "all" else (name,)
+    datasets = fetch_sources(names, config.paths.datasets)
+    reused = sum(dataset.reused for dataset in datasets)
+    return (
+        f"fetched {len(datasets) - reused} and reused {reused} dataset editions "
+        f"under {config.paths.datasets}"
+    )
 
 
 def collect(config: DictConfig) -> str:
@@ -77,6 +90,7 @@ def submit(config: DictConfig) -> str:
 
 
 ACTIONS: dict[str, Action] = {
+    "fetch": fetch,
     "prepare": prepare,
     "collect": collect,
     "export": export,

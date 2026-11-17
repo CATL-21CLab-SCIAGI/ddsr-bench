@@ -1,5 +1,6 @@
 import json
 import math
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -30,7 +31,11 @@ def test_compile(tmp_path: Path) -> None:
     )
 
     task = Task(task_path)
-    assert decode_instruction(encode_instruction(source.spec)) == source.spec
+    assert source.spec.images
+    assert decode_instruction(encode_instruction(source.spec)) == replace(
+        source.spec, images=()
+    )
+    assert source.spec.images[0].location not in task.instruction
     assert source.answer.formulas[0].formula not in task.instruction
     reference = json.loads((task_path / "tests" / "reference.json").read_text())
     assert reference["formulas"][1]["dependencies"] == [1]

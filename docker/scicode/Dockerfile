@@ -12,6 +12,7 @@ RUN python -m pip install --no-cache-dir \
     "sympy>=1.13,<2"
 
 COPY ddsr_bench /opt/ddsr-bench/ddsr_bench
-COPY datasets/scicode/test_data.h5 /opt/scicode/test_data.h5
+COPY datasets/scicode/v2.2/test_data_cleaned.h5 /opt/scicode/test_data.h5
+RUN echo "32c5602f2bf08393f917f03ff0b80d40  /opt/scicode/test_data.h5" | md5sum -c -
 
 WORKDIR /app

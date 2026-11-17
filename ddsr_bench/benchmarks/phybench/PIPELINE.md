@@ -6,9 +6,7 @@ the other supported benchmarks.
 
 ```mermaid
 flowchart TD
-    A["Pinned canonical file: 500 problems"] --> B{"Official answer present?"}
-    B -->|"yes: 100"| C["Build public tag and question"]
-    B -->|"no: 400"| D["Generation-only; omit from local scoring"]
+    A["Pinned independent LOCA correction: 100 problems"] --> C["Build public tag and question"]
     C --> E{"Evaluation path"}
     E -->|"direct"| F["ddsr-solve; no preparation or Docker"]
     E -->|"optional"| G["Normalize as Harbor task"]

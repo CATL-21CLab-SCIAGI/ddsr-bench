@@ -30,7 +30,7 @@ flowchart TD
 ```
 
 The verifier executes each step in a separate isolated Python subprocess using
-the official assertions and targets from `test_data.h5`. The complete problem
+the corrected assertions and matching v2.2 HDF5 targets. The complete problem
 passes only when every evaluated step passes. SciCode has no static runner and
 no Artificial Analysis submission stage.
 

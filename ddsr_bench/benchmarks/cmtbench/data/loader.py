@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 from typing import Any, get_args
 
-from ddsr_bench.benchmarks.utils import benchmark_config, read_text
+from ddsr_bench.benchmarks.utils import benchmark_config, read_jsonl, read_text
 
 from .schemas import AnswerSpec, Problem, ProblemSpec, ProblemType
 
@@ -13,6 +14,7 @@ REVISION = str(_CONFIG["revision"])
 VERSION = str(_CONFIG["version"])
 DATA_FILE = str(_CONFIG["data_file"])
 SPLIT = str(_CONFIG["split"])
+EXPECTED_RECORDS = int(_CONFIG["expected_records"])
 
 
 def load_problem(record: Mapping[str, Any]) -> Problem:
@@ -60,4 +62,20 @@ def load_split(split: str = SPLIT, revision: str = REVISION) -> list[Problem]:
         split=split,
         revision=revision,
     )
-    return load_problems(records)
+    return _checked(load_problems(records))
+
+
+def load_file(path: str | Path) -> list[Problem]:
+    """Load the pinned CMT edition from a local JSONL file."""
+    return _checked(load_problems(read_jsonl(path)))
+
+
+def validate_source(path: Path) -> None:
+    """Validate one materialized CMT-Benchmark edition."""
+    load_file(path / DATA_FILE)
+
+
+def _checked(problems: list[Problem]) -> list[Problem]:
+    if len(problems) != EXPECTED_RECORDS:
+        raise ValueError("CMT-Benchmark does not match its pinned release count")
+    return problems

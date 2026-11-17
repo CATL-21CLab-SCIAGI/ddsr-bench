@@ -31,4 +31,4 @@ agents:
 
 # Dataset layer: optional Harbor tasks and static fallback.
 datasets:
-  - path: tasks/cmphysbench
+  - path: tasks/cmphysbench/official

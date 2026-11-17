@@ -46,8 +46,8 @@ prismphysics = [
     "regex>=2024.11,<2027",
 ]
 scicode = [
-    "datasets>=4,<6",
     "h5py>=3,<4",
+    "huggingface-hub>=0.27,<2",
 ]
 
 [project.scripts]

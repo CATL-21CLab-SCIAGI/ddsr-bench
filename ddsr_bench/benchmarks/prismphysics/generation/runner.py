@@ -34,7 +34,8 @@ async def generate(
             "shard": problem.shard,
             "domain": problem.domain,
             "source": problem.source,
-            "images": [asdict(image) for image in problem.images],
+            # Text mode sends no images, so do not record unused locations.
+            "images": [],
         },
         "strategy": "text-only",
         "model": response.model,

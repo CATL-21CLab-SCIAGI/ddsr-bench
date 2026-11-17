@@ -5,7 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from ddsr_bench.benchmarks.utils import read_bytes, read_json, read_text, write_json
+from ddsr_bench.benchmarks.utils import (
+    read_bytes,
+    read_json,
+    read_jsonl,
+    read_text,
+    write_json,
+)
 
 
 def test_write_json(tmp_path):
@@ -78,6 +84,18 @@ def test_read_json(tmp_path):
             read_json(path)
     with pytest.raises(ValueError, match="cannot read"):
         read_json(tmp_path / "missing.json")
+
+
+def test_read_jsonl(tmp_path):
+    path = tmp_path / "records.jsonl"
+    path.write_text('{"id": 1}\n\n{"id": 2}\n', encoding="utf-8")
+    assert list(read_jsonl(path)) == [{"id": 1}, {"id": 2}]
+    path.write_text("[]\n", encoding="utf-8")
+    with pytest.raises(TypeError, match="JSON object"):
+        list(read_jsonl(path))
+    path.write_text("{\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="cannot read"):
+        list(read_jsonl(path))
 
 
 def test_bounded_json(tmp_path):

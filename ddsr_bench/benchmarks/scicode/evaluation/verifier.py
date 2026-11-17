@@ -49,7 +49,7 @@ def verify(
     *,
     timeout: float = 1_800,
 ) -> dict[str, Any]:
-    """Run official SciCode assertions, isolated once more per step."""
+    """Run the selected SciCode assertions, isolated once more per step."""
     try:
         solution = solution_path.read_text(encoding="utf-8")
         cases = [case for case in _cases(cases_path) if case["id"] not in _SKIPPED]

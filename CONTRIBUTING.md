@@ -52,6 +52,18 @@ revisions, files, splits, and official metric settings. Loaders may expose
 concise derived constants for callers, but must not repeat those values as
 independent Python literals.
 
+Register source acquisition in the shared `benchmarks/sources.py` catalog and
+expose semantic validation from the benchmark's existing data loader. Shared
+staging, atomic publication, edition layout, and tree-digest checks must not be
+reimplemented per benchmark.
+
+Task preparers must honor `paths.input` as an explicit local pinned source. A
+benchmark that also supports omitted input must load the same configured remote
+edition; remote fallback is not required when the benchmark contract requires
+materialized files. Generated tasks and raw downloads remain ignored artifacts
+rather than repository contents. Their directories mirror
+`datasets/<benchmark>/<edition>/` and `tasks/<benchmark>/<edition>/`.
+
 Update the root benchmark catalog and framework pipeline without dropping links
 to existing benchmarks. Keep copied upstream code attributed under its license.
 The reusable integration and release checklist is recorded in

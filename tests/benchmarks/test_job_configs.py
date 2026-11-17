@@ -19,7 +19,7 @@ def test_long_context_config(name: str, client: str, tokens: int) -> None:
     assert config.jobs_dir == Path("outputs/harbor")
     assert config.n_attempts == 1
     assert config.n_concurrent_trials == 4
-    assert config.datasets[0].path == Path("tasks/critpt-official")
+    assert config.datasets[0].path == Path("tasks/critpt/v2")
     assert kwargs["seed_base"] == 42
     assert kwargs["sampling"].get("seed") is None
     assert kwargs["client_name"] == client
@@ -53,7 +53,7 @@ def test_job_config(name: str, client: str) -> None:
     assert agent.name == ("ddsr_bench.benchmarks.critpt.evaluation.harbor:CritPtAgent")
     assert agent.kwargs["client_name"] == client
     assert agent.kwargs["sampling"]["max_tokens"] == 32768
-    assert config.datasets[0].path == Path("tasks/critpt-official")
+    assert config.datasets[0].path == Path("tasks/critpt/v2")
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"critpt-official{suffix}"
@@ -76,10 +76,10 @@ def test_scicode_job_config(name: str, client: str) -> None:
     assert raw["benchmark"] == "scicode"
     assert config.agents[0].name.endswith("scicode.evaluation.harbor:SciCodeAgent")
     assert config.agents[0].kwargs["client_name"] == client
-    assert config.datasets[0].path == Path("tasks/scicode-validation")
+    assert config.datasets[0].path == Path("tasks/scicode/v2.2")
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
-    assert config.job_name == f"scicode-validation{suffix}"
+    assert config.job_name == f"scicode-verified{suffix}"
 
 
 @pytest.mark.parametrize(
@@ -102,7 +102,7 @@ def test_cmphysbench_job_config(name: str, client: str) -> None:
     )
     assert config.agents[0].kwargs["client_name"] == client
     assert config.agents[0].kwargs["sampling"]["max_tokens"] == 16384
-    assert config.datasets[0].path == Path("tasks/cmphysbench")
+    assert config.datasets[0].path == Path("tasks/cmphysbench/official")
     assert config.jobs_dir == Path("outputs/harbor")
     assert config.verifier.override_timeout_sec is None
     suffix = "" if name == "vllm" else f"-{name}"
@@ -130,7 +130,7 @@ def test_phybench_job_config(name: str, client: str) -> None:
     assert config.agents[0].name.endswith("phybench.evaluation.harbor:PHYBenchAgent")
     assert config.agents[0].kwargs["client_name"] == client
     assert config.agents[0].kwargs["sampling"]["max_tokens"] == 32768
-    assert config.datasets[0].path == Path("tasks/phybench")
+    assert config.datasets[0].path == Path("tasks/phybench/loca")
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"phybench-gradable{suffix}"
@@ -158,7 +158,7 @@ def test_cmtbench_job_config(name: str, client: str) -> None:
     assert agent.name.endswith("cmtbench.evaluation.harbor:CMTBenchAgent")
     assert agent.kwargs["client_name"] == client
     assert agent.kwargs["sampling"]["max_tokens"] == 8192
-    assert config.datasets[0].path == Path("tasks/cmtbench")
+    assert config.datasets[0].path == Path("tasks/cmtbench/v2")
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"cmtbench-v2{suffix}"
@@ -183,7 +183,7 @@ def test_prismphysics_job_config(name: str, client: str) -> None:
     assert agent.name.endswith("prismphysics.evaluation.harbor:PRISMPhysicsAgent")
     assert agent.kwargs["client_name"] == client
     assert agent.kwargs["sampling"]["max_tokens"] == 8096
-    assert config.datasets[0].path == Path("tasks/prismphysics")
+    assert config.datasets[0].path == Path("tasks/prismphysics/official")
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"prismphysics-text{suffix}"

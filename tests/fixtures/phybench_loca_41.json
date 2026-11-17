@@ -1,0 +1,7 @@
+{
+  "id": "41",
+  "tag": "MECHANICS",
+  "questions": "The rocket ascends vertically from the Earth's surface with a constant acceleration $a = k_1g_0$, where $g_0$ is the gravitational acceleration at the Earth's surface. Inside the rocket, there is a smooth groove containing a testing apparatus. When the rocket reaches a height $h$ above the ground, the pressure exerted by the instrument on the bottom of the groove is $k_2$ times what it was at the time of liftoff. Given that the radius of the Earth is $R$, find $h$.",
+  "solutions": "At the moment of takeoff, $N_1=(1+k_1)mg_0$, where $m$ is the mass of the tester.  \nWhen ascending to a height $h$, the gravitational acceleration changes to $g=g_0(\\dfrac{R}{R+h})^2$  \nThe pressure at this time is $N_2=mg_0(\\dfrac{R}{R+h})^2+k_1mg_0$  \nSince $N_2=k_2N_1$, solving the equations together gives\n$h=R(\\dfrac{1}{\\sqrt{k_2(1+k_1)-k_1}}-1)$",
+  "final_answers": "$$R\\left(\\frac{1}{\\sqrt{k_2(1+k_1)-k_1}}-1\\right)$$"
+}

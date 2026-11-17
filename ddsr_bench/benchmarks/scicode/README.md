@@ -21,10 +21,15 @@ Install the optional data dependencies:
 python -m pip install -e '.[scicode]'
 ```
 
-Problem records load from `SciCode1/SciCode` on Hugging Face. Numeric targets
-are distributed separately as `test_data.h5`; download that file as directed by
-the [upstream repository](https://github.com/scicode-bench/SciCode) and place it
-at `datasets/scicode/test_data.h5`.
+Problem records load from the pinned SciCode-Verified v2.2 release. It contains
+64 corrected, human-verified problems and 287 scored steps after excluding one
+underdetermined original problem. The [dataset catalog](../../../DATASETS.md)
+records the audit evidence and checksums. Download its matching HDF5 targets;
+mixing targets from an earlier release changes grading behavior:
+
+```bash
+ddsr-bench action=fetch benchmark=scicode
+```
 
 Build the verifier image. It embeds the HDF5 targets so prepared task
 directories contain only small public instructions and assertion files:
@@ -35,29 +40,27 @@ docker build -f docker/scicode/Dockerfile -t ddsr-bench-scicode:latest .
 ddsr-bench \
   action=prepare \
   benchmark=scicode \
-  paths.output=tasks/scicode-validation \
+  paths.input=datasets/scicode/v2.2/data/problems_test.jsonl \
+  paths.output=tasks/scicode/v2.2 \
   harbor.image=ddsr-bench-scicode:latest \
   harbor.timeout_sec=1800
 ```
-
-Set `benchmark.split=test` and use a matching output directory to prepare the
-test split.
 
 ## Evaluation
 
 ### Harbor
 
-Run sequential generation and isolated official-test execution:
+Run sequential generation and isolated corrected-test execution:
 
 ```bash
 harbor run --config configs/jobs/scicode/vllm.yaml
 ```
 
 Other client configurations live beside `vllm.yaml`. The default vLLM job
-writes `outputs/harbor/scicode-validation`.
+writes `outputs/harbor/scicode-verified`.
 
 To evaluate one prepared problem, append
-`--path tasks/scicode-validation --include-task-name 19`. There is no
+`--path tasks/scicode/v2.2 --include-task-name 5`. There is no
 raw-data `ddsr-solve` shortcut: without the prepared assertions, HDF5 targets,
 and container execution it could generate functions but could not evaluate them
 under SciCode's contract.
@@ -67,7 +70,7 @@ under SciCode's contract.
 Use Harbor's existing recovery command, not `ddsr-solve --resume`:
 
 ```bash
-harbor job resume --job-path outputs/harbor/scicode-validation
+harbor job resume --job-path outputs/harbor/scicode-verified
 ```
 
 Harbor 0.22.0 reloads the saved `config.json` and retains trials with valid saved
@@ -103,5 +106,5 @@ are not training targets.
 
 SciCode recommends Inspect AI, and its implementation remains the compatibility
 reference. ddsr-bench does not execute generated code through Inspect AI on the
-host; Harbor keeps model access on the host and runs the official assertions in
+host; Harbor keeps model access on the host and runs the corrected assertions in
 an isolated no-network container.
