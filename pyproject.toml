@@ -40,6 +40,7 @@ phybench = [
     "latex2sympy2-extended>=1.11,<2",
     "timeout-decorator>=0.5,<1",
 ]
+physics = ["datasets>=4,<6"]
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -76,6 +77,10 @@ packages = [
     "ddsr_bench.benchmarks.phybench.evaluation",
     "ddsr_bench.benchmarks.phybench.evaluation.eed",
     "ddsr_bench.benchmarks.phybench.generation",
+    "ddsr_bench.benchmarks.physics",
+    "ddsr_bench.benchmarks.physics.data",
+    "ddsr_bench.benchmarks.physics.evaluation",
+    "ddsr_bench.benchmarks.physics.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -118,12 +123,14 @@ configs = [
     "jobs/critpt/*.yaml",
     "jobs/cmphysbench/*.yaml",
     "jobs/phybench/*.yaml",
+    "jobs/physics/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
     "prompts/cmtbench/*.txt",
     "prompts/cmphysbench/*.txt",
     "prompts/phybench/*.txt",
+    "prompts/physics/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",

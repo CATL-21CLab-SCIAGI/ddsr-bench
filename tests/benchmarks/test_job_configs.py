@@ -187,3 +187,29 @@ def test_prismphysics_job_config(name: str, client: str) -> None:
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"prismphysics-text{suffix}"
+
+
+@pytest.mark.parametrize(
+    ("name", "client"),
+    [
+        ("vllm", "vllm"),
+        ("openai", "openai"),
+        ("bedrock", "bedrock"),
+        ("aliyun", "aliyun"),
+    ],
+)
+def test_physics_job_config(name: str, client: str) -> None:
+    path = Path("configs/jobs/physics") / f"{name}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+    agent = config.agents[0]
+
+    assert raw["benchmark"] == "physics"
+    assert agent.name == "physics"
+    assert agent.kwargs["client_name"] == client
+    assert agent.kwargs["sampling"]["max_tokens"] == 65536
+    assert agent.kwargs["judge"]["client_name"] == client
+    assert config.datasets[0].path == Path("tasks/physics/verified")
+    assert config.jobs_dir == Path("outputs/harbor")
+    suffix = "" if name == "vllm" else f"-{name}"
+    assert config.job_name == f"physics-verified{suffix}"

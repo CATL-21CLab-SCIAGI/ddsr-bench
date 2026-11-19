@@ -164,11 +164,21 @@ def _scicode(config: Mapping[str, object], destination: Path) -> None:
     _download_hf(config, destination, files)
 
 
-def _prismphysics(config: Mapping[str, object], destination: Path) -> None:
+def _hf_files(config: Mapping[str, object], destination: Path) -> None:
     value = config["files"]
-    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-        raise TypeError("PRISM-Physics source files must be a list of names")
-    _download_hf(config, destination, ((filename, filename) for filename in value))
+    if isinstance(value, Mapping):
+        filenames = value.values()
+    elif isinstance(value, list):
+        filenames = value
+    else:
+        raise TypeError("source files must be a list or mapping of names")
+    if any(not isinstance(filename, str) for filename in filenames):
+        raise TypeError("source file names must be text")
+    _download_hf(
+        config,
+        destination,
+        ((filename, filename) for filename in filenames),
+    )
 
 
 def _phybench(config: Mapping[str, object], destination: Path) -> None:
@@ -192,7 +202,8 @@ _FETCHERS: dict[str, Fetcher] = {
     "cmphysbench": _hf_file,
     "phybench": _phybench,
     "cmtbench": _hf_file,
-    "prismphysics": _prismphysics,
+    "prismphysics": _hf_files,
+    "physics": _hf_files,
 }
 
 

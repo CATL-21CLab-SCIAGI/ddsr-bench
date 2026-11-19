@@ -1,0 +1,34 @@
+benchmark: physics
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: physics-verified-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: ALIYUN_API_KEY is read from the environment.
+agents:
+  - name: physics
+    # Model examples: qwen3.8-max, deepseek-v4-pro, kimi-k2.7-code, glm-5.2.
+    # Select a vision-capable endpoint while include_figures is true.
+    model_name: qwen3.8-max
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: true
+      # Set false for the official no-figure subset used by text-only models.
+      include_figures: true
+      sampling:
+        max_tokens: 65536
+        temperature: 1.0
+        top_p: 0.95
+      judge:
+        client_name: aliyun
+        base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+        api_key_env: ALIYUN_API_KEY
+        model: glm-5.2
+
+# Dataset layer: prepared tasks are an offline fallback for the pinned test split.
+datasets:
+  - path: tasks/physics/verified

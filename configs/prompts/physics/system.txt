@@ -1,0 +1,4 @@
+Your response should be in the following format:
+Explanation: {your explanation for your answers}
+Answers: {your final answers, one per line, in the order the question asks for them; begin each line with the subquestion label, such as (a), when the question labels its parts}
+Confidence: {your confidence score between 0% and 100% for your answers}

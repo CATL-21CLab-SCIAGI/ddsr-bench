@@ -14,6 +14,7 @@ from ddsr_bench.benchmarks.utils import Resources, benchmark_config
         ("phybench", "load_file"),
         ("prismphysics", "load_directory"),
         ("scicode", "load_file"),
+        ("physics", "load_directory"),
     ],
 )
 def test_prepares_local_source(

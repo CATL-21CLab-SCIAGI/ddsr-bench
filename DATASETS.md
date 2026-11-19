@@ -26,6 +26,7 @@ audited and disputed by the benchmark authors.
 | PHYBench | LOCA correction at `0e3b86b2ee18ab6118dd57029a3f8de444db365e` | Independent correction | `corrected` | 100 public-reference problems |
 | PRISM-Physics | `89d1e1cb91ec14b319482ec36b43fca5305f9c86` | Official | `unverified` | 1,401 problems |
 | CMPhysBench | `43d185851f731e23aa5737c3667b3a9e87bf8cd1` | Official | `unverified` | 520 problems; 100 locally gradable |
+| PHYSICS | PHYSICS-Verified at `724170025e3541c9b877285b2d577a1257796f0b` | Official | `verified` | 1,034 problems, 2,559 scored answers |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -34,7 +35,7 @@ silently change the model-elicitation contract.
 ## Local materialization
 
 Downloaded source files live under the ignored path
-`datasets/<benchmark>/<edition>/`; prepared Harbor tasks mirror that layout at
+`datasets/<benchmark>/<edition>/`; prepared tasks mirror that layout at
 `tasks/<benchmark>/<edition>/`.
 Edition names identify the source or major version (`loca`, `v2`, `v2.2`), while
 the exact release, revision, authority, and correction status stay in benchmark
@@ -146,20 +147,31 @@ search of the official repository, issues, forks, Hugging Face datasets, and
 paper-linked resources found no accessible corrected edition. The
 `budecosystem/cmphysbench` dataset identifies itself as a mirror.
 
+### PHYSICS
+
+- The original [PHYSICS repository](https://github.com/yale-nlp/Physics)
+  recommends PHYSICS-Verified for new evaluations. The official audited edition
+  removes proof-, explanation-, drawing-, and unavailable-figure-only requests;
+  independently resolves reference disagreements; and separates each requested
+  result for answer-level scoring.
+- The pinned release contains 240 validation problems with 620 answers and 794
+  test problems with 1,939 answers. Its 248 image-bearing problems embed 265 PNG
+  data URIs, so the selected edition is self-contained.
+- PHYSICS-Verified is a derivative edition under benchmark key `physics`, not a
+  separate DDSR benchmark name. The original 1,297-problem PHYSICS artifact is
+  retained upstream but is not selected for new evaluation.
+
 ## Related corrected benchmarks
 
-These public releases are not yet integrated, but are strong candidates:
+This public release is not yet integrated, but is a strong candidate:
 
-- [PHYSICS-Verified](https://huggingface.co/datasets/yale-nlp/physics-verified),
-  revision `724170025e3541c9b877285b2d577a1257796f0b`, contains 1,034 audited
-  PhD-qualifying-exam problems and 2,559 independently scored answers.
 - [HLE-Verified](https://huggingface.co/datasets/skylenage-ai/HLE-Verified),
   revision `0bc83643672d4f68a5f89998617a639d85e7318b`, is a broader
   multidisciplinary audit that includes physics.
 
 ## Search boundary
 
-This catalog was checked on 2026-11-17 against the official repositories and
+This catalog was checked on 2026-11-19 against the official repositories and
 dataset histories, public issues and forks, Hugging Face name searches, linked
 papers, LOCA, and the Alliance audit release. An absence statement means no
 accessible correction was found within that boundary; it is not a claim that

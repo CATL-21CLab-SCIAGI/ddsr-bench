@@ -361,6 +361,29 @@ async def test_preflight_and_chat() -> None:
 
 
 @pytest.mark.asyncio
+async def test_json_response_and_omitted_sampling() -> None:
+    body = None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal body
+        body = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": "{}"}, "finish_reason": "stop"}]},
+        )
+
+    async with VLLMClient(
+        "http://localhost:8000/v1",
+        Sampling("judge", temperature=None, top_p=None),
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        await client.chat(MESSAGES, response_format={"type": "json_object"})
+
+    assert body["response_format"] == {"type": "json_object"}
+    assert "temperature" not in body and "top_p" not in body
+
+
+@pytest.mark.asyncio
 async def test_retry_then_reject_malformed_response() -> None:
     calls = 0
 
