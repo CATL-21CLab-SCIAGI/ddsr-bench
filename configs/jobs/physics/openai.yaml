@@ -1,0 +1,32 @@
+benchmark: physics
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: physics-verified-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: OPENAI_API_KEY is read from the environment.
+agents:
+  - name: physics
+    model_name: gpt-5.6-luna
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      stream: true
+      # Set false for the official no-figure subset used by text-only models.
+      include_figures: true
+      # Published PHYSICS-Verified GPT runs use high reasoning effort.
+      sampling:
+        max_tokens: 65536
+        reasoning_effort: high
+      judge:
+        client_name: openai
+        base_url: https://api.openai.com/v1
+        api_key_env: OPENAI_API_KEY
+        model: gpt-5.6-luna
+
+# Dataset layer: prepared tasks are an offline fallback for the pinned test split.
+datasets:
+  - path: tasks/physics/verified

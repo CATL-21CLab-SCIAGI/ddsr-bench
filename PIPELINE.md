@@ -50,3 +50,4 @@ is verified:
 - [CMT-Benchmark pipeline](ddsr_bench/benchmarks/cmtbench/PIPELINE.md)
 - [PHYBench pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md)
 - [PRISM-Physics pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md)
+- [PHYSICS pipeline](ddsr_bench/benchmarks/physics/PIPELINE.md)

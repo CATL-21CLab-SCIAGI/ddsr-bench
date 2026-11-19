@@ -43,7 +43,7 @@ def test_prepares_scicode(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
 
-    assert dispatch(config) == "prepared 1 Harbor tasks in tasks/scicode/v2.2"
+    assert dispatch(config) == "prepared 1 tasks in tasks/scicode/v2.2"
 
 
 def test_fetches_all_datasets(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,0 +1,31 @@
+benchmark: physics
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: physics-verified-bedrock
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: AWS_BEARER_TOKEN_BEDROCK is read from the environment.
+agents:
+  - name: physics
+    model_name: global.openai.gpt-5.6-luna
+    kwargs:
+      client_name: bedrock
+      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      stream: true
+      # Set false for the official no-figure subset used by text-only models.
+      include_figures: true
+      sampling:
+        max_tokens: 65536
+        reasoning_effort: high
+      judge:
+        client_name: bedrock
+        base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+        api_key_env: AWS_BEARER_TOKEN_BEDROCK
+        model: global.openai.gpt-5.6-luna
+
+# Dataset layer: prepared tasks are an offline fallback for the pinned test split.
+datasets:
+  - path: tasks/physics/verified

@@ -1,0 +1,30 @@
+name: physics
+dataset: yale-nlp/physics-verified
+revision: 724170025e3541c9b877285b2d577a1257796f0b
+edition: verified
+authority: official
+status: verified
+files:
+  validation: data/validation.jsonl
+  test: data/test.jsonl
+expected_records:
+  validation: 240
+  test: 794
+expected_text_records:
+  validation: 184
+  test: 602
+expected_figures:
+  validation: 61
+  test: 204
+expected_answers:
+  validation: 620
+  test: 1939
+source_sha256: 06edf8cfbf0fbfc81652033b35bdfedc021a1eac14104823f83910b9d777a5e9
+split: test
+
+# Official PHYSICS-Verified evaluation settings.
+numeric_relative_tolerance: 0.01
+judge_max_tokens: 32768
+judge_retries: 4
+request_timeout_sec: 3600
+bootstrap_repetitions: 2000

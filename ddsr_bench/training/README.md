@@ -53,6 +53,10 @@ For CMPhysBench, `native` and `full` both export its single recorded call. The
 completion contains the visible derivation and boxed answer; provider reasoning
 is retained only in the canonical trajectory.
 
+For PHYSICS, `native` and `full` both export its single response-format call.
+Multimodal prompts retain the public OpenAI-compatible image parts; private
+solutions and judge references are never exported.
+
 ## Sample records
 
 Every JSONL line has one conversational prompt and one supervised assistant

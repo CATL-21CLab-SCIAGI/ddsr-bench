@@ -7,8 +7,8 @@ class Generation:
     """One model call, or one fixed stage used in its context."""
 
     id: str
-    prompt: tuple[dict[str, str], ...]
-    completion: dict[str, str] | None
+    prompt: tuple[dict[str, Any], ...]
+    completion: dict[str, Any] | None
     source: Literal["model", "fixed"]
     quality: dict[str, Any]
 
@@ -40,6 +40,6 @@ class SftSample:
     """One conversational prompt with one supervised assistant completion."""
 
     id: str
-    prompt: tuple[dict[str, str], ...]
-    completion: tuple[dict[str, str], ...]
+    prompt: tuple[dict[str, Any], ...]
+    completion: tuple[dict[str, Any], ...]
     metadata: dict[str, Any]

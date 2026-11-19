@@ -50,6 +50,7 @@ class Benchmark:
     preparer: str | None = None
     submitter: str | None = None
     dataset_validator: str | None = None
+    containerized: bool = True
 
 
 BENCHMARKS = {
@@ -104,6 +105,16 @@ BENCHMARKS = {
         sft_adapter="ddsr_bench.benchmarks.prismphysics.trajectory:sft_samples",
         preparer="ddsr_bench.benchmarks.prismphysics.evaluation.prepare:prepare_tasks",
         dataset_validator="ddsr_bench.benchmarks.prismphysics.data.loader:validate_source",
+    ),
+    "physics": Benchmark(
+        static_runner="ddsr_bench.benchmarks.physics.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.physics.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.physics.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.physics.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.physics.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.physics.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.physics.data.loader:validate_source",
+        containerized=False,
     ),
 }
 

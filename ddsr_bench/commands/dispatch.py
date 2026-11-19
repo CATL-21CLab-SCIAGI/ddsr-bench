@@ -46,7 +46,7 @@ def prepare(config: DictConfig) -> str:
         config.paths.output,
         resources,
     )
-    return f"prepared {len(tasks)} Harbor tasks in {config.paths.output}"
+    return f"prepared {len(tasks)} tasks in {config.paths.output}"
 
 
 def fetch(config: DictConfig) -> str:

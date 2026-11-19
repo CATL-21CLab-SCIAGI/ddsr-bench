@@ -190,3 +190,39 @@
   texts contain embedded relative Markdown image links; DDSR retains those
   upstream prompt strings and documents the unresolved assets rather than
   silently rewriting the questions.
+
+## PHYSICS
+
+- Original benchmark: https://github.com/yale-nlp/Physics
+- Verified dataset: `yale-nlp/physics-verified`
+- Dataset revision: `724170025e3541c9b877285b2d577a1257796f0b`.
+- Dataset tree used by DDSR: `data/validation.jsonl` and `data/test.jsonl`, tree
+  SHA-256 `06edf8cfbf0fbfc81652033b35bdfedc021a1eac14104823f83910b9d777a5e9`.
+- Evaluation harness: https://github.com/yale-nlp/physics-verified
+- Harness commit: `3b36e33cd3a904b86dd9b95d8e8ca4b49e81ce4b`.
+- Data status: official, verified. The original PHYSICS repository recommends
+  PHYSICS-Verified for new evaluations and retains the original release as the
+  paper artifact.
+- Verified shape: 240 validation problems/620 answers and 794 test
+  problems/1,939 answers. There are 248 image-bearing problems with 265 embedded
+  PNG data URIs; validation and test IDs are disjoint.
+- Pinned for: the multimodal message order, response format, per-problem judge
+  prompt, one verdict per reference answer, malformed-judge retry behavior, 1%
+  numeric relative tolerance, strict accuracy, answer accuracy, partial credit,
+  HLE RMS calibration error, a 3,600-second request timeout, and seeded
+  2,000-repeat bootstrap intervals. The upstream CLI defaults to 16 concurrent
+  requests; the bundled DDSR jobs use four as a conservative operational choice.
+- Exact prompt SHA-256 values: response format
+  `17ffc9761eb3a67a475f4e2e036f9a5a0fe05d864a6b7e86c52c4589f89d738e`;
+  judge `fb9a31a4242b0422056967125892ce694d2eb0030aa71bf935cfcf1bcea85c7f`.
+- Published generation settings are checkpoint-specific: thinking models use up
+  to 65,536 output tokens, non-thinking models up to 8,192, and GPT models use
+  high reasoning effort. The published judge is GLM-5.3-Flash served locally;
+  scores from different judges are not directly comparable.
+- Project choice: DDSR uses shared provider clients and records their explicit
+  request settings. Prepared tasks are a static/offline fallback and do not
+  introduce a container verifier because official scoring requires an LLM judge.
+  Shared DDSR resume keeps terminal failures; the upstream append-only runner
+  instead retries failed generation or missing judgments when rerun.
+- Dataset and harness license: MIT. The upstream notice is distributed beside
+  the copied prompt text at `configs/prompts/physics/LICENSE.txt`.

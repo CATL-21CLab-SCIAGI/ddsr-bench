@@ -16,7 +16,8 @@ from typing import Any, Literal, Protocol, Self
 import httpx
 
 ClientName = Literal["vllm", "openai", "bedrock", "aliyun"]
-ChatMessages = tuple[dict[str, str], ...]
+# Message content may be plain text or OpenAI-compatible multimodal parts.
+ChatMessages = tuple[dict[str, Any], ...]
 API_KEY_ENV: dict[ClientName, str] = {
     "openai": "OPENAI_API_KEY",
     "bedrock": "AWS_BEARER_TOKEN_BEDROCK",
@@ -116,8 +117,8 @@ async def _events(response: httpx.Response) -> AsyncIterator[dict[str, Any]]:
 class Sampling:
     model: str
     max_tokens: int = 32_768
-    temperature: float = 0.0
-    top_p: float = 1.0
+    temperature: float | None = 0.0
+    top_p: float | None = 1.0
     top_k: int | None = None
     seed: int | None = None
     reasoning_effort: (
@@ -161,6 +162,7 @@ class ChatClient(Protocol):
         max_tokens: int | None = None,
         stream_path: Path | None = None,
         seed: int | None = None,
+        response_format: dict[str, str] | None = None,
     ) -> ChatResponse: ...
 
 
@@ -286,16 +288,20 @@ class BaseClient(ABC):
         max_tokens: int | None = None,
         stream_path: Path | None = None,
         seed: int | None = None,
+        response_format: dict[str, str] | None = None,
     ) -> ChatResponse:
         payload, budget = await self._prepare_payload(messages, max_tokens)
         if seed is not None:
             payload["seed"] = seed
+        if response_format is not None:
+            payload["response_format"] = response_format
         # Check the final payload: CritPt supplies its per-trial seed here,
         # after profile formatting. Preserve historical requests; warn, don't repair.
         ignored = [
             field.name
             for field in fields(self.sampling)
             if field.name not in ("model", "max_tokens")
+            and getattr(self.sampling, field.name) is not None
             and getattr(self.sampling, field.name) != field.default
             and field.name not in payload
             and field.name not in payload.get("chat_template_kwargs", {})
@@ -543,9 +549,11 @@ class VLLMClient(BaseClient):
             "model": self.sampling.model,
             "messages": list(messages),
             "max_tokens": self.sampling.max_tokens,
-            "temperature": self.sampling.temperature,
-            "top_p": self.sampling.top_p,
         }
+        for name in ("temperature", "top_p"):
+            value = getattr(self.sampling, name)
+            if value is not None:
+                payload[name] = value
         if self.sampling.top_k is not None:
             payload["top_k"] = self.sampling.top_k
         if self.sampling.seed is not None:
@@ -611,9 +619,11 @@ class AliyunClient(BaseClient):
             "model": self.sampling.model,
             "messages": list(messages),
             "max_tokens": self.sampling.max_tokens,
-            "temperature": self.sampling.temperature,
-            "top_p": self.sampling.top_p,
         }
+        for name in ("temperature", "top_p"):
+            value = getattr(self.sampling, name)
+            if value is not None:
+                payload[name] = value
         if self.sampling.seed is not None:
             payload["seed"] = self.sampling.seed
         if self.sampling.enable_thinking is not None:

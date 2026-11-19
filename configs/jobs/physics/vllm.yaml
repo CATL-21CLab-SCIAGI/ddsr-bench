@@ -1,0 +1,32 @@
+benchmark: physics
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: physics-verified
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+# Generation layer: local OpenAI-compatible vLLM endpoint.
+agents:
+  - name: physics
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: true
+      # Set false for the official no-figure subset used by text-only models.
+      include_figures: true
+      # The published harness uses checkpoint-specific settings. Its quick-start
+      # reasoning-model example uses these values and a 65,536-token cap.
+      sampling:
+        max_tokens: 65536
+        temperature: 1.0
+        top_p: 0.95
+      judge:
+        client_name: vllm
+        base_url: http://127.0.0.1:8001/v1
+        model: physics-judge
+
+# Dataset layer: prepared tasks are an offline fallback for the pinned test split.
+datasets:
+  - path: tasks/physics/verified
