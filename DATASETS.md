@@ -33,6 +33,7 @@ audited and disputed by the benchmark authors.
 | MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `unverified` | 14,042 test questions across 57 subjects |
 | MMMU-Pro | `MMMU/MMMU_Pro` at `0d7426df4ccb3d8704a992fe6850abee7c262127` | Official | `corrected` | 1,730 records in each of Standard-10, Standard-4, and Vision |
 | SciBench | Repository data at `e14e0ca3d3db0f02928a18d435b9c3d15656a7c5` | Official | `revised` | 580 text and 151 image targets; 138 solved examples |
+| JEEBench | `dair-iitd/jeebench` at `a9af8bf354887043bd280a617c8716ef54e7aaec` | Official | `unverified` | 515 JEE-Advanced questions across three subjects |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not

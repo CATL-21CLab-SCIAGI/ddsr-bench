@@ -1,0 +1,1 @@
+"""JEEBench benchmark adapter."""

@@ -59,3 +59,4 @@ is verified:
 - [MMLU pipeline](ddsr_bench/benchmarks/mmlu/PIPELINE.md)
 - [MMMU-Pro pipeline](ddsr_bench/benchmarks/mmmupro/PIPELINE.md)
 - [SciBench pipeline](ddsr_bench/benchmarks/scibench/PIPELINE.md)
+- [JEEBench pipeline](ddsr_bench/benchmarks/jeebench/PIPELINE.md)

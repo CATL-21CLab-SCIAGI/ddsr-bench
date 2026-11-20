@@ -204,6 +204,16 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.scibench.data.loader:validate_source",
         containerized=False,
     ),
+    "jeebench": Benchmark(
+        static_runner="ddsr_bench.benchmarks.jeebench.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.jeebench.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.jeebench.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.jeebench.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.jeebench.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.jeebench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.jeebench.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

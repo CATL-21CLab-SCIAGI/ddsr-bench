@@ -387,6 +387,28 @@
 - License: MIT. Static evaluation is protocol-complete because generated text
   is parsed but never executed.
 
+## JEEBench
+
+- Repository: https://github.com/dair-iitd/jeebench, commit
+  `a9af8bf354887043bd280a617c8716ef54e7aaec`.
+- Paper: https://aclanthology.org/2023.findings-emnlp.150/.
+- Official archive: `data.zip`; materialized-tree SHA-256
+  `a34c20ed09709fa7d6284636b849591c2e3ccae6e68338dab485634430eee054`.
+- Source shape: 515 questions—236 mathematics, 156 chemistry, and 123 physics;
+  110 single-choice, 186 multiple-choice, 82 integer, and 137 numeric.
+- Pinned for: exact normal, zero-shot CoT, and one-shot prompt construction;
+  the subject/type demonstrations; and the official response-type scoring
+  rules, including partial credit and 0.01 absolute numeric tolerance.
+- Protocol boundary: upstream response files contain extracted answers, but the
+  repository publishes no extraction routine. DDSR uses a documented final
+  answer parser and does not describe it as upstream-exact.
+- Data status: official, unverified. No authoritative corrected English release
+  or comprehensive item-level errata ledger was accessible during review. A
+  later multilingual derivative preserves the English rows rather than
+  correcting their questions or keys.
+- License: MIT. Static evaluation is sufficient because no generated code is
+  executed.
+
 ## MMLU
 
 - Repository: https://github.com/hendrycks/test, commit

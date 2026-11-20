@@ -254,6 +254,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "mmlu": _url_file,
     "mmmupro": _hf_files,
     "scibench": _github_archive,
+    "jeebench": _github_file,
 }
 
 
