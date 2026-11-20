@@ -9,6 +9,7 @@ from ddsr_bench.benchmarks.utils import Resources, benchmark_config
 @pytest.mark.parametrize(
     ("name", "loader"),
     [
+        ("critpt", "load_challenges"),
         ("cmphysbench", "load_file"),
         ("cmtbench", "load_file"),
         ("phybench", "load_file"),
@@ -16,6 +17,14 @@ from ddsr_bench.benchmarks.utils import Resources, benchmark_config
         ("scicode", "load_file"),
         ("physics", "load_directory"),
         ("hle", "load_directory"),
+        ("frontierscience", "load_directory"),
+        ("olympiadbench", "load_directory"),
+        ("hipho", "load_directory"),
+        ("gpqa", "load_directory"),
+        ("mmlu", "load_directory"),
+        ("mmmupro", "iter_directory"),
+        ("scibench", "load_directory"),
+        ("jeebench", "load_directory"),
     ],
 )
 def test_prepares_local_source(

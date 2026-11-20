@@ -295,8 +295,8 @@ class BaseClient(ABC):
             payload["seed"] = seed
         if response_format is not None:
             payload["response_format"] = response_format
-        # Check the final payload: CritPt supplies its per-trial seed here,
-        # after profile formatting. Preserve historical requests; warn, don't repair.
+        # Check the final payload after per-trial overrides and profile formatting.
+        # Preserve historical requests; warn about omitted fields rather than repairing.
         ignored = [
             field.name
             for field in fields(self.sampling)

@@ -14,6 +14,14 @@ across all benchmarks.
 | PRISM-Physics | Process-level physics reasoning over formula DAGs | Direct static ancestor-closure scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/prismphysics/README.md) · [Pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md) |
 | PHYSICS | University-level text and multimodal physics problems | Direct static answer-level LLM judging | [Guide](ddsr_bench/benchmarks/physics/README.md) · [Pipeline](ddsr_bench/benchmarks/physics/PIPELINE.md) |
 | HLE-Verified | Multidisciplinary closed-ended text and image questions | Direct static official-style LLM judging | [Guide](ddsr_bench/benchmarks/hle/README.md) · [Pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md) |
+| FrontierScience | Expert scientific reasoning across two evaluation tracks | Direct static official LLM judging | [Guide](ddsr_bench/benchmarks/frontierscience/README.md) · [Pipeline](ddsr_bench/benchmarks/frontierscience/PIPELINE.md) |
+| OlympiadBench | Bilingual multimodal mathematics and physics competitions | Direct static official symbolic scoring for open-ended tasks; proofs retained ungraded | [Guide](ddsr_bench/benchmarks/olympiadbench/README.md) · [Pipeline](ddsr_bench/benchmarks/olympiadbench/PIPELINE.md) |
+| HiPhO | Multimodal high-school physics Olympiads with human marking schemes | Direct static official answer- and step-level grading | [Guide](ddsr_bench/benchmarks/hipho/README.md) · [Pipeline](ddsr_bench/benchmarks/hipho/PIPELINE.md) |
+| GPQA | Graduate-level biology, chemistry, and physics multiple choice | Direct static official sampled-answer scoring | [Guide](ddsr_bench/benchmarks/gpqa/README.md) · [Pipeline](ddsr_bench/benchmarks/gpqa/PIPELINE.md) |
+| MMLU | Knowledge and reasoning across 57 academic and professional subjects | Direct static five-shot generated-letter scoring | [Guide](ddsr_bench/benchmarks/mmlu/README.md) · [Pipeline](ddsr_bench/benchmarks/mmlu/PIPELINE.md) |
+| MMMU-Pro | Multidisciplinary multimodal reasoning across Standard and Vision settings | Direct static official answer-letter scoring | [Guide](ddsr_bench/benchmarks/mmmupro/README.md) · [Pipeline](ddsr_bench/benchmarks/mmmupro/PIPELINE.md) |
+| SciBench | College-level text and image scientific problem solving | Direct static official numeric scoring | [Guide](ddsr_bench/benchmarks/scibench/README.md) · [Pipeline](ddsr_bench/benchmarks/scibench/PIPELINE.md) |
+| JEEBench | IIT JEE-Advanced mathematics, physics, and chemistry reasoning | Direct static official exact, partial-credit, and numeric scoring | [Guide](ddsr_bench/benchmarks/jeebench/README.md) · [Pipeline](ddsr_bench/benchmarks/jeebench/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.

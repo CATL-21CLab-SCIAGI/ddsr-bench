@@ -1,0 +1,54 @@
+name: olympiadbench
+dataset: Hothan/OlympiadBench
+revision: 91184b52131e7fc9455fef848035173aea8cc01a
+repository: OpenBMB/OlympiadBench
+repository_revision: ba5b26a7e2849940b598a9159c1190daa2b9175f
+edition: official
+authority: official
+status: revised
+files:
+  - OlympiadBench/OE_MM_maths_en_COMP/OE_MM_maths_en_COMP.parquet
+  - OlympiadBench/OE_MM_maths_zh_CEE/OE_MM_maths_zh_CEE.parquet
+  - OlympiadBench/OE_MM_maths_zh_COMP/OE_MM_maths_zh_COMP.parquet
+  - OlympiadBench/OE_MM_physics_en_COMP/OE_MM_physics_en_COMP.parquet
+  - OlympiadBench/OE_MM_physics_zh_CEE/OE_MM_physics_zh_CEE.parquet
+  - OlympiadBench/OE_TO_maths_en_COMP/OE_TO_maths_en_COMP.parquet
+  - OlympiadBench/OE_TO_maths_zh_CEE/OE_TO_maths_zh_CEE.parquet
+  - OlympiadBench/OE_TO_maths_zh_COMP/OE_TO_maths_zh_COMP.parquet
+  - OlympiadBench/OE_TO_physics_en_COMP/OE_TO_physics_en_COMP.parquet
+  - OlympiadBench/OE_TO_physics_zh_CEE/OE_TO_physics_zh_CEE.parquet
+  - OlympiadBench/TP_MM_maths_en_COMP/TP_MM_maths_en_COMP.parquet
+  - OlympiadBench/TP_MM_maths_zh_CEE/TP_MM_maths_zh_CEE.parquet
+  - OlympiadBench/TP_MM_maths_zh_COMP/TP_MM_maths_zh_COMP.parquet
+  - OlympiadBench/TP_MM_physics_en_COMP/TP_MM_physics_en_COMP.parquet
+  - OlympiadBench/TP_TO_maths_en_COMP/TP_TO_maths_en_COMP.parquet
+  - OlympiadBench/TP_TO_maths_zh_CEE/TP_TO_maths_zh_CEE.parquet
+  - OlympiadBench/TP_TO_maths_zh_COMP/TP_TO_maths_zh_COMP.parquet
+  - OlympiadBench/TP_TO_physics_en_COMP/TP_TO_physics_en_COMP.parquet
+expected_records:
+  OE_MM_maths_en_COMP: 150
+  OE_MM_maths_zh_CEE: 1910
+  OE_MM_maths_zh_COMP: 56
+  OE_MM_physics_en_COMP: 456
+  OE_MM_physics_zh_CEE: 1483
+  OE_TO_maths_en_COMP: 674
+  OE_TO_maths_zh_CEE: 1240
+  OE_TO_maths_zh_COMP: 408
+  OE_TO_physics_en_COMP: 236
+  OE_TO_physics_zh_CEE: 115
+  TP_MM_maths_en_COMP: 62
+  TP_MM_maths_zh_CEE: 652
+  TP_MM_maths_zh_COMP: 81
+  TP_MM_physics_en_COMP: 19
+  TP_TO_maths_en_COMP: 503
+  TP_TO_maths_zh_CEE: 207
+  TP_TO_maths_zh_COMP: 199
+  TP_TO_physics_en_COMP: 25
+expected_total: 8476
+expected_open_ended: 6728
+expected_proofs: 1748
+expected_multimodal: 4869
+source_sha256: 24d949234fafd2562d81a4701b96ee21632e8af6dcd1b393889dc4b151868d30
+generation_timeout_sec: 600
+score_timeout_sec: 120
+transport_retries: 1

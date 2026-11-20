@@ -1,0 +1,32 @@
+benchmark: frontierscience
+
+job_name: frontierscience-gold-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 10
+
+agents:
+  - name: frontierscience
+    # Current text-model examples: qwen3.8-max, deepseek-v4-pro,
+    # kimi-k2.7-code, and glm-5.2.
+    model_name: qwen3.8-max
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: false
+      sampling:
+        max_tokens: 32768
+        temperature: null
+        top_p: null
+      judge:
+        client_name: aliyun
+        base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+        api_key_env: ALIYUN_API_KEY
+        # Provider substitution; not directly comparable with the paper judge.
+        model: glm-5.2
+        sampling:
+          reasoning_effort: high
+
+datasets:
+  - path: tasks/frontierscience/gold

@@ -5,6 +5,7 @@ published an edition; it does not imply that the data are defect-free.
 
 | Status | Meaning |
 | --- | --- |
+| `original` | The selected edition is the unchanged upstream release. |
 | `revised` | Upstream published a new edition with substantive data changes but no correction ledger sufficient to classify every change. |
 | `corrected` | Problems or references were repaired while preserving the intended benchmark where feasible. |
 | `verified` | A reviewed or filtered subset; its population may differ from the original benchmark. |
@@ -28,6 +29,14 @@ audited and disputed by the benchmark authors.
 | CMPhysBench | `43d185851f731e23aa5737c3667b3a9e87bf8cd1` | Official | `unverified` | 520 problems; 100 locally gradable |
 | PHYSICS | PHYSICS-Verified at `724170025e3541c9b877285b2d577a1257796f0b` | Official | `verified` | 1,034 problems, 2,559 scored answers |
 | HLE | HLE-Verified at `0bc83643672d4f68a5f89998617a639d85e7318b` | Official derivative | `verified` | 2,500 source items; 1,811 Gold+Revision selected |
+| FrontierScience | `openai/frontierscience` at `25ed67db7da8f4591484e764008ff585544f5a30` | Official | `verified` | 160 gold-set items across two tracks |
+| OlympiadBench | `Hothan/OlympiadBench` at `91184b52131e7fc9455fef848035173aea8cc01a` | Official | `revised` | 8,476 problems across 18 subsets |
+| HiPhO | `SciYu/HiPhO` at `8e196c09a71e4e68b75c422defa512473359e0e5` | Official | `revised` | 403 current and 360 published subquestions |
+| GPQA | `idavidrein/gpqa` at `56686c06f5e19865c153de0fdb11be3890014df7` | Official | `original` | 448 Main, 198 Diamond, 546 Extended questions |
+| MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `original` | 14,042 test questions across 57 subjects |
+| MMMU-Pro | `MMMU/MMMU_Pro` at `0d7426df4ccb3d8704a992fe6850abee7c262127` | Official | `corrected` | 1,730 records in each of Standard-10, Standard-4, and Vision |
+| SciBench | Repository data at `e14e0ca3d3db0f02928a18d435b9c3d15656a7c5` | Official | `revised` | 580 text and 151 image targets; 138 solved examples |
+| JEEBench | `dair-iitd/jeebench` at `a9af8bf354887043bd280a617c8716ef54e7aaec` | Official | `unverified` | 515 JEE-Advanced questions across three subjects |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -181,9 +190,116 @@ paper-linked resources found no accessible corrected edition. The
   No explicit dataset license was found at the pinned repository or dataset
   revision, so raw data remain downloaded, ignored local artifacts.
 
+### FrontierScience
+
+- The official Apache-2.0 Hugging Face release contains 100 Olympiad and 60
+  Research problems. The source tree digest is
+  `a3b5bd97aff5aabb76a3ee0a7d1ab6cc87b0306d44ef21bb26bef16b26816d2a`.
+- The public set has 70 physics, 60 chemistry, and 30 biology items. DDSR
+  validates those counts and the globally unique task-group IDs before use.
+- The release calls itself a gold set and asks that it not be used for model
+  training. DDSR supports evaluation and can export trajectories for auditing;
+  users are responsible for honoring the source's training-data restriction.
+
+### OlympiadBench
+
+- The pinned official revised release contains 8,476 problems across 18 Parquet
+  subsets: 6,142 mathematics, 2,334 physics, 6,351 Chinese, 2,125 English,
+  6,728 open-ended, and 1,748 theorem-proof records. Its 4,869 multimodal
+  problems contain 5,875 embedded JPEG/PNG assets.
+- The materialized 18-file source tree SHA-256 is
+  `24d949234fafd2562d81a4701b96ee21632e8af6dcd1b393889dc4b151868d30`.
+- The official repository describes the release as updated, deduplicated, and
+  image-fixed. It is therefore `revised`, not `corrected`: issue 15 reports an
+  isolated answer correction, issue 20 documents legacy scorer argument order,
+  and issue 21 documents tuple/interval matching limitations. No accessible
+  comprehensive corrected full release was found.
+- DDSR retains theorem proofs but excludes them from automatic accuracy because
+  upstream evaluated proofs manually and publishes no deterministic proof scorer.
+
+### HiPhO
+
+- The current official repository has 403 subquestions across 14 exams and 131
+  PNG files. The published ICML benchmark and leaderboard use 360 subquestions
+  across 13 exams; CPhO 2025 was added later and is an explicit extension.
+- The pinned current source tree SHA-256 is
+  `47f0041d39e57d9e7ec28669b21cd0cdc0218549719a59a90509a0c0e4ceeec8`.
+
+### MMMU-Pro
+
+- The pinned official dataset card documents successive expert and community
+  corrections through 2026-10-04. DDSR therefore records the current release as
+  official and `corrected`, rather than applying a separate derivative patch.
+- Each of the three settings contains the same 1,730 question IDs across 30
+  subjects. The option count remains variable (2–12) despite the Standard-4 and
+  Standard-10 setting names. The Vision split stores the complete question as a
+  screenshot and intentionally omits separate question and explanation fields.
+- The eight pinned Parquet shards have tree SHA-256
+  `97bce68fcbe2f920a712af472a331514dbd0a5fc38c2e55f332f881c787aa723`.
+
+### SciBench
+
+- The official README says the dataset received minor updates and retains the
+  previous release on an `old` branch, but provides no correction ledger. DDSR
+  therefore classifies the current commit as `revised`, not `corrected`.
+- The paper's 869 open-set records comprise both targets and solved examples.
+  The released evaluation scripts score 580 text targets and use 112 separate
+  solution records as demonstrations. The image tree analogously contains 151
+  targets and 26 solved examples. DDSR does not inflate evaluation coverage by
+  scoring those demonstrations as held-out questions.
+- Four text references are not parseable by upstream's own `float` conversion
+  because they contain commas or Unicode minus signs. No official repair was
+  found; DDSR preserves and documents this scorer ceiling rather than silently
+  changing labels or parsing behavior.
+- The pinned repository data tree SHA-256 is
+  `c09fb1324d28ad4166b0699f7bf50a90035c8bd8e1c46f33a89742b78d089404`.
+  GitHub and Hugging Face carry semantically matching records with different
+  JSON serialization, so DDSR materializes the pinned official GitHub commit.
+- No accessible corrected full release or item-level correction ledger was
+  found. DDSR records the source as `revised`: the official current release is
+  authoritative, while published and current cohorts remain separately named.
+- Six released subquestions have empty final-answer strings and therefore can
+  receive only marking-scheme credit. The later `CPhO_2025_7_6` row has a
+  malformed coarse reference in the maintained scorer; DDSR records that
+  branch error and preserves its independent marking-scheme score.
+- The official data repository does not ship an evaluator. DDSR pins the
+  maintained VLMEvalKit implementation used by the reproducible Axion wrapper,
+  including the English/Chinese prompts and answer-plus-step scoring policy.
+
+### GPQA
+
+- The pinned official password-protected archive contains 448 Main, 198
+  Diamond, and 546 Extended question rows, plus 60 expert-metadata rows. DDSR
+  validates all four files and uses Main by default.
+- Its source tree SHA-256 is
+  `77759a7dcb1909ba4f9962bdeb5a12be078c43070620464755b8fa19daeb0468`.
+  The source includes pre-revision question and answer fields for provenance,
+  while evaluation uses the current official fields as upstream does.
+- The repository invites item corrections, and public issues identify candidate
+  answer-key and baseline defects. No merged, accessible, comprehensively
+  corrected full edition was found, so DDSR records this source as `original`
+  rather than asserting that unresolved reports are verified corrections.
+
+### MMLU
+
+- The selected official release contains 14,042 test questions and 285 public
+  development examples across 57 subjects. DDSR evaluates the complete suite.
+- The official archive SHA-256 is
+  `bec563ba4bac1d6aaf04141cd7d1605d7a5ca833e38f994051e818489592989b`;
+  its one-file materialized-tree SHA-256 is
+  `e0d03a5240afbb89afdb74aa7b1017610d93d393ed26b8ea42906754c349f351`.
+- MMLU-Redux and other audits repair or relabel subsets of MMLU, but do not
+  provide an authoritative drop-in corrected edition of all 14,042 official
+  test rows. They remain named derivatives rather than silently replacing the
+  full benchmark.
+- The original code uses next-token likelihoods from a legacy completion API.
+  DDSR's provider-portable chat path preserves the prompt and records its
+  generated-letter protocol separately; score comparisons must respect that
+  distinction.
+
 ## Search boundary
 
-This catalog was checked on 2026-11-19 against the official repositories and
+This catalog was checked on 2026-11-20 against the official repositories and
 dataset histories, public issues and forks, Hugging Face name searches, linked
 papers, LOCA, and the Alliance audit release. An absence statement means no
 accessible correction was found within that boundary; it is not a claim that

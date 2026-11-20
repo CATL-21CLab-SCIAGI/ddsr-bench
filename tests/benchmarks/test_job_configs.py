@@ -4,6 +4,39 @@ import pytest
 import yaml
 from harbor.models.job.config import JobConfig
 
+from ddsr_bench.benchmarks.utils import benchmark_config
+
+RECENT_BENCHMARKS = (
+    "frontierscience",
+    "olympiadbench",
+    "hipho",
+    "gpqa",
+    "mmlu",
+    "mmmupro",
+    "scibench",
+    "jeebench",
+)
+
+
+@pytest.mark.parametrize("benchmark", RECENT_BENCHMARKS)
+@pytest.mark.parametrize("client", ("vllm", "openai", "bedrock", "aliyun"))
+def test_recent_job_configs(benchmark: str, client: str) -> None:
+    path = Path("configs/jobs") / benchmark / f"{client}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+    settings = benchmark_config(benchmark)
+    agent = config.agents[0]
+
+    assert raw["benchmark"] == benchmark
+    assert agent.name == benchmark
+    if client == "aliyun":
+        assert agent.kwargs["client_name"] in ("aliyun", "openai")
+    else:
+        assert agent.kwargs["client_name"] == client
+    assert config.datasets[0].path == Path("tasks") / benchmark / settings["edition"]
+    assert config.jobs_dir == Path("outputs/harbor")
+    assert config.n_attempts == int(settings.get("official_attempts", 1))
+
 
 @pytest.mark.parametrize(
     ("name", "client", "tokens"),

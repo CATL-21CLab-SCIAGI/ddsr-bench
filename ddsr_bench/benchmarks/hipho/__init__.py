@@ -1,0 +1,1 @@
+"""HiPhO benchmark adapter."""

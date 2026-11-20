@@ -1,0 +1,22 @@
+benchmark: jeebench
+job_name: jeebench-vllm
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: jeebench
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      source_path: datasets/jeebench/official
+      prompt_mode: cot # Official zero-shot chain-of-thought baseline.
+      stream: false
+      sampling:
+        max_tokens: 2048
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/jeebench/official

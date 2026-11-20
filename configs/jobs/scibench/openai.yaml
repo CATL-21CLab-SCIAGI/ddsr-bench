@@ -1,0 +1,25 @@
+benchmark: scibench
+job_name: scibench-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: scibench
+    model_name: gpt-5-mini
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      source_path: datasets/scibench/official
+      splits: [text, image]
+      strategy: zero-cot
+      stream: false
+      sampling:
+        # Upstream fixes temperature at zero but leaves the provider output cap unset.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/scibench/official

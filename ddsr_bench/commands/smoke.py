@@ -48,7 +48,7 @@ async def _run(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Check a CritPt model endpoint")
+    parser = argparse.ArgumentParser(description="Check a model endpoint")
     parser.add_argument(
         "--base-url",
         default=os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8000/v1"),

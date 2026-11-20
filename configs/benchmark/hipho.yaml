@@ -1,0 +1,53 @@
+name: hipho
+dataset: SciYu/HiPhO
+revision: 8e196c09a71e4e68b75c422defa512473359e0e5
+repository: SciYu/HiPhO
+repository_revision: 8db13ae9aa6e3d4ddb7bb63c8f6a568d5b207243
+evaluator_repository: open-compass/VLMEvalKit
+evaluator_revision: ed3e918edf4a62e0bf42a2768655e02d45312fef
+archive_path: data
+edition: official
+authority: official
+status: revised
+expected_records:
+  APhO_2025: 45
+  CPhO_2025: 43
+  EuPhO_2024: 7
+  EuPhO_2025: 6
+  F=MA_2024: 25
+  F=MA_2025: 25
+  IPhO_2024: 37
+  IPhO_2025: 39
+  NBPhO_2024: 24
+  NBPhO_2025: 20
+  PanMechanics_2024: 29
+  PanMechanics_2025: 23
+  PanPhO_2024: 33
+  PanPhO_2025: 47
+published_exams:
+  - APhO_2025
+  - EuPhO_2024
+  - EuPhO_2025
+  - F=MA_2024
+  - F=MA_2025
+  - IPhO_2024
+  - IPhO_2025
+  - NBPhO_2024
+  - NBPhO_2025
+  - PanMechanics_2024
+  - PanMechanics_2025
+  - PanPhO_2024
+  - PanPhO_2025
+expected_total: 403
+expected_published: 360
+expected_images: 131
+source_sha256: 47f0041d39e57d9e7ec28669b21cd0cdc0218549719a59a90509a0c0e4ceeec8
+# Official inference uses eight independent attempts per problem.
+official_attempts: 8
+# VLMEvalKit's maintained scorer uses this judge for marking-scheme credit.
+judge_model: gemini-2.5-flash
+judge_max_tokens: 4096
+judge_temperature: 1.0
+generation_timeout_sec: 1200
+judge_timeout_sec: 600
+transport_retries: 1

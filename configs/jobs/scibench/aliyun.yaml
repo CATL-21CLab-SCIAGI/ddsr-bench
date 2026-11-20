@@ -1,0 +1,25 @@
+benchmark: scibench
+job_name: scibench-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: scibench
+    model_name: qwen3-vl-plus
+    kwargs:
+      client_name: openai
+      base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key_env: DASHSCOPE_API_KEY
+      source_path: datasets/scibench/official
+      splits: [text, image]
+      strategy: zero-cot
+      stream: false
+      sampling:
+        # Upstream fixes temperature at zero but leaves the provider output cap unset.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/scibench/official

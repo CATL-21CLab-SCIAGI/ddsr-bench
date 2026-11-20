@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import shutil
+import tarfile
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from functools import cache
 from hashlib import sha256
 from pathlib import Path
-from tempfile import mkdtemp
+from tempfile import NamedTemporaryFile, mkdtemp
 from urllib.parse import quote
 
 import httpx
@@ -151,6 +152,39 @@ def _download_github(
         download(github_url(repository, revision, remote), destination / local)
 
 
+def _github_archive(config: Mapping[str, object], destination: Path) -> None:
+    """Materialize one pinned directory from a GitHub source archive."""
+    repository = str(config["repository"])
+    revision = str(config["repository_revision"])
+    selected = Path(str(config["archive_path"]))
+    url = f"https://github.com/{repository}/archive/{revision}.tar.gz"
+    with NamedTemporaryFile(suffix=".tar.gz") as temporary:
+        timeout = httpx.Timeout(120.0, connect=30.0)
+        with httpx.stream(
+            "GET", url, follow_redirects=True, timeout=timeout
+        ) as response:
+            response.raise_for_status()
+            for chunk in response.iter_bytes():
+                temporary.write(chunk)
+        temporary.flush()
+        with tarfile.open(temporary.name, "r:gz") as archive:
+            for member in archive.getmembers():
+                relative = Path(*Path(member.name).parts[1:])
+                if (
+                    not member.isfile()
+                    or ".." in relative.parts
+                    or not relative.is_relative_to(selected)
+                ):
+                    continue
+                source = archive.extractfile(member)
+                if source is None:
+                    raise ValueError(f"cannot extract archive member {member.name!r}")
+                target = destination / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open("xb") as output:
+                    shutil.copyfileobj(source, output)
+
+
 def _hf_file(config: Mapping[str, object], destination: Path) -> None:
     filename = str(config["data_file"])
     _download_hf(config, destination, ((filename, filename),))
@@ -167,9 +201,13 @@ def _scicode(config: Mapping[str, object], destination: Path) -> None:
 def _hf_files(config: Mapping[str, object], destination: Path) -> None:
     value = config["files"]
     if isinstance(value, Mapping):
-        filenames = value.values()
+        filenames = tuple(
+            filename
+            for item in value.values()
+            for filename in (item if isinstance(item, list) else [item])
+        )
     elif isinstance(value, list):
-        filenames = value
+        filenames = tuple(value)
     else:
         raise TypeError("source files must be a list or mapping of names")
     if any(not isinstance(filename, str) for filename in filenames):
@@ -181,9 +219,13 @@ def _hf_files(config: Mapping[str, object], destination: Path) -> None:
     )
 
 
-def _phybench(config: Mapping[str, object], destination: Path) -> None:
+def _github_file(config: Mapping[str, object], destination: Path) -> None:
     remote = str(config["data_file"])
     _download_github(config, destination, ((remote, Path(remote).name),))
+
+
+def _url_file(config: Mapping[str, object], destination: Path) -> None:
+    download(str(config["url"]), destination / str(config["data_file"]))
 
 
 def _critpt(config: Mapping[str, object], destination: Path) -> None:
@@ -200,11 +242,19 @@ _FETCHERS: dict[str, Fetcher] = {
     "critpt": _critpt,
     "scicode": _scicode,
     "cmphysbench": _hf_file,
-    "phybench": _phybench,
+    "phybench": _github_file,
     "cmtbench": _hf_file,
     "prismphysics": _hf_files,
     "physics": _hf_files,
     "hle": _hf_files,
+    "frontierscience": _hf_files,
+    "olympiadbench": _hf_files,
+    "hipho": _github_archive,
+    "gpqa": _github_file,
+    "mmlu": _url_file,
+    "mmmupro": _hf_files,
+    "scibench": _github_archive,
+    "jeebench": _github_file,
 }
 
 

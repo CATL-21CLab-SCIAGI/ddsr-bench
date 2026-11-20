@@ -1,0 +1,25 @@
+benchmark: scibench
+job_name: scibench-vllm
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: scibench
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      source_path: datasets/scibench/official
+      splits: [text, image]
+      strategy: zero-cot
+      stream: false
+      sampling:
+        # Upstream fixes temperature at zero but leaves the provider output cap unset.
+        # DDSR uses an explicit portable cap for reproducible hosted/local jobs.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/scibench/official

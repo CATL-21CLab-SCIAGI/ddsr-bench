@@ -1,0 +1,16 @@
+name: mmlu
+repository: hendrycks/test
+repository_revision: 4450500f923c49f1fb1dd3d99108a0bd9717b660
+url: https://people.eecs.berkeley.edu/~hendrycks/data.tar
+data_file: data.tar
+archive_sha256: bec563ba4bac1d6aaf04141cd7d1605d7a5ca833e38f994051e818489592989b
+source_sha256: e0d03a5240afbb89afdb74aa7b1017610d93d393ed26b8ea42906754c349f351
+edition: official
+authority: official
+status: original
+expected_subjects: 57
+expected_test_records: 14042
+expected_dev_records: 285
+few_shot_examples: 5
+generation_timeout_sec: 1200
+transport_retries: 1

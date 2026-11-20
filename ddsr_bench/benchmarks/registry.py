@@ -126,6 +126,94 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.hle.data.loader:validate_source",
         containerized=False,
     ),
+    "frontierscience": Benchmark(
+        static_runner=(
+            "ddsr_bench.benchmarks.frontierscience.evaluation.static:run_job"
+        ),
+        result_adapter="ddsr_bench.benchmarks.frontierscience.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.frontierscience.result:summarize",
+        trajectory_adapter=(
+            "ddsr_bench.benchmarks.frontierscience.trajectory:normalize"
+        ),
+        sft_adapter="ddsr_bench.benchmarks.frontierscience.trajectory:sft_samples",
+        preparer=(
+            "ddsr_bench.benchmarks.frontierscience.evaluation.prepare:prepare_tasks"
+        ),
+        dataset_validator=(
+            "ddsr_bench.benchmarks.frontierscience.data.loader:validate_source"
+        ),
+        containerized=False,
+    ),
+    "olympiadbench": Benchmark(
+        static_runner="ddsr_bench.benchmarks.olympiadbench.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.olympiadbench.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.olympiadbench.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.olympiadbench.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.olympiadbench.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.olympiadbench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.olympiadbench.data.loader:validate_source",
+        containerized=False,
+    ),
+    "hipho": Benchmark(
+        static_runner="ddsr_bench.benchmarks.hipho.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.hipho.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.hipho.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.hipho.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.hipho.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.hipho.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.hipho.data.loader:validate_source",
+        containerized=False,
+    ),
+    "gpqa": Benchmark(
+        static_runner="ddsr_bench.benchmarks.gpqa.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.gpqa.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.gpqa.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.gpqa.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.gpqa.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.gpqa.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.gpqa.data.loader:validate_source",
+        containerized=False,
+    ),
+    "mmlu": Benchmark(
+        static_runner="ddsr_bench.benchmarks.mmlu.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.mmlu.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.mmlu.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.mmlu.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.mmlu.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.mmlu.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.mmlu.data.loader:validate_source",
+        containerized=False,
+    ),
+    "mmmupro": Benchmark(
+        static_runner="ddsr_bench.benchmarks.mmmupro.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.mmmupro.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.mmmupro.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.mmmupro.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.mmmupro.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.mmmupro.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.mmmupro.data.loader:validate_source",
+        containerized=False,
+    ),
+    "scibench": Benchmark(
+        static_runner="ddsr_bench.benchmarks.scibench.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.scibench.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.scibench.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.scibench.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.scibench.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.scibench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.scibench.data.loader:validate_source",
+        containerized=False,
+    ),
+    "jeebench": Benchmark(
+        static_runner="ddsr_bench.benchmarks.jeebench.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.jeebench.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.jeebench.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.jeebench.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.jeebench.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.jeebench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.jeebench.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

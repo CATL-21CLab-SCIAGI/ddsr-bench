@@ -1,15 +1,25 @@
 import tomllib
 from pathlib import Path
 
+from ddsr_bench.benchmarks.registry import BENCHMARKS
+
 ROOT = Path(__file__).parents[2]
 
 
-def test_submission_packaged():
+def test_benchmark_packages_and_configs_are_distributed() -> None:
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
-    assert (
-        "ddsr_bench.benchmarks.critpt.submission"
-        in config["tool"]["setuptools"]["packages"]
-    )
+    packaged = set(config["tool"]["setuptools"]["packages"])
+    patterns = config["tool"]["setuptools"]["package-data"]["configs"]
+
+    for name in BENCHMARKS:
+        root = ROOT / "ddsr_bench" / "benchmarks" / name
+        expected = {
+            ".".join(path.parent.relative_to(ROOT).parts)
+            for path in root.rglob("__init__.py")
+        }
+        assert expected <= packaged
+        assert any(pattern.startswith(f"jobs/{name}/") for pattern in patterns)
+        assert any(pattern.startswith(f"prompts/{name}/") for pattern in patterns)
 
 
 def test_critpt_image() -> None:
@@ -50,7 +60,8 @@ def test_cmtbench_image() -> None:
 def test_all_solver_contexts_exclude_local_artifacts():
     from docker.utils.build import exclude_paths
 
-    for benchmark in ("critpt", "scicode", "cmphysbench", "phybench", "cmtbench"):
+    benchmarks = [name for name, item in BENCHMARKS.items() if item.containerized]
+    for benchmark in benchmarks:
         patterns = (
             (ROOT / "docker" / benchmark / "Dockerfile.dockerignore")
             .read_text()

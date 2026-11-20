@@ -1,0 +1,29 @@
+benchmark: hipho
+
+job_name: hipho-official-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 8
+n_concurrent_trials: 8
+
+agents:
+  - name: hipho
+    model_name: qwen3-vl-plus
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: false
+      cohort: published
+      include_images: true
+      sampling:
+        max_tokens: 32768
+        temperature: 0.6
+        top_p: 1.0
+      judge:
+        client_name: openai
+        base_url: https://generativelanguage.googleapis.com/v1beta/openai
+        api_key_env: GEMINI_API_KEY
+        model: gemini-2.5-flash
+
+datasets:
+  - path: tasks/hipho/official

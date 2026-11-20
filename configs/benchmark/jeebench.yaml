@@ -1,0 +1,24 @@
+name: jeebench
+repository: dair-iitd/jeebench
+revision: a9af8bf354887043bd280a617c8716ef54e7aaec
+data_file: data.zip
+edition: official
+authority: official
+status: unverified
+source_sha256: a34c20ed09709fa7d6284636b849591c2e3ccae6e68338dab485634430eee054
+expected_records: 515
+expected_subjects:
+  math: 236
+  chem: 156
+  phy: 123
+expected_response_types:
+  MCQ(multiple): 186
+  Numeric: 137
+  MCQ: 110
+  Integer: 82
+# The official baseline defaults to zero-shot chain-of-thought.
+default_prompt_mode: cot
+# Official numeric and integer scoring accepts absolute error up to 0.01.
+numeric_tolerance: 0.01
+generation_timeout_sec: 1200
+transport_retries: 1

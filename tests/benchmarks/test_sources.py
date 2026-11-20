@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from ddsr_bench.benchmarks import sources
+from ddsr_bench.benchmarks.registry import BENCHMARKS
 
 
 class Adapter:
@@ -125,16 +126,34 @@ def test_tree_rejects_symlinks(tmp_path: Path) -> None:
 def test_catalog_has_pinned_digests() -> None:
     catalog = sources.all_sources()
 
-    assert set(catalog) == {
-        "critpt",
-        "scicode",
-        "cmphysbench",
-        "phybench",
-        "cmtbench",
-        "prismphysics",
-        "physics",
-        "hle",
-    }
+    assert set(catalog) == set(BENCHMARKS)
     assert all(
         len(str(item.config.get("source_sha256"))) == 64 for item in catalog.values()
     )
+
+
+def test_hf_files_flattens_grouped_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = []
+    monkeypatch.setattr(
+        sources,
+        "_download_hf",
+        lambda config, destination, files: captured.extend(files),
+    )
+
+    sources._hf_files(
+        {
+            "files": {
+                "standard": ["a/0.parquet", "a/1.parquet"],
+                "vision": ["b/0.parquet"],
+            }
+        },
+        tmp_path,
+    )
+
+    assert captured == [
+        ("a/0.parquet", "a/0.parquet"),
+        ("a/1.parquet", "a/1.parquet"),
+        ("b/0.parquet", "b/0.parquet"),
+    ]

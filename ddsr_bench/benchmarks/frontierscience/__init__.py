@@ -1,0 +1,1 @@
+"""FrontierScience benchmark adapter."""

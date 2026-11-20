@@ -14,6 +14,14 @@ from ddsr_bench.benchmarks.utils import benchmark_config
         ("cmphysbench", "official", "official", "unverified"),
         ("physics", "verified", "official", "verified"),
         ("hle", "verified", "official", "verified"),
+        ("frontierscience", "gold", "official", "verified"),
+        ("olympiadbench", "official", "official", "revised"),
+        ("hipho", "official", "official", "revised"),
+        ("gpqa", "official", "official", "original"),
+        ("mmlu", "official", "official", "original"),
+        ("mmmupro", "corrected", "official", "corrected"),
+        ("scibench", "official", "official", "revised"),
+        ("jeebench", "official", "official", "unverified"),
     ],
 )
 def test_selected_dataset_edition(

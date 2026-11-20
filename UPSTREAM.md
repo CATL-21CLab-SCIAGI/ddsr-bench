@@ -68,6 +68,40 @@
   of template presence, without accessing private references during generation.
   Empty instructions use the corpus default. Official CritPt prompts are unchanged.
 
+## MMMU-Pro
+
+- Repository: https://github.com/MMMU-Benchmark/MMMU
+- Repository commit: `b26bdefc7e5e007962fde8f93b2bb53c99c8d13d`.
+- Dataset: `MMMU/MMMU_Pro`.
+- Dataset revision: `0d7426df4ccb3d8704a992fe6850abee7c262127`.
+- Dataset status: official, corrected; 1,730 records in each of Standard-10,
+  Standard-4, and Vision.
+- Pinned for: all four direct/chain-of-thought Standard/Vision instructions,
+  Standard placeholder replacement and image order, Vision screenshot input,
+  the OpenAI multimodal message envelope, 4,096 output tokens, answer-letter
+  extraction, subject/domain aggregation, and the Standard-10/Vision headline.
+- Local hardening: upstream seeds Python's global random generator to 42 before
+  guessing malformed answers. DDSR derives the same seeded policy from each
+  problem ID so scheduling, concurrency, and resume order cannot alter scores.
+- License: Apache-2.0.
+
+## SciBench
+
+- Repository: https://github.com/mandyyyyii/scibench
+- Repository commit: `e14e0ca3d3db0f02928a18d435b9c3d15656a7c5`.
+- Data status: official, revised; 580 text and 151 image targets plus 138
+  released solved examples.
+- Pinned for: zero-shot, two-call zero-shot chain-of-thought, few-shot, and
+  few-shot chain-of-thought text prompts; the exact system instruction; last
+  boxed-value extraction; scientific-unit rescaling; and 5% relative tolerance.
+- Project choice: the repository releases 151 image targets but no multimodal
+  inference script. DDSR uses the same problem/unit text contract and appends
+  the released question image to the user message.
+- Excluded: Python and Wolfram tool modes, which require separate model-code
+  execution and a local proprietary Wolfram installation. They are not
+  mislabeled as static evaluation.
+- License: MIT.
+
 ## Harbor
 
 - Repository: https://github.com/harbor-framework/harbor
@@ -259,3 +293,140 @@
   and the HLE-Verified paper is CC BY 4.0. No explicit license was found for the
   HLE-Verified repository or dataset at the pinned revisions; DDSR does not
   redistribute its data. The HLE MIT notice is copied beside the prompts.
+
+## FrontierScience
+
+- Dataset: `openai/frontierscience`, revision
+  `25ed67db7da8f4591484e764008ff585544f5a30`.
+- Dataset tree: `olympiad/test.jsonl` and `research/test.jsonl`, SHA-256
+  `a3b5bd97aff5aabb76a3ee0a7d1ab6cc87b0306d44ef21bb26bef16b26816d2a`.
+- Official paper: https://arxiv.org/abs/2601.21165.
+- Maintained Inspect implementation: https://github.com/UKGovernmentBEIS/inspect_evals,
+  release commit `a4205c238a40de36204c487fa38d7720bc1085cf`.
+- Pinned for: the verbatim problem input, official Olympiad equivalence and
+  Research rubric prompts, terminal judge markers, ten-point normalization,
+  seven-point Research success threshold, GPT-5 high-effort judge setting, and
+  empty-response behavior. The paper averages 20 Olympiad and 30 Research
+  trials; DDSR leaves the job attempt count explicit so the tracks can be run
+  separately with those settings.
+- The maintained Inspect scorer calls this format `olympic`, while the official
+  dataset path and paper terminology use Olympiad. DDSR uses `olympiad` for the
+  data-facing track name and preserves the scoring behavior.
+- Data status and license: official, verified gold set; Apache-2.0. The dataset
+  card requests that the released evaluation data not enter training corpora.
+  DDSR does not redistribute raw records and keeps references out of exported
+  model trajectories.
+
+## OlympiadBench
+
+- Repository: https://github.com/OpenBMB/OlympiadBench, commit
+  `ba5b26a7e2849940b598a9159c1190daa2b9175f`.
+- Dataset: `Hothan/OlympiadBench`, revision
+  `91184b52131e7fc9455fef848035173aea8cc01a`.
+- Dataset tree: 18 Parquet files below `OlympiadBench/`, materialized-tree
+  SHA-256 `24d949234fafd2562d81a4701b96ee21632e8af6dcd1b393889dc4b151868d30`.
+- Pinned for: bilingual system prompts; answer-type, multiple-answer, unit, and
+  theorem-proof instructions; physics context ordering; multimodal placeholder
+  ordering; deterministic 2,048-token generation settings; boxed extraction;
+  percentage, numeric, expression, equation, interval, and unordered-answer
+  comparison.
+- The current dataset uses `<image_n>` placeholders while the older GPT-4V
+  helper in the repository splits `<img_n>`. DDSR follows the released data
+  placeholders and verifies a one-to-one match with embedded assets.
+- The current `eval/auto_scoring_judge.py` documents its first argument as the
+  ground truth. DDSR follows that order rather than the reversed call in the
+  legacy `inference/judge.py`. `latex2sympy2-extended` replaces only the parser
+  runtime dependency, not the comparison policy.
+- Official automated scoring covers open-ended problems only. Theorem proofs
+  were sampled for human evaluation; DDSR records them as ungraded.
+- License: MIT.
+
+## HiPhO
+
+- Official repository: https://github.com/SciYu/HiPhO, commit
+  `8db13ae9aa6e3d4ddb7bb63c8f6a568d5b207243`.
+- Dataset: `SciYu/HiPhO`, revision
+  `8e196c09a71e4e68b75c422defa512473359e0e5`.
+- Paper: https://proceedings.mlr.press/v306/yu26ay.html.
+- Current source: 403 subquestions across 14 exams and 131 PNG assets; pinned
+  tree SHA-256 `47f0041d39e57d9e7ec28669b21cd0cdc0218549719a59a90509a0c0e4ceeec8`.
+- Published cohort: 360 subquestions across 13 exams. CPhO 2025 is a later
+  official extension and is excluded when `cohort: published` is selected.
+- Maintained evaluator: `open-compass/VLMEvalKit`, commit
+  `ed3e918edf4a62e0bf42a2768655e02d45312fef`. The three vendored files are
+  byte-identical to the reproducible `bytedance/axion1_0` wrapper at commit
+  `96ce1830d87399f20577790f405fe2407da34156`.
+- Pinned for: exact English/Chinese inference prompts, image-first message
+  order, answer extraction and equivalence, Gemini-2.5-Flash marking-criterion
+  grading, final `max(answer_points, step_points)` policy, and arithmetic mean
+  of per-exam raw point totals. Published inference uses temperature `0.6`, the
+  largest output limit available per model, and eight independent attempts.
+- Project choice: VLMEvalKit predates CPhO support and marks only
+  PanMechanics as Chinese. DDSR also routes CPhO 2025 through the unchanged
+  Chinese template because the released exam text and data sheet are Chinese.
+  Static evaluation is primary because no generated program is executed.
+- Data license: MIT. Vendored evaluator and shim: Apache-2.0; notices and exact
+  file digests are distributed beside the code.
+
+## GPQA
+
+- Repository: https://github.com/idavidrein/gpqa, commit
+  `56686c06f5e19865c153de0fdb11be3890014df7`.
+- Dataset archive: `dataset.zip`, password published in the repository README.
+  Pinned materialized-tree SHA-256:
+  `77759a7dcb1909ba4f9962bdeb5a12be078c43070620464755b8fa19daeb0468`.
+- Source shape: 448 Main, 198 Diamond, and 546 Extended question rows; the
+  separate 60-row Experts file is metadata about contributors.
+- Pinned for: the zero-shot system and user prompts, seeded sequential choice
+  shuffle, sampled-answer parsing, and exact fixed-denominator accuracy. DDSR
+  uses the official current fields and retains neither expert explanations nor
+  answer keys in generation messages.
+- Data status: official, original. The source records expose pre-revision fields
+  and upstream accepts correction reports, but no accessible, authoritative,
+  comprehensively corrected full release was found at the pinned revision.
+- License: MIT. Static evaluation is protocol-complete because generated text
+  is parsed but never executed.
+
+## JEEBench
+
+- Repository: https://github.com/dair-iitd/jeebench, commit
+  `a9af8bf354887043bd280a617c8716ef54e7aaec`.
+- Paper: https://aclanthology.org/2023.findings-emnlp.150/.
+- Official archive: `data.zip`; materialized-tree SHA-256
+  `a34c20ed09709fa7d6284636b849591c2e3ccae6e68338dab485634430eee054`.
+- Source shape: 515 questions—236 mathematics, 156 chemistry, and 123 physics;
+  110 single-choice, 186 multiple-choice, 82 integer, and 137 numeric.
+- Pinned for: exact normal, zero-shot CoT, and one-shot prompt construction;
+  the subject/type demonstrations; and the official response-type scoring
+  rules, including partial credit and 0.01 absolute numeric tolerance.
+- Protocol boundary: upstream response files contain extracted answers, but the
+  repository publishes no extraction routine. DDSR uses a documented final
+  answer parser and does not describe it as upstream-exact.
+- Data status: official, unverified. No authoritative corrected English release
+  or comprehensive item-level errata ledger was accessible during review. A
+  later multilingual derivative preserves the English rows rather than
+  correcting their questions or keys.
+- License: MIT. Static evaluation is sufficient because no generated code is
+  executed.
+
+## MMLU
+
+- Repository: https://github.com/hendrycks/test, commit
+  `4450500f923c49f1fb1dd3d99108a0bd9717b660`.
+- Official data: https://people.eecs.berkeley.edu/~hendrycks/data.tar.
+- Official archive SHA-256:
+  `bec563ba4bac1d6aaf04141cd7d1605d7a5ca833e38f994051e818489592989b`.
+- Source shape: 57 subjects, 285 development demonstrations, and 14,042 test
+  questions. DDSR uses the complete test population and the first five
+  per-subject development rows, matching upstream's default `ntrain=5`.
+- Pinned for: subject formatting, example formatting, five-shot prompt order,
+  category taxonomy, and fixed-denominator accuracy.
+- Protocol boundary: upstream predicts from the next-token likelihoods of four
+  answer letters through a legacy Completions request and shrinks demonstrations
+  against a GPT-2 2,048-token budget. DDSR preserves the prompt serialization,
+  retains five examples for modern contexts, generates and parses the letter
+  through shared chat clients, and labels resulting records `mmlu-generative`
+  rather than claiming leaderboard parity with that likelihood metric.
+- Data status: official, original. Public correction projects cover subsets,
+  not a full authoritative replacement of all official test rows.
+- License: MIT.

@@ -1,0 +1,25 @@
+benchmark: mmmupro
+job_name: mmmupro-bedrock
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+agents:
+  - name: mmmupro
+    model_name: global.openai.gpt-5.6-luna
+    kwargs:
+      client_name: bedrock
+      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      source_path: datasets/mmmupro/corrected
+      settings: [standard10, vision]
+      mode: cot
+      stream: false
+      sampling:
+        # Official inference uses 4096 generated tokens.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/mmmupro/corrected

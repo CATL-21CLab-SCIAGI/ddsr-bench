@@ -1,0 +1,1 @@
+In this problem, the final answer will be a non-negative integer. Give a detailed solution and end the solution with the final answer.

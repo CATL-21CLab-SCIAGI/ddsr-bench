@@ -42,6 +42,22 @@ phybench = [
 ]
 physics = ["datasets>=4,<6"]
 hle = ["datasets>=4,<6", "huggingface-hub>=0.27,<2"]
+frontierscience = ["huggingface-hub>=0.27,<2"]
+olympiadbench = [
+    "huggingface-hub>=0.27,<2",
+    "latex2sympy2-extended>=1.11,<2",
+    "pyarrow>=18,<24",
+]
+hipho = [
+    "huggingface-hub>=0.27,<2",
+    "math-verify>=0.9,<1",
+    "pylatexenc==2.10",
+]
+gpqa = []
+mmlu = []
+mmmupro = ["huggingface-hub>=0.27,<2", "pyarrow>=18,<24"]
+scibench = []
+jeebench = []
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -86,6 +102,39 @@ packages = [
     "ddsr_bench.benchmarks.hle.data",
     "ddsr_bench.benchmarks.hle.evaluation",
     "ddsr_bench.benchmarks.hle.generation",
+    "ddsr_bench.benchmarks.frontierscience",
+    "ddsr_bench.benchmarks.frontierscience.data",
+    "ddsr_bench.benchmarks.frontierscience.evaluation",
+    "ddsr_bench.benchmarks.frontierscience.generation",
+    "ddsr_bench.benchmarks.olympiadbench",
+    "ddsr_bench.benchmarks.olympiadbench.data",
+    "ddsr_bench.benchmarks.olympiadbench.evaluation",
+    "ddsr_bench.benchmarks.olympiadbench.generation",
+    "ddsr_bench.benchmarks.hipho",
+    "ddsr_bench.benchmarks.hipho.data",
+    "ddsr_bench.benchmarks.hipho.evaluation",
+    "ddsr_bench.benchmarks.hipho.evaluation.official",
+    "ddsr_bench.benchmarks.hipho.generation",
+    "ddsr_bench.benchmarks.gpqa",
+    "ddsr_bench.benchmarks.gpqa.data",
+    "ddsr_bench.benchmarks.gpqa.evaluation",
+    "ddsr_bench.benchmarks.gpqa.generation",
+    "ddsr_bench.benchmarks.mmlu",
+    "ddsr_bench.benchmarks.mmlu.data",
+    "ddsr_bench.benchmarks.mmlu.evaluation",
+    "ddsr_bench.benchmarks.mmlu.generation",
+    "ddsr_bench.benchmarks.mmmupro",
+    "ddsr_bench.benchmarks.mmmupro.data",
+    "ddsr_bench.benchmarks.mmmupro.evaluation",
+    "ddsr_bench.benchmarks.mmmupro.generation",
+    "ddsr_bench.benchmarks.scibench",
+    "ddsr_bench.benchmarks.scibench.data",
+    "ddsr_bench.benchmarks.scibench.evaluation",
+    "ddsr_bench.benchmarks.scibench.generation",
+    "ddsr_bench.benchmarks.jeebench",
+    "ddsr_bench.benchmarks.jeebench.data",
+    "ddsr_bench.benchmarks.jeebench.evaluation",
+    "ddsr_bench.benchmarks.jeebench.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -119,6 +168,7 @@ packages = [
 "ddsr_bench.benchmarks.cmphysbench.evaluation.seed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.phybench.evaluation.eed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.prismphysics.evaluation.gradephyx" = ["LICENSE", "NOTICE.md"]
+"ddsr_bench.benchmarks.hipho.evaluation.official" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]
 configs = [
     "*.yaml",
@@ -130,6 +180,14 @@ configs = [
     "jobs/phybench/*.yaml",
     "jobs/physics/*.yaml",
     "jobs/hle/*.yaml",
+    "jobs/frontierscience/*.yaml",
+    "jobs/olympiadbench/*.yaml",
+    "jobs/hipho/*.yaml",
+    "jobs/gpqa/*.yaml",
+    "jobs/mmlu/*.yaml",
+    "jobs/mmmupro/*.yaml",
+    "jobs/scibench/*.yaml",
+    "jobs/jeebench/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
@@ -138,6 +196,14 @@ configs = [
     "prompts/phybench/*.txt",
     "prompts/physics/*.txt",
     "prompts/hle/*.txt",
+    "prompts/frontierscience/*.txt",
+    "prompts/olympiadbench/*.txt",
+    "prompts/hipho/*.txt",
+    "prompts/gpqa/*.txt",
+    "prompts/mmlu/*.txt",
+    "prompts/mmmupro/*.txt",
+    "prompts/scibench/*.txt",
+    "prompts/jeebench/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",
@@ -148,6 +214,9 @@ testpaths = ["tests"]
 
 [tool.black]
 target-version = ["py312"]
+extend-exclude = '''
+/ddsr_bench/benchmarks/(cmphysbench/evaluation/seed|phybench/evaluation/eed|prismphysics/evaluation/gradephyx|hipho/evaluation/official)/
+'''
 
 [tool.ruff]
 line-length = 88
@@ -157,6 +226,7 @@ target-version = "py312"
 "ddsr_bench/benchmarks/cmphysbench/evaluation/seed/*.py" = ["ALL"]
 "ddsr_bench/benchmarks/phybench/evaluation/eed/*.py" = ["ALL"]
 "ddsr_bench/benchmarks/prismphysics/evaluation/gradephyx/*.py" = ["ALL"]
+"ddsr_bench/benchmarks/hipho/evaluation/official/*.py" = ["ALL"]
 
 "ddsr_bench/benchmarks/critpt/evaluation/ai/grader.py" = ["BLE001"]
 "ddsr_bench/benchmarks/critpt/evaluation/ai/llm/clients/bedrock.py" = ["SIM117", "TRY004"]

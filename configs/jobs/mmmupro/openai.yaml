@@ -1,0 +1,25 @@
+benchmark: mmmupro
+job_name: mmmupro-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+agents:
+  - name: mmmupro
+    model_name: gpt-5-mini
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      source_path: datasets/mmmupro/corrected
+      settings: [standard10, vision]
+      mode: cot
+      stream: false
+      sampling:
+        # Official inference uses 4096 generated tokens.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/mmmupro/corrected
