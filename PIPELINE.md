@@ -52,3 +52,4 @@ is verified:
 - [PRISM-Physics pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md)
 - [PHYSICS pipeline](ddsr_bench/benchmarks/physics/PIPELINE.md)
 - [HLE pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md)
+- [FrontierScience pipeline](ddsr_bench/benchmarks/frontierscience/PIPELINE.md)

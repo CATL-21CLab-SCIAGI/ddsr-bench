@@ -259,3 +259,26 @@
   and the HLE-Verified paper is CC BY 4.0. No explicit license was found for the
   HLE-Verified repository or dataset at the pinned revisions; DDSR does not
   redistribute its data. The HLE MIT notice is copied beside the prompts.
+
+## FrontierScience
+
+- Dataset: `openai/frontierscience`, revision
+  `25ed67db7da8f4591484e764008ff585544f5a30`.
+- Dataset tree: `olympiad/test.jsonl` and `research/test.jsonl`, SHA-256
+  `a3b5bd97aff5aabb76a3ee0a7d1ab6cc87b0306d44ef21bb26bef16b26816d2a`.
+- Official paper: https://arxiv.org/abs/2601.21165.
+- Maintained Inspect implementation: https://github.com/UKGovernmentBEIS/inspect_evals,
+  release commit `a4205c238a40de36204c487fa38d7720bc1085cf`.
+- Pinned for: the verbatim problem input, official Olympiad equivalence and
+  Research rubric prompts, terminal judge markers, ten-point normalization,
+  seven-point Research success threshold, GPT-5 high-effort judge setting, and
+  empty-response behavior. The paper averages 20 Olympiad and 30 Research
+  trials; DDSR leaves the job attempt count explicit so the tracks can be run
+  separately with those settings.
+- The maintained Inspect scorer calls this format `olympic`, while the official
+  dataset path and paper terminology use Olympiad. DDSR uses `olympiad` for the
+  data-facing track name and preserves the scoring behavior.
+- Data status and license: official, verified gold set; Apache-2.0. The dataset
+  card requests that the released evaluation data not enter training corpora.
+  DDSR does not redistribute raw records and keeps references out of exported
+  model trajectories.

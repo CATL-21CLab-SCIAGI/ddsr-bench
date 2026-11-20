@@ -126,6 +126,24 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.hle.data.loader:validate_source",
         containerized=False,
     ),
+    "frontierscience": Benchmark(
+        static_runner=(
+            "ddsr_bench.benchmarks.frontierscience.evaluation.static:run_job"
+        ),
+        result_adapter="ddsr_bench.benchmarks.frontierscience.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.frontierscience.result:summarize",
+        trajectory_adapter=(
+            "ddsr_bench.benchmarks.frontierscience.trajectory:normalize"
+        ),
+        sft_adapter="ddsr_bench.benchmarks.frontierscience.trajectory:sft_samples",
+        preparer=(
+            "ddsr_bench.benchmarks.frontierscience.evaluation.prepare:prepare_tasks"
+        ),
+        dataset_validator=(
+            "ddsr_bench.benchmarks.frontierscience.data.loader:validate_source"
+        ),
+        containerized=False,
+    ),
 }
 
 

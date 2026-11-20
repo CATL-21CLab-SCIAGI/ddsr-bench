@@ -42,6 +42,7 @@ phybench = [
 ]
 physics = ["datasets>=4,<6"]
 hle = ["datasets>=4,<6", "huggingface-hub>=0.27,<2"]
+frontierscience = ["huggingface-hub>=0.27,<2"]
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -86,6 +87,10 @@ packages = [
     "ddsr_bench.benchmarks.hle.data",
     "ddsr_bench.benchmarks.hle.evaluation",
     "ddsr_bench.benchmarks.hle.generation",
+    "ddsr_bench.benchmarks.frontierscience",
+    "ddsr_bench.benchmarks.frontierscience.data",
+    "ddsr_bench.benchmarks.frontierscience.evaluation",
+    "ddsr_bench.benchmarks.frontierscience.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -130,6 +135,7 @@ configs = [
     "jobs/phybench/*.yaml",
     "jobs/physics/*.yaml",
     "jobs/hle/*.yaml",
+    "jobs/frontierscience/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
@@ -138,6 +144,7 @@ configs = [
     "prompts/phybench/*.txt",
     "prompts/physics/*.txt",
     "prompts/hle/*.txt",
+    "prompts/frontierscience/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",

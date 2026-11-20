@@ -1,0 +1,30 @@
+benchmark: frontierscience
+
+# Static layer: generation and GPT-5-style judging run on the host; no Harbor.
+job_name: frontierscience-gold
+jobs_dir: outputs/harbor
+# The paper reports 20 Olympiad and 30 Research trials. Use track filters in
+# separate jobs when reproducing those figures; one attempt is the smoke default.
+n_attempts: 1
+n_concurrent_trials: 10
+
+agents:
+  - name: frontierscience
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: false
+      sampling:
+        max_tokens: 32768
+        temperature: null
+        top_p: null
+      judge:
+        client_name: vllm
+        base_url: http://127.0.0.1:8001/v1
+        model: frontierscience-judge
+        sampling:
+          reasoning_effort: high
+
+datasets:
+  - path: tasks/frontierscience/gold

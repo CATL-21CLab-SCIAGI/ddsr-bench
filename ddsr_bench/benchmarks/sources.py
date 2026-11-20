@@ -205,6 +205,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "prismphysics": _hf_files,
     "physics": _hf_files,
     "hle": _hf_files,
+    "frontierscience": _hf_files,
 }
 
 

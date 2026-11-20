@@ -10,6 +10,9 @@ Close out tested milestones before unrelated refactors, committing checkpoints
 when authorized. Carry approved workflows through without repeated confirmation.
 Squash related development commits by logical change, not the entire branch by
 default; preserve distinct features, fixes, refactors, and contributor attribution.
+For an explicitly authorized multi-benchmark integration, continue through the
+agreed queue without pausing for routine permission. Finish and smoke-test each
+benchmark before its logical commit, then run repository-wide checks at the end.
 
 ## Maintaining guidance
 

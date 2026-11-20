@@ -134,6 +134,7 @@ def test_catalog_has_pinned_digests() -> None:
         "prismphysics",
         "physics",
         "hle",
+        "frontierscience",
     }
     assert all(
         len(str(item.config.get("source_sha256"))) == 64 for item in catalog.values()

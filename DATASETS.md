@@ -28,6 +28,7 @@ audited and disputed by the benchmark authors.
 | CMPhysBench | `43d185851f731e23aa5737c3667b3a9e87bf8cd1` | Official | `unverified` | 520 problems; 100 locally gradable |
 | PHYSICS | PHYSICS-Verified at `724170025e3541c9b877285b2d577a1257796f0b` | Official | `verified` | 1,034 problems, 2,559 scored answers |
 | HLE | HLE-Verified at `0bc83643672d4f68a5f89998617a639d85e7318b` | Official derivative | `verified` | 2,500 source items; 1,811 Gold+Revision selected |
+| FrontierScience | `openai/frontierscience` at `25ed67db7da8f4591484e764008ff585544f5a30` | Official | `verified` | 160 gold-set items across two tracks |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -180,6 +181,17 @@ paper-linked resources found no accessible corrected edition. The
   `5dc045c3eb1629de5ed7bcfb01cb95a09fac0295b00d2f4e614696b07ba1d27c`.
   No explicit dataset license was found at the pinned repository or dataset
   revision, so raw data remain downloaded, ignored local artifacts.
+
+### FrontierScience
+
+- The official Apache-2.0 Hugging Face release contains 100 Olympiad and 60
+  Research problems. The source tree digest is
+  `a3b5bd97aff5aabb76a3ee0a7d1ab6cc87b0306d44ef21bb26bef16b26816d2a`.
+- The public set has 70 physics, 60 chemistry, and 30 biology items. DDSR
+  validates those counts and the globally unique task-group IDs before use.
+- The release calls itself a gold set and asks that it not be used for model
+  training. DDSR supports evaluation and can export trajectories for auditing;
+  users are responsible for honoring the source's training-data restriction.
 
 ## Search boundary
 
