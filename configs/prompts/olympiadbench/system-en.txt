@@ -1,0 +1,1 @@
+You are an AI assistant. Please answer the following {subject} competition problems as required.

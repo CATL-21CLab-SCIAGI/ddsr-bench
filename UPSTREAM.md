@@ -282,3 +282,27 @@
   card requests that the released evaluation data not enter training corpora.
   DDSR does not redistribute raw records and keeps references out of exported
   model trajectories.
+
+## OlympiadBench
+
+- Repository: https://github.com/OpenBMB/OlympiadBench, commit
+  `ba5b26a7e2849940b598a9159c1190daa2b9175f`.
+- Dataset: `Hothan/OlympiadBench`, revision
+  `91184b52131e7fc9455fef848035173aea8cc01a`.
+- Dataset tree: 18 Parquet files below `OlympiadBench/`, materialized-tree
+  SHA-256 `24d949234fafd2562d81a4701b96ee21632e8af6dcd1b393889dc4b151868d30`.
+- Pinned for: bilingual system prompts; answer-type, multiple-answer, unit, and
+  theorem-proof instructions; physics context ordering; multimodal placeholder
+  ordering; deterministic 2,048-token generation settings; boxed extraction;
+  percentage, numeric, expression, equation, interval, and unordered-answer
+  comparison.
+- The current dataset uses `<image_n>` placeholders while the older GPT-4V
+  helper in the repository splits `<img_n>`. DDSR follows the released data
+  placeholders and verifies a one-to-one match with embedded assets.
+- The current `eval/auto_scoring_judge.py` documents its first argument as the
+  ground truth. DDSR follows that order rather than the reversed call in the
+  legacy `inference/judge.py`. `latex2sympy2-extended` replaces only the parser
+  runtime dependency, not the comparison policy.
+- Official automated scoring covers open-ended problems only. Theorem proofs
+  were sampled for human evaluation; DDSR records them as ungraded.
+- License: MIT.

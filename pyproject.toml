@@ -43,6 +43,11 @@ phybench = [
 physics = ["datasets>=4,<6"]
 hle = ["datasets>=4,<6", "huggingface-hub>=0.27,<2"]
 frontierscience = ["huggingface-hub>=0.27,<2"]
+olympiadbench = [
+    "huggingface-hub>=0.27,<2",
+    "latex2sympy2-extended>=1.11,<2",
+    "pyarrow>=18,<24",
+]
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -91,6 +96,10 @@ packages = [
     "ddsr_bench.benchmarks.frontierscience.data",
     "ddsr_bench.benchmarks.frontierscience.evaluation",
     "ddsr_bench.benchmarks.frontierscience.generation",
+    "ddsr_bench.benchmarks.olympiadbench",
+    "ddsr_bench.benchmarks.olympiadbench.data",
+    "ddsr_bench.benchmarks.olympiadbench.evaluation",
+    "ddsr_bench.benchmarks.olympiadbench.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -136,6 +145,7 @@ configs = [
     "jobs/physics/*.yaml",
     "jobs/hle/*.yaml",
     "jobs/frontierscience/*.yaml",
+    "jobs/olympiadbench/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
@@ -145,6 +155,7 @@ configs = [
     "prompts/physics/*.txt",
     "prompts/hle/*.txt",
     "prompts/frontierscience/*.txt",
+    "prompts/olympiadbench/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",

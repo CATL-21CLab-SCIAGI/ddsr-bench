@@ -193,6 +193,22 @@ paper-linked resources found no accessible corrected edition. The
   training. DDSR supports evaluation and can export trajectories for auditing;
   users are responsible for honoring the source's training-data restriction.
 
+### OlympiadBench
+
+- The pinned official revised release contains 8,476 problems across 18 Parquet
+  subsets: 6,142 mathematics, 2,334 physics, 6,351 Chinese, 2,125 English,
+  6,728 open-ended, and 1,748 theorem-proof records. Its 4,869 multimodal
+  problems contain 5,875 embedded JPEG/PNG assets.
+- The materialized 18-file source tree SHA-256 is
+  `24d949234fafd2562d81a4701b96ee21632e8af6dcd1b393889dc4b151868d30`.
+- The official repository describes the release as updated, deduplicated, and
+  image-fixed. It is therefore `revised`, not `corrected`: issue 15 reports an
+  isolated answer correction, issue 20 documents legacy scorer argument order,
+  and issue 21 documents tuple/interval matching limitations. No accessible
+  comprehensive corrected full release was found.
+- DDSR retains theorem proofs but excludes them from automatic accuracy because
+  upstream evaluated proofs manually and publishes no deterministic proof scorer.
+
 ## Search boundary
 
 This catalog was checked on 2026-11-19 against the official repositories and

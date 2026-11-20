@@ -15,6 +15,7 @@ across all benchmarks.
 | PHYSICS | University-level text and multimodal physics problems | Direct static answer-level LLM judging | [Guide](ddsr_bench/benchmarks/physics/README.md) · [Pipeline](ddsr_bench/benchmarks/physics/PIPELINE.md) |
 | HLE-Verified | Multidisciplinary closed-ended text and image questions | Direct static official-style LLM judging | [Guide](ddsr_bench/benchmarks/hle/README.md) · [Pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md) |
 | FrontierScience | Expert scientific reasoning across two evaluation tracks | Direct static official LLM judging | [Guide](ddsr_bench/benchmarks/frontierscience/README.md) · [Pipeline](ddsr_bench/benchmarks/frontierscience/PIPELINE.md) |
+| OlympiadBench | Bilingual multimodal mathematics and physics competitions | Direct static official symbolic scoring for open-ended tasks; proofs retained ungraded | [Guide](ddsr_bench/benchmarks/olympiadbench/README.md) · [Pipeline](ddsr_bench/benchmarks/olympiadbench/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.

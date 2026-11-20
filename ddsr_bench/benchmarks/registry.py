@@ -144,6 +144,16 @@ BENCHMARKS = {
         ),
         containerized=False,
     ),
+    "olympiadbench": Benchmark(
+        static_runner="ddsr_bench.benchmarks.olympiadbench.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.olympiadbench.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.olympiadbench.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.olympiadbench.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.olympiadbench.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.olympiadbench.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.olympiadbench.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

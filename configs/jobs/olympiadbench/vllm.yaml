@@ -1,0 +1,23 @@
+benchmark: olympiadbench
+
+job_name: olympiadbench-official
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: olympiadbench
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: false
+      include_images: true
+      sampling:
+        # The official GPT-4V harness uses deterministic decoding and 2,048 tokens.
+        max_tokens: 2048
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/olympiadbench/official

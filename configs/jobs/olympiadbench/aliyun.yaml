@@ -1,0 +1,24 @@
+benchmark: olympiadbench
+
+job_name: olympiadbench-official-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: olympiadbench
+    # Current multimodal model examples: qwen3-vl-plus and qwen-vl-max.
+    model_name: qwen3-vl-plus
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: false
+      include_images: true
+      sampling:
+        max_tokens: 2048
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/olympiadbench/official

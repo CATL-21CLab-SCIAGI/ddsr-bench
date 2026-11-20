@@ -1,0 +1,1 @@
+"""OlympiadBench benchmark adapter."""
