@@ -30,6 +30,7 @@ audited and disputed by the benchmark authors.
 | HLE | HLE-Verified at `0bc83643672d4f68a5f89998617a639d85e7318b` | Official derivative | `verified` | 2,500 source items; 1,811 Gold+Revision selected |
 | FrontierScience | `openai/frontierscience` at `25ed67db7da8f4591484e764008ff585544f5a30` | Official | `verified` | 160 gold-set items across two tracks |
 | GPQA | `idavidrein/gpqa` at `56686c06f5e19865c153de0fdb11be3890014df7` | Official | `original` | 448 Main, 198 Diamond, 546 Extended questions |
+| MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `unverified` | 14,042 test questions across 57 subjects |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -243,6 +244,23 @@ paper-linked resources found no accessible corrected edition. The
   answer-key and baseline defects. No merged, accessible, comprehensively
   corrected full edition was found, so DDSR records this source as `original`
   rather than asserting that unresolved reports are verified corrections.
+
+### MMLU
+
+- The selected official release contains 14,042 test questions and 285 public
+  development examples across 57 subjects. DDSR evaluates the complete suite.
+- The official archive SHA-256 is
+  `bec563ba4bac1d6aaf04141cd7d1605d7a5ca833e38f994051e818489592989b`;
+  its one-file materialized-tree SHA-256 is
+  `e0d03a5240afbb89afdb74aa7b1017610d93d393ed26b8ea42906754c349f351`.
+- MMLU-Redux and other audits repair or relabel subsets of MMLU, but do not
+  provide an authoritative drop-in corrected edition of all 14,042 official
+  test rows. They remain named derivatives rather than silently replacing the
+  full benchmark.
+- The original code uses next-token likelihoods from a legacy completion API.
+  DDSR's provider-portable chat path preserves the prompt and records its
+  generated-letter protocol separately; score comparisons must respect that
+  distinction.
 
 ## Search boundary
 

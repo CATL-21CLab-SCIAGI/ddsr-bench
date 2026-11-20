@@ -220,6 +220,10 @@ def _github_file(config: Mapping[str, object], destination: Path) -> None:
     _download_github(config, destination, ((remote, Path(remote).name),))
 
 
+def _url_file(config: Mapping[str, object], destination: Path) -> None:
+    download(str(config["url"]), destination / str(config["data_file"]))
+
+
 def _critpt(config: Mapping[str, object], destination: Path) -> None:
     directory = str(config["data_dir"])
     count = int(config["expected_challenges"])
@@ -243,6 +247,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "olympiadbench": _hf_files,
     "hipho": _github_archive,
     "gpqa": _github_file,
+    "mmlu": _url_file,
 }
 
 

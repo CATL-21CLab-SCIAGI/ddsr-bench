@@ -352,3 +352,25 @@
   comprehensively corrected full release was found at the pinned revision.
 - License: MIT. Static evaluation is protocol-complete because generated text
   is parsed but never executed.
+
+## MMLU
+
+- Repository: https://github.com/hendrycks/test, commit
+  `4450500f923c49f1fb1dd3d99108a0bd9717b660`.
+- Official data: https://people.eecs.berkeley.edu/~hendrycks/data.tar.
+- Official archive SHA-256:
+  `bec563ba4bac1d6aaf04141cd7d1605d7a5ca833e38f994051e818489592989b`.
+- Source shape: 57 subjects, 285 development demonstrations, and 14,042 test
+  questions. DDSR uses the complete test population and the first five
+  per-subject development rows, matching upstream's default `ntrain=5`.
+- Pinned for: subject formatting, example formatting, five-shot prompt order,
+  category taxonomy, and fixed-denominator accuracy.
+- Protocol boundary: upstream predicts from the next-token likelihoods of four
+  answer letters through a legacy Completions request and shrinks demonstrations
+  against a GPT-2 2,048-token budget. DDSR preserves the prompt serialization,
+  retains five examples for modern contexts, generates and parses the letter
+  through shared chat clients, and labels resulting records `mmlu-generative`
+  rather than claiming leaderboard parity with that likelihood metric.
+- Data status: official, unverified. Public correction projects cover subsets,
+  not a full authoritative replacement of all official test rows.
+- License: MIT.

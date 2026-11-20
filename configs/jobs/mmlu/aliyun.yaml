@@ -1,0 +1,22 @@
+benchmark: mmlu
+job_name: mmlu-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 16
+
+agents:
+  - name: mmlu
+    model_name: qwen3-max
+    kwargs:
+      client_name: openai
+      base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key_env: DASHSCOPE_API_KEY
+      source_path: datasets/mmlu/official
+      stream: false
+      sampling:
+        max_tokens: 64
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/mmlu/official

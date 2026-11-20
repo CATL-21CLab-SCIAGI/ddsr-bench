@@ -174,6 +174,16 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.gpqa.data.loader:validate_source",
         containerized=False,
     ),
+    "mmlu": Benchmark(
+        static_runner="ddsr_bench.benchmarks.mmlu.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.mmlu.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.mmlu.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.mmlu.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.mmlu.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.mmlu.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.mmlu.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

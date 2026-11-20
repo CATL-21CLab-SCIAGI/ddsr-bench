@@ -1,0 +1,22 @@
+benchmark: mmlu
+job_name: mmlu-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 16
+
+agents:
+  - name: mmlu
+    model_name: gpt-5-mini
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      source_path: datasets/mmlu/official
+      stream: false
+      sampling:
+        max_tokens: 64
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/mmlu/official
