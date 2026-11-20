@@ -47,6 +47,7 @@ def write_trial(
         "phybench": "answer.txt",
         "cmtbench": "answer.txt",
         "prismphysics": "answer.txt",
+        "hle": "answer.txt",
     }
     artifact = artifacts[benchmark]
     (trial / "artifacts" / artifact).write_text("def answer():\n    pass\n")
@@ -64,7 +65,7 @@ def write_trial(
         "config": {"agent": {"kwargs": kwargs}},
         "verifier_result": {"rewards": {"reward": reward}},
     }
-    if benchmark in ("cmphysbench", "phybench", "cmtbench", "prismphysics"):
+    if benchmark in ("cmphysbench", "phybench", "cmtbench", "prismphysics", "hle"):
         static_result = {
             "reward": reward,
             "status": "passed" if reward == 1 else "different",
@@ -82,6 +83,16 @@ def write_trial(
             static_result["type"] = "DMRG"
         elif benchmark == "prismphysics":
             static_result.update(domain="optics", shard="03")
+        elif benchmark == "hle":
+            static_result.update(
+                subset="Gold",
+                category="Physics",
+                answer_type="exactMatch",
+                correct=reward == 1,
+                confidence=90,
+                judge_model="judge",
+                judged=True,
+            )
         result["static_result"] = static_result
     (trial / "result.json").write_text(json.dumps(result))
     (trial / "verifier" / "result.json").write_text(
@@ -242,6 +253,25 @@ def test_collects_prismphysics(tmp_path: Path) -> None:
     assert trial["benchmark_config"] == {"domain": "optics", "shard": "03"}
     assert trial["artifact"] == "trial/artifacts/answer.txt"
     assert summary["metrics"]["overall"]["step_score"] == 50
+
+
+def test_collects_hle(tmp_path: Path) -> None:
+    write_trial(
+        tmp_path,
+        "trial",
+        "668825f80a642802bdfeadfa",
+        "2026-01-01",
+        1,
+        agent="hle",
+        benchmark="hle",
+    )
+
+    summary = collect_trials(tmp_path)
+    trial = summary["batches"][0]["trials"][0]
+
+    assert trial["benchmark_config"]["subset"] == "Gold"
+    assert trial["artifact"] == "trial/artifacts/answer.txt"
+    assert summary["metrics"]["overall"]["accuracy"] == 100
 
 
 def test_rejects_unknown_benchmark(tmp_path: Path) -> None:

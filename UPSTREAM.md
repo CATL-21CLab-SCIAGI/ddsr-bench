@@ -226,3 +226,36 @@
   instead retries failed generation or missing judgments when rerun.
 - Dataset and harness license: MIT. The upstream notice is distributed beside
   the copied prompt text at `configs/prompts/physics/LICENSE.txt`.
+
+## HLE-Verified
+
+- Original benchmark and evaluator: https://github.com/centerforaisafety/hle
+- Evaluator commit: `22ed3074b1e7b134bcbc09028d0ba320839b0655`.
+- Verified release: https://github.com/SKYLENAGE-AI/HLE-Verified
+- Verified repository commit: `b705e0fb541c025a1532ce0d60d70ae2f53b00e0`.
+- Paper: https://arxiv.org/abs/2602.13964
+- Dataset: `skylenage-ai/HLE-Verified`, revision
+  `0bc83643672d4f68a5f89998617a639d85e7318b`.
+- Dataset tree: 15 Parquet shards, SHA-256
+  `5dc045c3eb1629de5ed7bcfb01cb95a09fac0295b00d2f4e614696b07ba1d27c`.
+- Data status: official derivative, verified. The source contains 668 Gold,
+  1,143 Revision, and 689 Uncertain records. DDSR's default certified selection
+  is Gold+Revision (1,811), while source validation covers all 2,500.
+- Pinned for: exact response-format and judge prompts, multimodal message order,
+  the o1 role exception, structured judge fields, default judge
+  `o3-mini-2025-01-31`, 4,096-token judge cap, fixed-denominator accuracy,
+  Wald 95% half-width, and HLE RMS calibration error including its skipped last
+  bin. The original clients use 600-second generation and 300-second judge
+  timeouts with one transport retry. Generation leaves checkpoint decoding
+  defaults unchanged. HLE-Verified uses five independent rollouts and reports
+  avg5 accuracy; DDSR keeps the original ten-request concurrency default.
+- Exact prompt file SHA-256 values: response format
+  `cd27d28bdfe308dab9c78659fb0ff24dee3d85cdf0340ec4e37f984c5fcf1aac`;
+  judge `732dd73cab327aca3bc0d6357d0c2254c0fdeeb8928d2c51edc51648d1be4fb8`.
+- Project choice: prepared tasks are an offline fallback; scoring stays on the
+  host because no model code is executed. Non-OpenAI job profiles substitute a
+  provider judge and therefore do not claim official-judge score parity.
+- License boundary: original HLE evaluation code and copied prompts are MIT,
+  and the HLE-Verified paper is CC BY 4.0. No explicit license was found for the
+  HLE-Verified repository or dataset at the pinned revisions; DDSR does not
+  redistribute its data. The HLE MIT notice is copied beside the prompts.

@@ -213,3 +213,30 @@ def test_physics_job_config(name: str, client: str) -> None:
     assert config.jobs_dir == Path("outputs/harbor")
     suffix = "" if name == "vllm" else f"-{name}"
     assert config.job_name == f"physics-verified{suffix}"
+
+
+@pytest.mark.parametrize(
+    ("name", "client"),
+    [
+        ("vllm", "vllm"),
+        ("openai", "openai"),
+        ("bedrock", "bedrock"),
+        ("aliyun", "aliyun"),
+    ],
+)
+def test_hle_job_config(name: str, client: str) -> None:
+    path = Path("configs/jobs/hle") / f"{name}.yaml"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config = JobConfig.model_validate(raw)
+    agent = config.agents[0]
+
+    assert raw["benchmark"] == "hle"
+    assert agent.name == "hle"
+    assert agent.kwargs["client_name"] == client
+    assert agent.kwargs["sampling"]["max_tokens"] == 8192
+    assert agent.kwargs["include_images"] is True
+    assert config.datasets[0].path == Path("tasks/hle/verified")
+    assert config.jobs_dir == Path("outputs/harbor")
+    assert config.n_attempts == 5
+    suffix = "" if name == "vllm" else f"-{name}"
+    assert config.job_name == f"hle-verified{suffix}"

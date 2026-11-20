@@ -1,0 +1,33 @@
+benchmark: hle
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: hle-verified
+jobs_dir: outputs/harbor
+# HLE-Verified reports the mean of five independent rollouts per item.
+n_attempts: 5
+n_concurrent_trials: 10
+
+# Generation layer: local OpenAI-compatible vLLM endpoints.
+agents:
+  - name: hle
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      stream: false
+      # Set false for a text-only endpoint; this changes evaluated coverage.
+      include_images: true
+      # The official harness leaves checkpoint decoding defaults unchanged and
+      # recommends at least 8,192 completion tokens for reasoning models.
+      sampling:
+        max_tokens: 8192
+        temperature: null
+        top_p: null
+      judge:
+        client_name: vllm
+        base_url: http://127.0.0.1:8001/v1
+        model: hle-judge
+
+# Prepared tasks are an offline fallback for the certified Gold+Revision set.
+datasets:
+  - path: tasks/hle/verified

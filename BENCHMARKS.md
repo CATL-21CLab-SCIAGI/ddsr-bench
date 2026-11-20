@@ -13,6 +13,7 @@ across all benchmarks.
 | PHYBench | Advanced physics reasoning with boxed LaTeX answers | Direct static EED scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/phybench/README.md) · [Pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md) |
 | PRISM-Physics | Process-level physics reasoning over formula DAGs | Direct static ancestor-closure scoring; optional Harbor | [Guide](ddsr_bench/benchmarks/prismphysics/README.md) · [Pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md) |
 | PHYSICS | University-level text and multimodal physics problems | Direct static answer-level LLM judging | [Guide](ddsr_bench/benchmarks/physics/README.md) · [Pipeline](ddsr_bench/benchmarks/physics/PIPELINE.md) |
+| HLE-Verified | Multidisciplinary closed-ended text and image questions | Direct static official-style LLM judging | [Guide](ddsr_bench/benchmarks/hle/README.md) · [Pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.
