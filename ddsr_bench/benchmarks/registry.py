@@ -184,6 +184,16 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.mmlu.data.loader:validate_source",
         containerized=False,
     ),
+    "mmmupro": Benchmark(
+        static_runner="ddsr_bench.benchmarks.mmmupro.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.mmmupro.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.mmmupro.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.mmmupro.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.mmmupro.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.mmmupro.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.mmmupro.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

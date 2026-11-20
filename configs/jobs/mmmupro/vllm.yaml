@@ -1,0 +1,24 @@
+benchmark: mmmupro
+job_name: mmmupro-vllm
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 4
+
+agents:
+  - name: mmmupro
+    model_name: ddsr-local
+    kwargs:
+      client_name: vllm
+      base_url: http://127.0.0.1:8000/v1
+      source_path: datasets/mmmupro/corrected
+      settings: [standard10, vision]
+      mode: cot
+      stream: false
+      sampling:
+        # Official inference uses 4096 generated tokens.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/mmmupro/corrected

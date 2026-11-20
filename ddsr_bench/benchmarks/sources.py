@@ -201,9 +201,13 @@ def _scicode(config: Mapping[str, object], destination: Path) -> None:
 def _hf_files(config: Mapping[str, object], destination: Path) -> None:
     value = config["files"]
     if isinstance(value, Mapping):
-        filenames = value.values()
+        filenames = tuple(
+            filename
+            for item in value.values()
+            for filename in (item if isinstance(item, list) else [item])
+        )
     elif isinstance(value, list):
-        filenames = value
+        filenames = tuple(value)
     else:
         raise TypeError("source files must be a list or mapping of names")
     if any(not isinstance(filename, str) for filename in filenames):
@@ -248,6 +252,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "hipho": _github_archive,
     "gpqa": _github_file,
     "mmlu": _url_file,
+    "mmmupro": _hf_files,
 }
 
 

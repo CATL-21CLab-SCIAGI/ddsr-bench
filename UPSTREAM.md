@@ -68,6 +68,23 @@
   of template presence, without accessing private references during generation.
   Empty instructions use the corpus default. Official CritPt prompts are unchanged.
 
+## MMMU-Pro
+
+- Repository: https://github.com/MMMU-Benchmark/MMMU
+- Repository commit: `b26bdefc7e5e007962fde8f93b2bb53c99c8d13d`.
+- Dataset: `MMMU/MMMU_Pro`.
+- Dataset revision: `0d7426df4ccb3d8704a992fe6850abee7c262127`.
+- Dataset status: official, corrected; 1,730 records in each of Standard-10,
+  Standard-4, and Vision.
+- Pinned for: all four direct/chain-of-thought Standard/Vision instructions,
+  Standard placeholder replacement and image order, Vision screenshot input,
+  the OpenAI multimodal message envelope, 4,096 output tokens, answer-letter
+  extraction, subject/domain aggregation, and the Standard-10/Vision headline.
+- Local hardening: upstream seeds Python's global random generator to 42 before
+  guessing malformed answers. DDSR derives the same seeded policy from each
+  problem ID so scheduling, concurrency, and resume order cannot alter scores.
+- License: Apache-2.0.
+
 ## Harbor
 
 - Repository: https://github.com/harbor-framework/harbor

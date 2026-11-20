@@ -139,7 +139,35 @@ def test_catalog_has_pinned_digests() -> None:
         "hipho",
         "gpqa",
         "mmlu",
+        "mmmupro",
     }
     assert all(
         len(str(item.config.get("source_sha256"))) == 64 for item in catalog.values()
     )
+
+
+def test_hf_files_flattens_grouped_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = []
+    monkeypatch.setattr(
+        sources,
+        "_download_hf",
+        lambda config, destination, files: captured.extend(files),
+    )
+
+    sources._hf_files(
+        {
+            "files": {
+                "standard": ["a/0.parquet", "a/1.parquet"],
+                "vision": ["b/0.parquet"],
+            }
+        },
+        tmp_path,
+    )
+
+    assert captured == [
+        ("a/0.parquet", "a/0.parquet"),
+        ("a/1.parquet", "a/1.parquet"),
+        ("b/0.parquet", "b/0.parquet"),
+    ]

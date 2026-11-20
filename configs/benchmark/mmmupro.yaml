@@ -1,0 +1,29 @@
+name: mmmupro
+dataset: MMMU/MMMU_Pro
+revision: 0d7426df4ccb3d8704a992fe6850abee7c262127
+edition: corrected
+authority: official
+status: corrected
+files:
+  standard10:
+    - standard (10 options)/test-00000-of-00002.parquet
+    - standard (10 options)/test-00001-of-00002.parquet
+  standard4:
+    - standard (4 options)/test-00000-of-00002.parquet
+    - standard (4 options)/test-00001-of-00002.parquet
+  vision:
+    - vision/test-00000-of-00004.parquet
+    - vision/test-00001-of-00004.parquet
+    - vision/test-00002-of-00004.parquet
+    - vision/test-00003-of-00004.parquet
+expected_records:
+  standard10: 1730
+  standard4: 1730
+  vision: 1730
+# The headline benchmark averages Standard-10 and Vision accuracy.
+official_settings: [standard10, vision]
+default_mode: cot
+malformed_seed: 42
+generation_timeout_sec: 1200
+transport_retries: 1
+source_sha256: 97bce68fcbe2f920a712af472a331514dbd0a5fc38c2e55f332f881c787aa723

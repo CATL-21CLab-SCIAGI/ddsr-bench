@@ -31,6 +31,7 @@ audited and disputed by the benchmark authors.
 | FrontierScience | `openai/frontierscience` at `25ed67db7da8f4591484e764008ff585544f5a30` | Official | `verified` | 160 gold-set items across two tracks |
 | GPQA | `idavidrein/gpqa` at `56686c06f5e19865c153de0fdb11be3890014df7` | Official | `original` | 448 Main, 198 Diamond, 546 Extended questions |
 | MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `unverified` | 14,042 test questions across 57 subjects |
+| MMMU-Pro | `MMMU/MMMU_Pro` at `0d7426df4ccb3d8704a992fe6850abee7c262127` | Official | `corrected` | 1,730 records in each of Standard-10, Standard-4, and Vision |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -218,6 +219,18 @@ paper-linked resources found no accessible corrected edition. The
   across 13 exams; CPhO 2025 was added later and is an explicit extension.
 - The pinned current source tree SHA-256 is
   `47f0041d39e57d9e7ec28669b21cd0cdc0218549719a59a90509a0c0e4ceeec8`.
+
+### MMMU-Pro
+
+- The pinned official dataset card documents successive expert and community
+  corrections through 2026-10-04. DDSR therefore records the current release as
+  official and `corrected`, rather than applying a separate derivative patch.
+- Each of the three settings contains the same 1,730 question IDs across 30
+  subjects. The option count remains variable (2–12) despite the Standard-4 and
+  Standard-10 setting names. The Vision split stores the complete question as a
+  screenshot and intentionally omits separate question and explanation fields.
+- The eight pinned Parquet shards have tree SHA-256
+  `97bce68fcbe2f920a712af472a331514dbd0a5fc38c2e55f332f881c787aa723`.
   GitHub and Hugging Face carry semantically matching records with different
   JSON serialization, so DDSR materializes the pinned official GitHub commit.
 - No accessible corrected full release or item-level correction ledger was

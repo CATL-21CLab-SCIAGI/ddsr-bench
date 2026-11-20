@@ -57,3 +57,4 @@ is verified:
 - [HiPhO pipeline](ddsr_bench/benchmarks/hipho/PIPELINE.md)
 - [GPQA pipeline](ddsr_bench/benchmarks/gpqa/PIPELINE.md)
 - [MMLU pipeline](ddsr_bench/benchmarks/mmlu/PIPELINE.md)
+- [MMMU-Pro pipeline](ddsr_bench/benchmarks/mmmupro/PIPELINE.md)
