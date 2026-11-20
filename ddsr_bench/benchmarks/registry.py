@@ -116,6 +116,16 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.physics.data.loader:validate_source",
         containerized=False,
     ),
+    "hle": Benchmark(
+        static_runner="ddsr_bench.benchmarks.hle.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.hle.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.hle.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.hle.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.hle.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.hle.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.hle.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

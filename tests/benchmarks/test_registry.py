@@ -48,6 +48,7 @@ def test_static_capabilities() -> None:
     assert static_runner("cmtbench").__name__ == "run_job"
     assert static_runner("prismphysics").__name__ == "run_job"
     assert static_runner("physics").__name__ == "run_job"
+    assert static_runner("hle").__name__ == "run_job"
     with pytest.raises(ValueError, match="no static runner"):
         static_runner("scicode")
 
@@ -65,6 +66,7 @@ def test_summary_capabilities() -> None:
     assert summarizer("cmtbench").__name__ == "summarize"
     assert summarizer("prismphysics").__name__ == "summarize"
     assert summarizer("physics").__name__ == "summarize"
+    assert summarizer("hle").__name__ == "summarize"
     assert summarizer("critpt") is None
 
 
@@ -84,6 +86,7 @@ def test_preparation_capabilities() -> None:
     assert preparer("cmtbench").__name__ == "prepare_tasks"
     assert preparer("prismphysics").__name__ == "prepare_tasks"
     assert preparer("physics").__name__ == "prepare_tasks"
+    assert preparer("hle").__name__ == "prepare_tasks"
 
 
 @pytest.mark.parametrize("name", BENCHMARKS)

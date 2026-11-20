@@ -13,6 +13,7 @@ from ddsr_bench.benchmarks.utils import benchmark_config
         ("prismphysics", "official", "official", "unverified"),
         ("cmphysbench", "official", "official", "unverified"),
         ("physics", "verified", "official", "verified"),
+        ("hle", "verified", "official", "verified"),
     ],
 )
 def test_selected_dataset_edition(

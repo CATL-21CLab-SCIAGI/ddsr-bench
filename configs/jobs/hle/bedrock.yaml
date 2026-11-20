@@ -1,0 +1,31 @@
+benchmark: hle
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: hle-verified-bedrock
+jobs_dir: outputs/harbor
+n_attempts: 5
+n_concurrent_trials: 10
+
+# Generation layer: AWS_BEARER_TOKEN_BEDROCK is read from the environment.
+agents:
+  - name: hle
+    model_name: global.openai.gpt-5.6-luna
+    kwargs:
+      client_name: bedrock
+      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      stream: false
+      include_images: true
+      sampling:
+        max_tokens: 8192
+        temperature: null
+        top_p: null
+      judge:
+        client_name: bedrock
+        base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+        api_key_env: AWS_BEARER_TOKEN_BEDROCK
+        # Provider substitution; scores are not the official o3-mini judgment.
+        model: global.openai.gpt-5.6-luna
+
+datasets:
+  - path: tasks/hle/verified

@@ -204,6 +204,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "cmtbench": _hf_file,
     "prismphysics": _hf_files,
     "physics": _hf_files,
+    "hle": _hf_files,
 }
 
 

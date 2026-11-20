@@ -1,0 +1,49 @@
+name: hle
+dataset: skylenage-ai/HLE-Verified
+revision: 0bc83643672d4f68a5f89998617a639d85e7318b
+edition: verified
+authority: official
+status: verified
+files:
+  - data/Gold_subset.part01.parquet
+  - data/Gold_subset.part02.parquet
+  - data/Gold_subset.part03.parquet
+  - data/Gold_subset.part04.parquet
+  - data/Gold_subset.part05.parquet
+  - data/Revision_subset.part01.parquet
+  - data/Revision_subset.part02.parquet
+  - data/Revision_subset.part03.parquet
+  - data/Revision_subset.part04.parquet
+  - data/Revision_subset.part05.parquet
+  - data/Uncertain_subset.part01.parquet
+  - data/Uncertain_subset.part02.parquet
+  - data/Uncertain_subset.part03.parquet
+  - data/Uncertain_subset.part04.parquet
+  - data/Uncertain_subset.part05.parquet
+expected_records:
+  Gold: 668
+  Revision: 1143
+  Uncertain: 689
+expected_answer_types:
+  exactMatch: 1909
+  multipleChoice: 591
+expected_images: 342
+expected_rationale_images: 376
+expected_selected_records: 1811
+expected_selected_answer_types:
+  exactMatch: 1372
+  multipleChoice: 439
+expected_selected_images: 211
+expected_selected_rationale_images: 272
+source_sha256: 5dc045c3eb1629de5ed7bcfb01cb95a09fac0295b00d2f4e614696b07ba1d27c
+
+# DDSR's certified default excludes unresolved Uncertain items.
+subsets: [Gold, Revision]
+
+# Official HLE evaluation settings used by HLE-Verified.
+judge_model: o3-mini-2025-01-31
+judge_max_tokens: 4096
+generation_timeout_sec: 600
+judge_timeout_sec: 300
+transport_retries: 1
+calibration_bin_size: 100

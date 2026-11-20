@@ -1,0 +1,31 @@
+benchmark: hle
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: hle-verified-openai
+jobs_dir: outputs/harbor
+n_attempts: 5
+n_concurrent_trials: 10
+
+# Generation layer: OPENAI_API_KEY is read from the environment.
+agents:
+  - name: hle
+    model_name: gpt-5.6-luna
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      stream: false
+      include_images: true
+      sampling:
+        max_tokens: 8192
+        temperature: null
+        top_p: null
+      judge:
+        client_name: openai
+        base_url: https://api.openai.com/v1
+        api_key_env: OPENAI_API_KEY
+        # This is the judge pinned by the official HLE harness.
+        model: o3-mini-2025-01-31
+
+datasets:
+  - path: tasks/hle/verified

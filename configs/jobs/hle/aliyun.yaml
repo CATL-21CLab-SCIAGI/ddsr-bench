@@ -1,0 +1,33 @@
+benchmark: hle
+
+# Static evaluation layer: official judging runs on the host, not in Harbor.
+job_name: hle-verified-aliyun
+jobs_dir: outputs/harbor
+n_attempts: 5
+n_concurrent_trials: 10
+
+# Generation layer: ALIYUN_API_KEY is read from the environment.
+agents:
+  - name: hle
+    # Model examples: qwen3.8-max, deepseek-v4-pro, kimi-k2.7-code, glm-5.2.
+    # Select a vision-capable endpoint while include_images is true.
+    model_name: qwen3.8-max
+    kwargs:
+      client_name: aliyun
+      base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+      api_key_env: ALIYUN_API_KEY
+      stream: false
+      include_images: true
+      sampling:
+        max_tokens: 8192
+        temperature: null
+        top_p: null
+      judge:
+        client_name: aliyun
+        base_url: https://cn-beijing.pai-token.aliyuncs.com/v1
+        api_key_env: ALIYUN_API_KEY
+        # Provider substitution; scores are not the official o3-mini judgment.
+        model: glm-5.2
+
+datasets:
+  - path: tasks/hle/verified

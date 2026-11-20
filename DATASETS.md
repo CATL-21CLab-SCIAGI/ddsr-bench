@@ -27,6 +27,7 @@ audited and disputed by the benchmark authors.
 | PRISM-Physics | `89d1e1cb91ec14b319482ec36b43fca5305f9c86` | Official | `unverified` | 1,401 problems |
 | CMPhysBench | `43d185851f731e23aa5737c3667b3a9e87bf8cd1` | Official | `unverified` | 520 problems; 100 locally gradable |
 | PHYSICS | PHYSICS-Verified at `724170025e3541c9b877285b2d577a1257796f0b` | Official | `verified` | 1,034 problems, 2,559 scored answers |
+| HLE | HLE-Verified at `0bc83643672d4f68a5f89998617a639d85e7318b` | Official derivative | `verified` | 2,500 source items; 1,811 Gold+Revision selected |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -161,13 +162,24 @@ paper-linked resources found no accessible corrected edition. The
   separate DDSR benchmark name. The original 1,297-problem PHYSICS artifact is
   retained upstream but is not selected for new evaluation.
 
-## Related corrected benchmarks
+### HLE
 
-This public release is not yet integrated, but is a strong candidate:
-
-- [HLE-Verified](https://huggingface.co/datasets/skylenage-ai/HLE-Verified),
-  revision `0bc83643672d4f68a5f89998617a639d85e7318b`, is a broader
-  multidisciplinary audit that includes physics.
+- [HLE-Verified](https://huggingface.co/datasets/skylenage-ai/HLE-Verified)
+  audits all 2,500 HLE records into 668 Gold, 1,143 Revision, and 689 Uncertain
+  items. The accompanying paper recommends Gold for stable leaderboards,
+  Revision for robustness, and Uncertain for ambiguity research.
+- DDSR's `verified` edition downloads all three classes but selects Gold and
+  Revision by default. This 1,811-item certified population is an explicit DDSR
+  policy, not a claim that the HLE-Verified paper's “Full Set” excludes
+  Uncertain records.
+- The selected population has 1,372 exact-match and 439 multiple-choice items,
+  including 211 embedded question images. The complete source has 342 embedded
+  question images. DDSR also preserves the 376 released rationale images
+  verifier-side, 272 of which belong to the selected population.
+- The pinned dataset tree SHA-256 is
+  `5dc045c3eb1629de5ed7bcfb01cb95a09fac0295b00d2f4e614696b07ba1d27c`.
+  No explicit dataset license was found at the pinned repository or dataset
+  revision, so raw data remain downloaded, ignored local artifacts.
 
 ## Search boundary
 

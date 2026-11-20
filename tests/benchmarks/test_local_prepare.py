@@ -15,6 +15,7 @@ from ddsr_bench.benchmarks.utils import Resources, benchmark_config
         ("prismphysics", "load_directory"),
         ("scicode", "load_file"),
         ("physics", "load_directory"),
+        ("hle", "load_directory"),
     ],
 )
 def test_prepares_local_source(
@@ -32,6 +33,8 @@ def test_prepares_local_source(
         return []
 
     monkeypatch.setattr(module, loader, load)
+    if name == "hle":
+        monkeypatch.setattr(module, "select", lambda problems: problems)
     tasks = module.prepare_tasks(
         benchmark_config(name),
         source,

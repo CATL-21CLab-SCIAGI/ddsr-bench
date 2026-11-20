@@ -51,3 +51,4 @@ is verified:
 - [PHYBench pipeline](ddsr_bench/benchmarks/phybench/PIPELINE.md)
 - [PRISM-Physics pipeline](ddsr_bench/benchmarks/prismphysics/PIPELINE.md)
 - [PHYSICS pipeline](ddsr_bench/benchmarks/physics/PIPELINE.md)
+- [HLE pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md)
