@@ -20,6 +20,7 @@ across all benchmarks.
 | GPQA | Graduate-level biology, chemistry, and physics multiple choice | Direct static official sampled-answer scoring | [Guide](ddsr_bench/benchmarks/gpqa/README.md) · [Pipeline](ddsr_bench/benchmarks/gpqa/PIPELINE.md) |
 | MMLU | Knowledge and reasoning across 57 academic and professional subjects | Direct static five-shot generated-letter scoring | [Guide](ddsr_bench/benchmarks/mmlu/README.md) · [Pipeline](ddsr_bench/benchmarks/mmlu/PIPELINE.md) |
 | MMMU-Pro | Multidisciplinary multimodal reasoning across Standard and Vision settings | Direct static official answer-letter scoring | [Guide](ddsr_bench/benchmarks/mmmupro/README.md) · [Pipeline](ddsr_bench/benchmarks/mmmupro/PIPELINE.md) |
+| SciBench | College-level text and image scientific problem solving | Direct static official numeric scoring | [Guide](ddsr_bench/benchmarks/scibench/README.md) · [Pipeline](ddsr_bench/benchmarks/scibench/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.

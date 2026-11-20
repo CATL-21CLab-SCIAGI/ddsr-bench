@@ -1,0 +1,21 @@
+name: scibench
+repository: mandyyyyii/scibench
+repository_revision: e14e0ca3d3db0f02928a18d435b9c3d15656a7c5
+revision: e14e0ca3d3db0f02928a18d435b9c3d15656a7c5
+archive_path: dataset
+edition: official
+authority: official
+status: revised
+expected_records:
+  text: 580
+  image: 151
+expected_examples:
+  text: 112
+  image: 26
+textbooks: [atkins, calculus, chemmc, class, diff, fund, matter, quan, stat, thermo]
+default_splits: [text, image]
+default_strategy: zero-cot
+relative_tolerance: 0.05
+generation_timeout_sec: 1200
+transport_retries: 1
+source_sha256: c09fb1324d28ad4166b0699f7bf50a90035c8bd8e1c46f33a89742b78d089404

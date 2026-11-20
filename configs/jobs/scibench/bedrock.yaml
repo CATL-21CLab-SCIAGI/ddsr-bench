@@ -1,0 +1,25 @@
+benchmark: scibench
+job_name: scibench-bedrock
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: scibench
+    model_name: global.openai.gpt-5.6-luna
+    kwargs:
+      client_name: bedrock
+      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      source_path: datasets/scibench/official
+      splits: [text, image]
+      strategy: zero-cot
+      stream: false
+      sampling:
+        # Upstream fixes temperature at zero but leaves the provider output cap unset.
+        max_tokens: 4096
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/scibench/official

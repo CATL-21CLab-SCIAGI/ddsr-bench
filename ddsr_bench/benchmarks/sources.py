@@ -253,6 +253,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "gpqa": _github_file,
     "mmlu": _url_file,
     "mmmupro": _hf_files,
+    "scibench": _github_archive,
 }
 
 

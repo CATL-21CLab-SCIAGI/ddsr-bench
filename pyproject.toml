@@ -56,6 +56,7 @@ hipho = [
 gpqa = []
 mmlu = []
 mmmupro = ["huggingface-hub>=0.27,<2", "pyarrow>=18,<24"]
+scibench = []
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -125,6 +126,10 @@ packages = [
     "ddsr_bench.benchmarks.mmmupro.data",
     "ddsr_bench.benchmarks.mmmupro.evaluation",
     "ddsr_bench.benchmarks.mmmupro.generation",
+    "ddsr_bench.benchmarks.scibench",
+    "ddsr_bench.benchmarks.scibench.data",
+    "ddsr_bench.benchmarks.scibench.evaluation",
+    "ddsr_bench.benchmarks.scibench.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -176,6 +181,7 @@ configs = [
     "jobs/gpqa/*.yaml",
     "jobs/mmlu/*.yaml",
     "jobs/mmmupro/*.yaml",
+    "jobs/scibench/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
@@ -190,6 +196,7 @@ configs = [
     "prompts/gpqa/*.txt",
     "prompts/mmlu/*.txt",
     "prompts/mmmupro/*.txt",
+    "prompts/scibench/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",

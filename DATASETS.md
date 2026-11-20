@@ -32,6 +32,7 @@ audited and disputed by the benchmark authors.
 | GPQA | `idavidrein/gpqa` at `56686c06f5e19865c153de0fdb11be3890014df7` | Official | `original` | 448 Main, 198 Diamond, 546 Extended questions |
 | MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `unverified` | 14,042 test questions across 57 subjects |
 | MMMU-Pro | `MMMU/MMMU_Pro` at `0d7426df4ccb3d8704a992fe6850abee7c262127` | Official | `corrected` | 1,730 records in each of Standard-10, Standard-4, and Vision |
+| SciBench | Repository data at `e14e0ca3d3db0f02928a18d435b9c3d15656a7c5` | Official | `revised` | 580 text and 151 image targets; 138 solved examples |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -231,6 +232,23 @@ paper-linked resources found no accessible corrected edition. The
   screenshot and intentionally omits separate question and explanation fields.
 - The eight pinned Parquet shards have tree SHA-256
   `97bce68fcbe2f920a712af472a331514dbd0a5fc38c2e55f332f881c787aa723`.
+
+### SciBench
+
+- The official README says the dataset received minor updates and retains the
+  previous release on an `old` branch, but provides no correction ledger. DDSR
+  therefore classifies the current commit as `revised`, not `corrected`.
+- The paper's 869 open-set records comprise both targets and solved examples.
+  The released evaluation scripts score 580 text targets and use 112 separate
+  solution records as demonstrations. The image tree analogously contains 151
+  targets and 26 solved examples. DDSR does not inflate evaluation coverage by
+  scoring those demonstrations as held-out questions.
+- Four text references are not parseable by upstream's own `float` conversion
+  because they contain commas or Unicode minus signs. No official repair was
+  found; DDSR preserves and documents this scorer ceiling rather than silently
+  changing labels or parsing behavior.
+- The pinned repository data tree SHA-256 is
+  `c09fb1324d28ad4166b0699f7bf50a90035c8bd8e1c46f33a89742b78d089404`.
   GitHub and Hugging Face carry semantically matching records with different
   JSON serialization, so DDSR materializes the pinned official GitHub commit.
 - No accessible corrected full release or item-level correction ledger was

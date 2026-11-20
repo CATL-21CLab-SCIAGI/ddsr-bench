@@ -85,6 +85,23 @@
   problem ID so scheduling, concurrency, and resume order cannot alter scores.
 - License: Apache-2.0.
 
+## SciBench
+
+- Repository: https://github.com/mandyyyyii/scibench
+- Repository commit: `e14e0ca3d3db0f02928a18d435b9c3d15656a7c5`.
+- Data status: official, revised; 580 text and 151 image targets plus 138
+  released solved examples.
+- Pinned for: zero-shot, two-call zero-shot chain-of-thought, few-shot, and
+  few-shot chain-of-thought text prompts; the exact system instruction; last
+  boxed-value extraction; scientific-unit rescaling; and 5% relative tolerance.
+- Project choice: the repository releases 151 image targets but no multimodal
+  inference script. DDSR uses the same problem/unit text contract and appends
+  the released question image to the user message.
+- Excluded: Python and Wolfram tool modes, which require separate model-code
+  execution and a local proprietary Wolfram installation. They are not
+  mislabeled as static evaluation.
+- License: MIT.
+
 ## Harbor
 
 - Repository: https://github.com/harbor-framework/harbor

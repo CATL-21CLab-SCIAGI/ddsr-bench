@@ -1,0 +1,1 @@
+"""SciBench benchmark adapter."""
