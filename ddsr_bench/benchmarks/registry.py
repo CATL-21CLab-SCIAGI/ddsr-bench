@@ -164,6 +164,16 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.hipho.data.loader:validate_source",
         containerized=False,
     ),
+    "gpqa": Benchmark(
+        static_runner="ddsr_bench.benchmarks.gpqa.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.gpqa.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.gpqa.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.gpqa.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.gpqa.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.gpqa.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.gpqa.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 

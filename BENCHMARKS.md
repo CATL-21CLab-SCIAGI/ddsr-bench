@@ -17,6 +17,7 @@ across all benchmarks.
 | FrontierScience | Expert scientific reasoning across two evaluation tracks | Direct static official LLM judging | [Guide](ddsr_bench/benchmarks/frontierscience/README.md) · [Pipeline](ddsr_bench/benchmarks/frontierscience/PIPELINE.md) |
 | OlympiadBench | Bilingual multimodal mathematics and physics competitions | Direct static official symbolic scoring for open-ended tasks; proofs retained ungraded | [Guide](ddsr_bench/benchmarks/olympiadbench/README.md) · [Pipeline](ddsr_bench/benchmarks/olympiadbench/PIPELINE.md) |
 | HiPhO | Multimodal high-school physics Olympiads with human marking schemes | Direct static official answer- and step-level grading | [Guide](ddsr_bench/benchmarks/hipho/README.md) · [Pipeline](ddsr_bench/benchmarks/hipho/PIPELINE.md) |
+| GPQA | Graduate-level biology, chemistry, and physics multiple choice | Direct static official sampled-answer scoring | [Guide](ddsr_bench/benchmarks/gpqa/README.md) · [Pipeline](ddsr_bench/benchmarks/gpqa/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.

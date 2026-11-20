@@ -1,0 +1,19 @@
+name: gpqa
+repository: idavidrein/gpqa
+revision: 56686c06f5e19865c153de0fdb11be3890014df7
+data_file: dataset.zip
+edition: official
+authority: official
+status: original
+source_sha256: 77759a7dcb1909ba4f9962bdeb5a12be078c43070620464755b8fa19daeb0468
+archive_password: deserted-untie-orchid
+expected_records:
+  main: 448
+  diamond: 198
+  extended: 546
+expected_experts: 60
+default_cohort: main
+# Upstream resets Python's RNG before shuffling each cohort's answer choices.
+choice_seed: 0
+generation_timeout_sec: 1200
+transport_retries: 1

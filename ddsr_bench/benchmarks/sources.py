@@ -215,7 +215,7 @@ def _hf_files(config: Mapping[str, object], destination: Path) -> None:
     )
 
 
-def _phybench(config: Mapping[str, object], destination: Path) -> None:
+def _github_file(config: Mapping[str, object], destination: Path) -> None:
     remote = str(config["data_file"])
     _download_github(config, destination, ((remote, Path(remote).name),))
 
@@ -234,7 +234,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "critpt": _critpt,
     "scicode": _scicode,
     "cmphysbench": _hf_file,
-    "phybench": _phybench,
+    "phybench": _github_file,
     "cmtbench": _hf_file,
     "prismphysics": _hf_files,
     "physics": _hf_files,
@@ -242,6 +242,7 @@ _FETCHERS: dict[str, Fetcher] = {
     "frontierscience": _hf_files,
     "olympiadbench": _hf_files,
     "hipho": _github_archive,
+    "gpqa": _github_file,
 }
 
 

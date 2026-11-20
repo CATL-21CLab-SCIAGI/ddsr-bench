@@ -53,6 +53,7 @@ hipho = [
     "math-verify>=0.9,<1",
     "pylatexenc==2.10",
 ]
+gpqa = []
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -110,6 +111,10 @@ packages = [
     "ddsr_bench.benchmarks.hipho.evaluation",
     "ddsr_bench.benchmarks.hipho.evaluation.official",
     "ddsr_bench.benchmarks.hipho.generation",
+    "ddsr_bench.benchmarks.gpqa",
+    "ddsr_bench.benchmarks.gpqa.data",
+    "ddsr_bench.benchmarks.gpqa.evaluation",
+    "ddsr_bench.benchmarks.gpqa.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -158,6 +163,7 @@ configs = [
     "jobs/frontierscience/*.yaml",
     "jobs/olympiadbench/*.yaml",
     "jobs/hipho/*.yaml",
+    "jobs/gpqa/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
@@ -169,6 +175,7 @@ configs = [
     "prompts/frontierscience/*.txt",
     "prompts/olympiadbench/*.txt",
     "prompts/hipho/*.txt",
+    "prompts/gpqa/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",

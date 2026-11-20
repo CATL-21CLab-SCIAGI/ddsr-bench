@@ -1,0 +1,23 @@
+benchmark: gpqa
+job_name: gpqa-main-openai
+jobs_dir: outputs/harbor
+n_attempts: 1
+n_concurrent_trials: 8
+
+agents:
+  - name: gpqa
+    model_name: gpt-5-mini
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      source_path: datasets/gpqa/official
+      cohort: main
+      stream: false
+      sampling:
+        max_tokens: 2048
+        temperature: 0.0
+        top_p: 1.0
+
+datasets:
+  - path: tasks/gpqa/official

@@ -333,3 +333,22 @@
   Static evaluation is primary because no generated program is executed.
 - Data license: MIT. Vendored evaluator and shim: Apache-2.0; notices and exact
   file digests are distributed beside the code.
+
+## GPQA
+
+- Repository: https://github.com/idavidrein/gpqa, commit
+  `56686c06f5e19865c153de0fdb11be3890014df7`.
+- Dataset archive: `dataset.zip`, password published in the repository README.
+  Pinned materialized-tree SHA-256:
+  `77759a7dcb1909ba4f9962bdeb5a12be078c43070620464755b8fa19daeb0468`.
+- Source shape: 448 Main, 198 Diamond, and 546 Extended question rows; the
+  separate 60-row Experts file is metadata about contributors.
+- Pinned for: the zero-shot system and user prompts, seeded sequential choice
+  shuffle, sampled-answer parsing, and exact fixed-denominator accuracy. DDSR
+  uses the official current fields and retains neither expert explanations nor
+  answer keys in generation messages.
+- Data status: official, original. The source records expose pre-revision fields
+  and upstream accepts correction reports, but no accessible, authoritative,
+  comprehensively corrected full release was found at the pinned revision.
+- License: MIT. Static evaluation is protocol-complete because generated text
+  is parsed but never executed.

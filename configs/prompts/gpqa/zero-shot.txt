@@ -1,0 +1,9 @@
+What is the correct answer to this question: {question}
+
+Choices:
+(A) {choice_a}
+(B) {choice_b}
+(C) {choice_c}
+(D) {choice_d}
+
+Format your response as follows: "The correct answer is (insert answer here)"

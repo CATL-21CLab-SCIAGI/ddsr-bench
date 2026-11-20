@@ -29,6 +29,7 @@ audited and disputed by the benchmark authors.
 | PHYSICS | PHYSICS-Verified at `724170025e3541c9b877285b2d577a1257796f0b` | Official | `verified` | 1,034 problems, 2,559 scored answers |
 | HLE | HLE-Verified at `0bc83643672d4f68a5f89998617a639d85e7318b` | Official derivative | `verified` | 2,500 source items; 1,811 Gold+Revision selected |
 | FrontierScience | `openai/frontierscience` at `25ed67db7da8f4591484e764008ff585544f5a30` | Official | `verified` | 160 gold-set items across two tracks |
+| GPQA | `idavidrein/gpqa` at `56686c06f5e19865c153de0fdb11be3890014df7` | Official | `original` | 448 Main, 198 Diamond, 546 Extended questions |
 
 CritPt prompts remain pinned independently to the inspected official prompt
 commit recorded in [UPSTREAM.md](UPSTREAM.md). A data correction does not
@@ -228,6 +229,20 @@ paper-linked resources found no accessible corrected edition. The
 - The official data repository does not ship an evaluator. DDSR pins the
   maintained VLMEvalKit implementation used by the reproducible Axion wrapper,
   including the English/Chinese prompts and answer-plus-step scoring policy.
+
+### GPQA
+
+- The pinned official password-protected archive contains 448 Main, 198
+  Diamond, and 546 Extended question rows, plus 60 expert-metadata rows. DDSR
+  validates all four files and uses Main by default.
+- Its source tree SHA-256 is
+  `77759a7dcb1909ba4f9962bdeb5a12be078c43070620464755b8fa19daeb0468`.
+  The source includes pre-revision question and answer fields for provenance,
+  while evaluation uses the current official fields as upstream does.
+- The repository invites item corrections, and public issues identify candidate
+  answer-key and baseline defects. No merged, accessible, comprehensively
+  corrected full edition was found, so DDSR records this source as `original`
+  rather than asserting that unresolved reports are verified corrections.
 
 ## Search boundary
 
