@@ -54,3 +54,4 @@ is verified:
 - [HLE pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md)
 - [FrontierScience pipeline](ddsr_bench/benchmarks/frontierscience/PIPELINE.md)
 - [OlympiadBench pipeline](ddsr_bench/benchmarks/olympiadbench/PIPELINE.md)
+- [HiPhO pipeline](ddsr_bench/benchmarks/hipho/PIPELINE.md)

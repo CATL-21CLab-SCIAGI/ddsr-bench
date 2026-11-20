@@ -1,0 +1,31 @@
+benchmark: hipho
+
+job_name: hipho-official-openai
+jobs_dir: outputs/harbor
+# Official protocol: 8 independent runs, averaged per problem.
+n_attempts: 8
+n_concurrent_trials: 8
+
+agents:
+  - name: hipho
+    model_name: gpt-5.6-luna
+    kwargs:
+      client_name: openai
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      stream: false
+      cohort: published
+      include_images: true
+      sampling:
+        # Official protocol uses temperature 0.6 and each model's largest limit.
+        max_tokens: 32768
+        temperature: 0.6
+        top_p: 1.0
+      judge:
+        client_name: openai
+        base_url: https://generativelanguage.googleapis.com/v1beta/openai
+        api_key_env: GEMINI_API_KEY
+        model: gemini-2.5-flash
+
+datasets:
+  - path: tasks/hipho/official

@@ -209,9 +209,29 @@ paper-linked resources found no accessible corrected edition. The
 - DDSR retains theorem proofs but excludes them from automatic accuracy because
   upstream evaluated proofs manually and publishes no deterministic proof scorer.
 
+### HiPhO
+
+- The current official repository has 403 subquestions across 14 exams and 131
+  PNG files. The published ICML benchmark and leaderboard use 360 subquestions
+  across 13 exams; CPhO 2025 was added later and is an explicit extension.
+- The pinned current source tree SHA-256 is
+  `47f0041d39e57d9e7ec28669b21cd0cdc0218549719a59a90509a0c0e4ceeec8`.
+  GitHub and Hugging Face carry semantically matching records with different
+  JSON serialization, so DDSR materializes the pinned official GitHub commit.
+- No accessible corrected full release or item-level correction ledger was
+  found. DDSR records the source as `revised`: the official current release is
+  authoritative, while published and current cohorts remain separately named.
+- Six released subquestions have empty final-answer strings and therefore can
+  receive only marking-scheme credit. The later `CPhO_2025_7_6` row has a
+  malformed coarse reference in the maintained scorer; DDSR records that
+  branch error and preserves its independent marking-scheme score.
+- The official data repository does not ship an evaluator. DDSR pins the
+  maintained VLMEvalKit implementation used by the reproducible Axion wrapper,
+  including the English/Chinese prompts and answer-plus-step scoring policy.
+
 ## Search boundary
 
-This catalog was checked on 2026-11-19 against the official repositories and
+This catalog was checked on 2026-11-20 against the official repositories and
 dataset histories, public issues and forks, Hugging Face name searches, linked
 papers, LOCA, and the Alliance audit release. An absence statement means no
 accessible correction was found within that boundary; it is not a claim that

@@ -1,0 +1,29 @@
+benchmark: hipho
+
+job_name: hipho-official-bedrock
+jobs_dir: outputs/harbor
+n_attempts: 8
+n_concurrent_trials: 8
+
+agents:
+  - name: hipho
+    model_name: global.openai.gpt-5.6-luna
+    kwargs:
+      client_name: bedrock
+      base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+      api_key_env: AWS_BEARER_TOKEN_BEDROCK
+      stream: false
+      cohort: published
+      include_images: true
+      sampling:
+        max_tokens: 32768
+        temperature: 0.6
+        top_p: 1.0
+      judge:
+        client_name: openai
+        base_url: https://generativelanguage.googleapis.com/v1beta/openai
+        api_key_env: GEMINI_API_KEY
+        model: gemini-2.5-flash
+
+datasets:
+  - path: tasks/hipho/official

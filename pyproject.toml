@@ -48,6 +48,11 @@ olympiadbench = [
     "latex2sympy2-extended>=1.11,<2",
     "pyarrow>=18,<24",
 ]
+hipho = [
+    "huggingface-hub>=0.27,<2",
+    "math-verify>=0.9,<1",
+    "pylatexenc==2.10",
+]
 prismphysics = [
     "huggingface-hub>=0.27,<2",
     "latex2sympy2-extended>=1.11,<2",
@@ -100,6 +105,11 @@ packages = [
     "ddsr_bench.benchmarks.olympiadbench.data",
     "ddsr_bench.benchmarks.olympiadbench.evaluation",
     "ddsr_bench.benchmarks.olympiadbench.generation",
+    "ddsr_bench.benchmarks.hipho",
+    "ddsr_bench.benchmarks.hipho.data",
+    "ddsr_bench.benchmarks.hipho.evaluation",
+    "ddsr_bench.benchmarks.hipho.evaluation.official",
+    "ddsr_bench.benchmarks.hipho.generation",
     "ddsr_bench.benchmarks.prismphysics",
     "ddsr_bench.benchmarks.prismphysics.data",
     "ddsr_bench.benchmarks.prismphysics.evaluation",
@@ -133,6 +143,7 @@ packages = [
 "ddsr_bench.benchmarks.cmphysbench.evaluation.seed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.phybench.evaluation.eed" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.prismphysics.evaluation.gradephyx" = ["LICENSE", "NOTICE.md"]
+"ddsr_bench.benchmarks.hipho.evaluation.official" = ["LICENSE", "NOTICE.md"]
 "ddsr_bench.benchmarks.scicode.data" = ["fixed/*.txt"]
 configs = [
     "*.yaml",
@@ -146,6 +157,7 @@ configs = [
     "jobs/hle/*.yaml",
     "jobs/frontierscience/*.yaml",
     "jobs/olympiadbench/*.yaml",
+    "jobs/hipho/*.yaml",
     "jobs/prismphysics/*.yaml",
     "jobs/scicode/*.yaml",
     "prompts/critpt/*.yaml",
@@ -156,6 +168,7 @@ configs = [
     "prompts/hle/*.txt",
     "prompts/frontierscience/*.txt",
     "prompts/olympiadbench/*.txt",
+    "prompts/hipho/*.txt",
     "prompts/prismphysics/*.txt",
     "prompts/scicode/*.txt",
     "serving/vllm/*.yaml",
@@ -166,6 +179,9 @@ testpaths = ["tests"]
 
 [tool.black]
 target-version = ["py312"]
+extend-exclude = '''
+/ddsr_bench/benchmarks/(cmphysbench/evaluation/seed|phybench/evaluation/eed|prismphysics/evaluation/gradephyx|hipho/evaluation/official)/
+'''
 
 [tool.ruff]
 line-length = 88
@@ -175,6 +191,7 @@ target-version = "py312"
 "ddsr_bench/benchmarks/cmphysbench/evaluation/seed/*.py" = ["ALL"]
 "ddsr_bench/benchmarks/phybench/evaluation/eed/*.py" = ["ALL"]
 "ddsr_bench/benchmarks/prismphysics/evaluation/gradephyx/*.py" = ["ALL"]
+"ddsr_bench/benchmarks/hipho/evaluation/official/*.py" = ["ALL"]
 
 "ddsr_bench/benchmarks/critpt/evaluation/ai/grader.py" = ["BLE001"]
 "ddsr_bench/benchmarks/critpt/evaluation/ai/llm/clients/bedrock.py" = ["SIM117", "TRY004"]

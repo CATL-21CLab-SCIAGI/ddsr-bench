@@ -306,3 +306,30 @@
 - Official automated scoring covers open-ended problems only. Theorem proofs
   were sampled for human evaluation; DDSR records them as ungraded.
 - License: MIT.
+
+## HiPhO
+
+- Official repository: https://github.com/SciYu/HiPhO, commit
+  `8db13ae9aa6e3d4ddb7bb63c8f6a568d5b207243`.
+- Dataset: `SciYu/HiPhO`, revision
+  `8e196c09a71e4e68b75c422defa512473359e0e5`.
+- Paper: https://proceedings.mlr.press/v306/yu26ay.html.
+- Current source: 403 subquestions across 14 exams and 131 PNG assets; pinned
+  tree SHA-256 `47f0041d39e57d9e7ec28669b21cd0cdc0218549719a59a90509a0c0e4ceeec8`.
+- Published cohort: 360 subquestions across 13 exams. CPhO 2025 is a later
+  official extension and is excluded when `cohort: published` is selected.
+- Maintained evaluator: `open-compass/VLMEvalKit`, commit
+  `ed3e918edf4a62e0bf42a2768655e02d45312fef`. The three vendored files are
+  byte-identical to the reproducible `bytedance/axion1_0` wrapper at commit
+  `96ce1830d87399f20577790f405fe2407da34156`.
+- Pinned for: exact English/Chinese inference prompts, image-first message
+  order, answer extraction and equivalence, Gemini-2.5-Flash marking-criterion
+  grading, final `max(answer_points, step_points)` policy, and arithmetic mean
+  of per-exam raw point totals. Published inference uses temperature `0.6`, the
+  largest output limit available per model, and eight independent attempts.
+- Project choice: VLMEvalKit predates CPhO support and marks only
+  PanMechanics as Chinese. DDSR also routes CPhO 2025 through the unchanged
+  Chinese template because the released exam text and data sheet are Chinese.
+  Static evaluation is primary because no generated program is executed.
+- Data license: MIT. Vendored evaluator and shim: Apache-2.0; notices and exact
+  file digests are distributed beside the code.

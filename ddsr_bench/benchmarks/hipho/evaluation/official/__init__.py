@@ -1,0 +1,1 @@
+"""Pinned VLMEvalKit HiPhO evaluator."""

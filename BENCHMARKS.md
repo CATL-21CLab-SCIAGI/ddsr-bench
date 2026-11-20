@@ -16,6 +16,7 @@ across all benchmarks.
 | HLE-Verified | Multidisciplinary closed-ended text and image questions | Direct static official-style LLM judging | [Guide](ddsr_bench/benchmarks/hle/README.md) · [Pipeline](ddsr_bench/benchmarks/hle/PIPELINE.md) |
 | FrontierScience | Expert scientific reasoning across two evaluation tracks | Direct static official LLM judging | [Guide](ddsr_bench/benchmarks/frontierscience/README.md) · [Pipeline](ddsr_bench/benchmarks/frontierscience/PIPELINE.md) |
 | OlympiadBench | Bilingual multimodal mathematics and physics competitions | Direct static official symbolic scoring for open-ended tasks; proofs retained ungraded | [Guide](ddsr_bench/benchmarks/olympiadbench/README.md) · [Pipeline](ddsr_bench/benchmarks/olympiadbench/PIPELINE.md) |
+| HiPhO | Multimodal high-school physics Olympiads with human marking schemes | Direct static official answer- and step-level grading | [Guide](ddsr_bench/benchmarks/hipho/README.md) · [Pipeline](ddsr_bench/benchmarks/hipho/PIPELINE.md) |
 
 New integrations should follow the [code layout](CONTRIBUTING.md#code-layout)
 and provide both a guide and a pipeline.

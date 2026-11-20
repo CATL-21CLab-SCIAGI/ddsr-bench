@@ -154,6 +154,16 @@ BENCHMARKS = {
         dataset_validator="ddsr_bench.benchmarks.olympiadbench.data.loader:validate_source",
         containerized=False,
     ),
+    "hipho": Benchmark(
+        static_runner="ddsr_bench.benchmarks.hipho.evaluation.static:run_job",
+        result_adapter="ddsr_bench.benchmarks.hipho.result:trial_fields",
+        summarizer="ddsr_bench.benchmarks.hipho.result:summarize",
+        trajectory_adapter="ddsr_bench.benchmarks.hipho.trajectory:normalize",
+        sft_adapter="ddsr_bench.benchmarks.hipho.trajectory:sft_samples",
+        preparer="ddsr_bench.benchmarks.hipho.evaluation.prepare:prepare_tasks",
+        dataset_validator="ddsr_bench.benchmarks.hipho.data.loader:validate_source",
+        containerized=False,
+    ),
 }
 
 
