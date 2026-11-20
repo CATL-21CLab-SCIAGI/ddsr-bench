@@ -8,6 +8,7 @@ status: revised
 revision: bc37a22bedb8744dff8996ccce7f9eedec548915
 dataset_revision: 37ecba7e9d00eda858d7be1adba19a38ba50e7a6
 prompt_revision: 17c2545c302762d2f2d644d923ea4c301605cb08
+ai_revision: 565d1b0bfab353e17a40a38fe656c3ab0caee660
 expected_challenges: 70
 source_sha256: eea62bc8a33935ef36dfa86a6f8caebf4ff1994f21c70941c76ab620d027f4a6
 submission:

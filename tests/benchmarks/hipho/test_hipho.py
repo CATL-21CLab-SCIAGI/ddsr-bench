@@ -14,6 +14,7 @@ from ddsr_bench.benchmarks.hipho.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.hipho.evaluation.static import run_trial
 from ddsr_bench.benchmarks.hipho.generation.prompts import messages, render
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _record() -> dict:
@@ -152,3 +153,4 @@ async def test_static_trial_keeps_reference_private(tmp_path: Path) -> None:
     )
     assert result["status"] == "passed"
     assert "Award 1.0" not in response
+    assert_static_pipeline(tmp_path / "trial", "hipho")

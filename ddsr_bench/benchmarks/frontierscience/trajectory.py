@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.frontierscience.data.loader import REVISION
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-HARNESS_COMMIT = "a4205c238a40de36204c487fa38d7720bc1085cf"
+HARNESS_COMMIT = str(benchmark_config("frontierscience")["harness_revision"])
 
 
 def _generation(response: dict[str, Any]) -> Generation:

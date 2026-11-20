@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.olympiadbench.data.loader import REVISION
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-REPOSITORY_COMMIT = "ba5b26a7e2849940b598a9159c1190daa2b9175f"
+REPOSITORY_COMMIT = str(benchmark_config("olympiadbench")["repository_revision"])
 
 
 def _generation(response: dict[str, Any]) -> Generation:

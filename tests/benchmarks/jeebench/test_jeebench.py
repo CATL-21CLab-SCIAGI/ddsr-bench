@@ -14,6 +14,7 @@ from ddsr_bench.benchmarks.jeebench.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.jeebench.evaluation.static import run_trial
 from ddsr_bench.benchmarks.jeebench.generation.prompts import messages, render
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _problem(response_type: str = "MCQ(multiple)", gold: str = "AC"):
@@ -89,3 +90,4 @@ async def test_static_trial(tmp_path: Path) -> None:
 
     assert result["status"] == "passed"
     assert (tmp_path / "trial" / "agent" / "response.json").exists()
+    assert_static_pipeline(tmp_path / "trial", "jeebench")

@@ -19,7 +19,18 @@ from ddsr_bench.benchmarks.utils import benchmark_config
 
 @pytest.mark.parametrize("name", BENCHMARKS)
 def test_benchmark_configs(name: str) -> None:
-    assert benchmark_config(name)["name"] == name
+    config = benchmark_config(name)
+    assert config["name"] == name
+    assert config["edition"]
+    assert config["authority"] in ("official", "independent")
+    assert config["status"] in (
+        "original",
+        "revised",
+        "corrected",
+        "verified",
+        "unverified",
+    )
+    assert len(config["source_sha256"]) == 64
     assert registry.benchmark_config(name)["name"] == name
 
 
@@ -28,6 +39,8 @@ def test_benchmark_layout(name: str) -> None:
     root = Path("ddsr_bench/benchmarks") / name
     assert (root / "README.md").is_file()
     assert (root / "PIPELINE.md").is_file()
+    assert f"benchmarks/{name}/README.md" in Path("BENCHMARKS.md").read_text()
+    assert f"benchmarks/{name}/PIPELINE.md" in Path("PIPELINE.md").read_text()
     if BENCHMARKS[name].containerized:
         assert (Path("docker") / name / "Dockerfile").is_file()
     assert any((Path("configs/jobs") / name).glob("*.yaml"))
@@ -41,16 +54,14 @@ def test_unknown_benchmark_config() -> None:
         benchmark_config("../critpt")
 
 
-def test_static_capabilities() -> None:
-    assert static_runner("critpt").__name__ == "run_job"
-    assert static_runner("cmphysbench").__name__ == "run_job"
-    assert static_runner("phybench").__name__ == "run_job"
-    assert static_runner("cmtbench").__name__ == "run_job"
-    assert static_runner("prismphysics").__name__ == "run_job"
-    assert static_runner("physics").__name__ == "run_job"
-    assert static_runner("hle").__name__ == "run_job"
-    with pytest.raises(ValueError, match="no static runner"):
-        static_runner("scicode")
+@pytest.mark.parametrize("name", BENCHMARKS)
+def test_static_capabilities(name: str) -> None:
+    target = BENCHMARKS[name].static_runner
+    if target is None:
+        with pytest.raises(ValueError, match="no static runner"):
+            static_runner(name)
+    else:
+        assert static_runner(name).__name__ == "run_job"
 
 
 @pytest.mark.parametrize(
@@ -60,14 +71,13 @@ def test_result_capabilities(name: str) -> None:
     assert result_adapter(name).__name__ == "trial_fields"
 
 
-def test_summary_capabilities() -> None:
-    assert summarizer("cmphysbench").__name__ == "summarize"
-    assert summarizer("phybench").__name__ == "summarize"
-    assert summarizer("cmtbench").__name__ == "summarize"
-    assert summarizer("prismphysics").__name__ == "summarize"
-    assert summarizer("physics").__name__ == "summarize"
-    assert summarizer("hle").__name__ == "summarize"
-    assert summarizer("critpt") is None
+@pytest.mark.parametrize("name", BENCHMARKS)
+def test_summary_capabilities(name: str) -> None:
+    summary = summarizer(name)
+    if BENCHMARKS[name].summarizer is None:
+        assert summary is None
+    else:
+        assert summary is not None and summary.__name__ == "summarize"
 
 
 @pytest.mark.parametrize(
@@ -78,15 +88,9 @@ def test_trajectory_capabilities(name: str) -> None:
     assert sft_adapter(name).__name__ == "sft_samples"
 
 
-def test_preparation_capabilities() -> None:
-    assert preparer("critpt").__name__ == "prepare_tasks"
-    assert preparer("scicode").__name__ == "prepare_tasks"
-    assert preparer("cmphysbench").__name__ == "prepare_tasks"
-    assert preparer("phybench").__name__ == "prepare_tasks"
-    assert preparer("cmtbench").__name__ == "prepare_tasks"
-    assert preparer("prismphysics").__name__ == "prepare_tasks"
-    assert preparer("physics").__name__ == "prepare_tasks"
-    assert preparer("hle").__name__ == "prepare_tasks"
+@pytest.mark.parametrize("name", BENCHMARKS)
+def test_preparation_capabilities(name: str) -> None:
+    assert preparer(name).__name__ == "prepare_tasks"
 
 
 @pytest.mark.parametrize("name", BENCHMARKS)

@@ -5,10 +5,11 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-REPOSITORY_COMMIT = "a9af8bf354887043bd280a617c8716ef54e7aaec"
+REPOSITORY_COMMIT = str(benchmark_config("jeebench")["revision"])
 
 
 def _generation(response: dict[str, Any]) -> Generation:

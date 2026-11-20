@@ -5,10 +5,11 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-REPOSITORY_COMMIT = "4450500f923c49f1fb1dd3d99108a0bd9717b660"
+REPOSITORY_COMMIT = str(benchmark_config("mmlu")["repository_revision"])
 
 
 def _generation(response: dict[str, Any]) -> Generation:

@@ -3,6 +3,8 @@ dataset: SciYu/HiPhO
 revision: 8e196c09a71e4e68b75c422defa512473359e0e5
 repository: SciYu/HiPhO
 repository_revision: 8db13ae9aa6e3d4ddb7bb63c8f6a568d5b207243
+evaluator_repository: open-compass/VLMEvalKit
+evaluator_revision: ed3e918edf4a62e0bf42a2768655e02d45312fef
 archive_path: data
 edition: official
 authority: official

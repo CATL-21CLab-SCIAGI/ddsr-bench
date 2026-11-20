@@ -19,6 +19,7 @@ from ddsr_bench.benchmarks.frontierscience.generation.prompts import (
     messages,
 )
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _problem(track: str = "olympiad"):
@@ -136,3 +137,4 @@ async def test_static_trial_keeps_reference_private(tmp_path: Path) -> None:
     )
     assert result["status"] == "passed"
     assert '"reference": "42"' not in record
+    assert_static_pipeline(tmp_path / "trial", "frontierscience")

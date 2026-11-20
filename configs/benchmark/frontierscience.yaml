@@ -1,6 +1,8 @@
 name: frontierscience
 dataset: openai/frontierscience
 revision: 25ed67db7da8f4591484e764008ff585544f5a30
+harness_repository: UKGovernmentBEIS/inspect_evals
+harness_revision: a4205c238a40de36204c487fa38d7720bc1085cf
 edition: gold
 authority: official
 status: verified

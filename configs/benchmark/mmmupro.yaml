@@ -1,6 +1,8 @@
 name: mmmupro
 dataset: MMMU/MMMU_Pro
 revision: 0d7426df4ccb3d8704a992fe6850abee7c262127
+repository: MMMU-Benchmark/MMMU
+repository_revision: b26bdefc7e5e007962fde8f93b2bb53c99c8d13d
 edition: corrected
 authority: official
 status: corrected

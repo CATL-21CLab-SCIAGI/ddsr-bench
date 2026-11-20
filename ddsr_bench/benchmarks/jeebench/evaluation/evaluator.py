@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from ddsr_bench.benchmarks.jeebench.data.schemas import AnswerSpec, ProblemSpec
+from ddsr_bench.benchmarks.utils import benchmark_config
 
 _BOXED = re.compile(r"\\boxed\s*\{([^{}]+)\}", re.IGNORECASE)
 _FINAL = re.compile(
@@ -15,6 +16,7 @@ _FRACTION = re.compile(r"\\frac\s*\{([-+]?\d+(?:\.\d*)?)\}\s*\{([-+]?\d+(?:\.\d*
 _SCIENTIFIC = re.compile(
     r"([-+]?(?:\d+(?:\.\d*)?|\.\d+))\s*(?:\\times|×|\*)\s*10\s*\^\s*\{?([-+]?\d+)\}?"
 )
+_TOLERANCE = float(benchmark_config("jeebench")["numeric_tolerance"])
 
 
 def _tail(response: str) -> str:
@@ -57,7 +59,7 @@ def score(expected: str, selected: str | None, response_type: str) -> float:
     if response_type == "MCQ":
         return float((set(expected) & set("ABCD")) == (set(selected) & set("ABCD")))
     try:
-        return float(abs(float(expected) - float(selected)) <= 0.01)
+        return float(abs(float(expected) - float(selected)) <= _TOLERANCE)
     except ValueError:
         return 0.0
 

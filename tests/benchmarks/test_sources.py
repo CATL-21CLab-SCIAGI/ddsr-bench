@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from ddsr_bench.benchmarks import sources
+from ddsr_bench.benchmarks.registry import BENCHMARKS
 
 
 class Adapter:
@@ -125,24 +126,7 @@ def test_tree_rejects_symlinks(tmp_path: Path) -> None:
 def test_catalog_has_pinned_digests() -> None:
     catalog = sources.all_sources()
 
-    assert set(catalog) == {
-        "critpt",
-        "scicode",
-        "cmphysbench",
-        "phybench",
-        "cmtbench",
-        "prismphysics",
-        "physics",
-        "hle",
-        "frontierscience",
-        "olympiadbench",
-        "hipho",
-        "gpqa",
-        "mmlu",
-        "mmmupro",
-        "scibench",
-        "jeebench",
-    }
+    assert set(catalog) == set(BENCHMARKS)
     assert all(
         len(str(item.config.get("source_sha256"))) == 64 for item in catalog.values()
     )

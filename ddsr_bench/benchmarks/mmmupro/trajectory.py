@@ -5,11 +5,13 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-DATASET_REVISION = "0d7426df4ccb3d8704a992fe6850abee7c262127"
-REPOSITORY_COMMIT = "b26bdefc7e5e007962fde8f93b2bb53c99c8d13d"
+_CONFIG = benchmark_config("mmmupro")
+DATASET_REVISION = str(_CONFIG["revision"])
+REPOSITORY_COMMIT = str(_CONFIG["repository_revision"])
 
 
 def _generation(response: dict[str, Any]) -> Generation:

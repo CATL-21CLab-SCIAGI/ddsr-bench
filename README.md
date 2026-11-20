@@ -64,7 +64,7 @@ and Alibaba Cloud Model Studio.
 
 ## ⚗️ Evaluate
 
-After following the selected benchmark's preparation instructions, run its job
+For benchmarks whose catalog entry lists Harbor isolation, run the prepared job
 with Harbor:
 
 ```bash

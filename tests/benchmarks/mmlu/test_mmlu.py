@@ -15,6 +15,7 @@ from ddsr_bench.benchmarks.mmlu.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.mmlu.evaluation.static import run_trial
 from ddsr_bench.benchmarks.mmlu.generation.prompts import messages, render
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _problem() -> Problem:
@@ -85,6 +86,7 @@ async def test_static_trial(tmp_path: Path) -> None:
 
     assert result["status"] == "passed"
     assert (tmp_path / "trial" / "artifacts" / "answer.txt").read_text() == "C"
+    assert_static_pipeline(tmp_path / "trial", "mmlu")
 
 
 class FakeClient:

@@ -11,6 +11,7 @@ from ddsr_bench.benchmarks.olympiadbench.evaluation.scorer import equivalent
 from ddsr_bench.benchmarks.olympiadbench.evaluation.static import run_trial
 from ddsr_bench.benchmarks.olympiadbench.generation.prompts import messages, user_prompt
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _record(kind: str = "OE", modality: str = "TO") -> dict:
@@ -136,3 +137,4 @@ async def test_static_trial_scores_without_harbor(tmp_path: Path) -> None:
         encoding="utf-8"
     )
     assert "secret derivation" not in response
+    assert_static_pipeline(tmp_path / "trial", "olympiadbench")

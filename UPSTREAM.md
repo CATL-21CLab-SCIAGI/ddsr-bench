@@ -427,6 +427,6 @@
   retains five examples for modern contexts, generates and parses the letter
   through shared chat clients, and labels resulting records `mmlu-generative`
   rather than claiming leaderboard parity with that likelihood metric.
-- Data status: official, unverified. Public correction projects cover subsets,
+- Data status: official, original. Public correction projects cover subsets,
   not a full authoritative replacement of all official test rows.
 - License: MIT.

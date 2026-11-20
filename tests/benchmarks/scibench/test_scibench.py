@@ -16,6 +16,7 @@ from ddsr_bench.benchmarks.scibench.generation.prompts import (
 )
 from ddsr_bench.benchmarks.scibench.generation.runner import generate
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _record() -> dict[str, str]:
@@ -114,6 +115,7 @@ async def test_static_trial(tmp_path: Path) -> None:
     )
 
     assert result["status"] == "passed"
+    assert_static_pipeline(tmp_path / "trial", "scibench")
 
 
 class FakeClient:

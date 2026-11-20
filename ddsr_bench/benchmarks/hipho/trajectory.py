@@ -6,11 +6,13 @@ from pathlib import Path
 from typing import Any
 
 from ddsr_bench.benchmarks.hipho.data.loader import REVISION
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-REPOSITORY_COMMIT = "8db13ae9aa6e3d4ddb7bb63c8f6a568d5b207243"
-EVALUATOR_COMMIT = "ed3e918edf4a62e0bf42a2768655e02d45312fef"
+_CONFIG = benchmark_config("hipho")
+REPOSITORY_COMMIT = str(_CONFIG["repository_revision"])
+EVALUATOR_COMMIT = str(_CONFIG["evaluator_revision"])
 
 
 def _generation(response: dict[str, Any]) -> Generation:

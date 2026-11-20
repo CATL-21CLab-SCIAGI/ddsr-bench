@@ -10,6 +10,7 @@ from ddsr_bench.benchmarks.mmmupro.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.mmmupro.evaluation.static import run_trial
 from ddsr_bench.benchmarks.mmmupro.generation.prompts import SYSTEM, messages, render
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 IMAGE_1 = "data:image/png;base64,aW1hZ2Ux"
 IMAGE_2 = "data:image/png;base64,aW1hZ2Uy"
@@ -99,6 +100,7 @@ async def test_static_trial(tmp_path: Path) -> None:
     assert result["status"] == "passed"
     record = json.loads((tmp_path / "trial" / "agent" / "response.json").read_text())
     assert record["problem"]["setting"] == "standard10"
+    assert_static_pipeline(tmp_path / "trial", "mmmupro")
 
 
 class FakeClient:

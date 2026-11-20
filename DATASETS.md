@@ -5,6 +5,7 @@ published an edition; it does not imply that the data are defect-free.
 
 | Status | Meaning |
 | --- | --- |
+| `original` | The selected edition is the unchanged upstream release. |
 | `revised` | Upstream published a new edition with substantive data changes but no correction ledger sufficient to classify every change. |
 | `corrected` | Problems or references were repaired while preserving the intended benchmark where feasible. |
 | `verified` | A reviewed or filtered subset; its population may differ from the original benchmark. |
@@ -29,8 +30,10 @@ audited and disputed by the benchmark authors.
 | PHYSICS | PHYSICS-Verified at `724170025e3541c9b877285b2d577a1257796f0b` | Official | `verified` | 1,034 problems, 2,559 scored answers |
 | HLE | HLE-Verified at `0bc83643672d4f68a5f89998617a639d85e7318b` | Official derivative | `verified` | 2,500 source items; 1,811 Gold+Revision selected |
 | FrontierScience | `openai/frontierscience` at `25ed67db7da8f4591484e764008ff585544f5a30` | Official | `verified` | 160 gold-set items across two tracks |
+| OlympiadBench | `Hothan/OlympiadBench` at `91184b52131e7fc9455fef848035173aea8cc01a` | Official | `revised` | 8,476 problems across 18 subsets |
+| HiPhO | `SciYu/HiPhO` at `8e196c09a71e4e68b75c422defa512473359e0e5` | Official | `revised` | 403 current and 360 published subquestions |
 | GPQA | `idavidrein/gpqa` at `56686c06f5e19865c153de0fdb11be3890014df7` | Official | `original` | 448 Main, 198 Diamond, 546 Extended questions |
-| MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `unverified` | 14,042 test questions across 57 subjects |
+| MMLU | Official `data.tar` with code at `4450500f923c49f1fb1dd3d99108a0bd9717b660` | Official | `original` | 14,042 test questions across 57 subjects |
 | MMMU-Pro | `MMMU/MMMU_Pro` at `0d7426df4ccb3d8704a992fe6850abee7c262127` | Official | `corrected` | 1,730 records in each of Standard-10, Standard-4, and Vision |
 | SciBench | Repository data at `e14e0ca3d3db0f02928a18d435b9c3d15656a7c5` | Official | `revised` | 580 text and 151 image targets; 138 solved examples |
 | JEEBench | `dair-iitd/jeebench` at `a9af8bf354887043bd280a617c8716ef54e7aaec` | Official | `unverified` | 515 JEE-Advanced questions across three subjects |

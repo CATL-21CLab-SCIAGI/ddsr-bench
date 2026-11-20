@@ -11,6 +11,7 @@ from ddsr_bench.benchmarks.gpqa.evaluation.prepare import compile_problem
 from ddsr_bench.benchmarks.gpqa.evaluation.static import run_trial
 from ddsr_bench.benchmarks.gpqa.generation.prompts import SYSTEM, messages, render
 from ddsr_bench.generation.client import ChatResponse, Sampling
+from tests.benchmarks.helpers import assert_static_pipeline
 
 
 def _problem():
@@ -98,6 +99,7 @@ async def test_static_trial(tmp_path: Path) -> None:
     )
     assert result["status"] == "passed"
     assert "SECRET" not in record
+    assert_static_pipeline(tmp_path / "trial", "gpqa")
 
 
 async def _response(content: str) -> ChatResponse:

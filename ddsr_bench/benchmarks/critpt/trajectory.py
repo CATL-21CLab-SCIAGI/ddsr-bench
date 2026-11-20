@@ -8,11 +8,13 @@ from typing import Any
 
 from ddsr_bench.benchmarks.critpt.data.schemas import CritPtSource
 from ddsr_bench.benchmarks.critpt.generation.prompts import system_prompt
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-PROMPT_COMMIT = "17c2545c302762d2f2d644d923ea4c301605cb08"
-AI_PROMPT_COMMIT = "565d1b0bfab353e17a40a38fe656c3ab0caee660"
+_CONFIG = benchmark_config("critpt")
+PROMPT_COMMIT = str(_CONFIG["prompt_revision"])
+AI_PROMPT_COMMIT = str(_CONFIG["ai_revision"])
 
 
 def _messages(record: dict[str, Any]) -> tuple[dict[str, str], ...]:

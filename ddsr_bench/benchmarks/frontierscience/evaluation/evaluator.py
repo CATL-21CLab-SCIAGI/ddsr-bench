@@ -5,10 +5,14 @@ from typing import Any
 
 from ddsr_bench.benchmarks.frontierscience.data.schemas import AnswerSpec, ProblemSpec
 from ddsr_bench.benchmarks.frontierscience.generation.prompts import judge_prompt
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.generation.client import ChatClient
 
 _OLYMPIAD = re.compile(r"GRADE:\s*([CI])\s*$", re.IGNORECASE)
 _RESEARCH = re.compile(r"VERDICT:\s*([0-9]+(?:\.[0-9]+)?)\s*$", re.IGNORECASE)
+_RESEARCH_PASS_POINTS = float(
+    benchmark_config("frontierscience")["research_pass_points"]
+)
 
 
 def parse_judgment(track: str, response: str) -> tuple[float, bool] | None:
@@ -20,7 +24,7 @@ def parse_judgment(track: str, response: str) -> tuple[float, bool] | None:
         passed = match.group(1).upper() == "C"
         return float(passed), passed
     points = min(10.0, max(0.0, float(match.group(1))))
-    return points, points >= 7
+    return points, points >= _RESEARCH_PASS_POINTS
 
 
 def unanswered(problem: ProblemSpec, reason: str) -> dict[str, Any]:

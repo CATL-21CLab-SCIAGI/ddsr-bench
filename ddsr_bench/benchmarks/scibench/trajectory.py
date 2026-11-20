@@ -5,10 +5,11 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from ddsr_bench.benchmarks.utils import benchmark_config
 from ddsr_bench.training.schemas import Generation, SftSample, Trajectory
 from ddsr_bench.training.sft import native_samples
 
-REPOSITORY_COMMIT = "e14e0ca3d3db0f02928a18d435b9c3d15656a7c5"
+REPOSITORY_COMMIT = str(benchmark_config("scibench")["repository_revision"])
 
 
 def _generations(response: dict[str, Any]) -> tuple[Generation, ...]:
